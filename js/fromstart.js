@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════
 // FROMSTART — das Bild vom Probier-Raster der Startseite übernehmen
 // ════════════════════════════════════════════════════════════════════
-// „Im Editor weitermalen“ (js/landing-demo.js) hängt das Bild an den Link:
+// „Im Editor weitermalen“ (js/landing-shared.js, startLink) hängt das Bild an den Link:
 //   editor.html#start=eis.14213d,2d4870,6ea8fe,a9d1ff,f2f8ff.0000…0123…
 // Palettenname · ihre Farben (ohne #) · N×N Ziffern Zeile für Zeile
 // (0 = transparent, sonst Index in die Palette) · optional „.skizze“, wenn

@@ -1761,7 +1761,7 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 .try-btn[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
 .try-text { display: grid; gap: var(--sp-5); justify-items: start; }
 
-/* Bitty stellt sich vor (js/bitty.js, js/landing-demo.js) */
+/* Bitty stellt sich vor (js/bitty.js, js/landing-paint.js) */
 .bitty-hi { display: flex; align-items: center; gap: var(--sp-4); }
 .bitty-hi-fig {
   flex: none;
