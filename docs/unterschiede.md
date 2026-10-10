@@ -36,7 +36,6 @@ nicht sicher.*
 |---|---|---|---|
 | Palette | Farben werden im **Paletten-Panel** bearbeitet: Raster mit „+“-Feld, Doppelklick, Rechtsklick-Menü — auch für eine nur *angezeigte* Palette | bearbeitet wird in der Farbreihe im Panel „Farben“ (nur die Palette des Sprites); die Felder im Paletten-Panel sind nur zum Ansehen | mittel |
 | Palette | **Farbe entfernen** gilt für alle Sprites mit dieser Palette | eine mit anderen Sprites geteilte Palette wird für den aktuellen Sprite kopiert, nur er ändert sich | klein — erst entscheiden, welches richtig ist |
-| Timeline | Vorschaubilder ohne gezogene Größe: **passend zur Breite** (30–48 px); Doppelklick auf die Trennlinie stellt das wieder ein | feste Standardgröße 32 px, Doppelklick setzt auf 32 zurück | klein |
 
 ## 3. Desktop macht es besser — Web nachziehen
 
