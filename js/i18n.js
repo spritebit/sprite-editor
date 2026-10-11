@@ -767,7 +767,7 @@ const STATIC = {
       + '<div><b>Pencil</b> — single pixels.</div>'
       + '<div><b>Brush</b> — an area; <i>strength</i> = density, <i>size</i> = edge length.</div>'
       + '<div><b>Spray</b> — random pixels; <i>strength</i> = amount per event.</div>'
-      + '<div><b>Shade</b> — a pen that works through a <i>colour ramp</i> with every stroke. Build the ramp: tap two or more colours in the colour bar or the palette panel, e.g. three reds — in the order they should follow each other. An empty pixel gets the first colour on the first stroke, every further stroke over it the next one — or keep pressing: like an airbrush, wherever the brush stays longer it moves on by itself, faster and faster, even while painting slowly. Pixels in other colours (e.g. the outline) stay untouched. Right click runs the ramp the other way round; on phones the <b>⇄ Reverse</b> button does that. The button with the bars sorts the ramp by shades, light to dark — it never happens by itself. <b>Shades</b> creates matching lighter and darker tones from the current colour (light a little warmer, shadows a little cooler), adds them to the palette and chooses them as the ramp. Without a ramp it paints with the current colour and then takes the next darker shade of the same colour. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
+      + '<div><b>Shade</b> — a pen that works through a <i>colour ramp</i> with every stroke. Build the ramp: tap two or more colours in the colour bar or the palette panel, e.g. three reds — in the order they should follow each other. An empty pixel gets the first colour on the first stroke, every further stroke over it the next one — or keep pressing: like an airbrush, wherever the brush stays longer it moves on by itself, faster and faster, even while painting slowly. Pixels in other colours are treated like empty ones: they first get the first colour of the ramp — so you can shade over things you already painted. Right click runs the ramp the other way round; on phones the <b>⇄ Reverse</b> button does that. The button with the bars sorts the ramp by shades, light to dark — it never happens by itself. <b>Shades</b> creates matching lighter and darker tones from the current colour (light a little warmer, shadows a little cooler), adds them to the palette and chooses them as the ramp. Without a ramp it paints with the current colour and then takes the next darker shade of the same colour. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
       + '<div><b>Brush shape</b> — brush, eraser and shade paint square or round (the two buttons after the size). Round shows from size 3: 3 px is a plus, 5 px a round dot.</div>'
       + '<div><b>Size</b> 1–300 with the slider or number field; <span class="kbd">Alt</span> + right-drag changes it right on the drawing area. An outline shows what brush, eraser and spray are about to hit.</div>'
       + '<div><b>Clean Stroke</b> — with the pencil (and the eraser at size 1) the L-shaped corners of a freehand line disappear: clean 1-pixel lines as if placed by hand.</div>'
@@ -1238,7 +1238,7 @@ const MSG = {
     'shade.genDone':    '{n} Töne erzeugt und als Farbreihe gewählt — {added} davon neu in der Palette.',
     'shade.swTitle':    '{hex} — antippen nimmt die Farbe aus der Reihe',
     'shade.needRamp':   'Schattieren: eine Farbe allein ist noch keine Reihe — tippe mindestens eine zweite an, z. B. ein helleres Rot. Oder „Leeren“: dann geht es automatisch.',
-    'shade.nothingRamp': 'Schattieren hat nichts geändert: Pixel in Farben, die nicht in der Farbreihe stehen, bleiben, wie sie sind — und an der dunkelsten (bzw. hellsten) Farbe geht es nicht weiter.',
+    'shade.nothingRamp': 'Schattieren hat nichts geändert: diese Pixel sind schon bei der letzten Farbe der Reihe — weiter geht es nicht. Rechtsklick läuft die Reihe zurück.',
     'shade.nothingAuto': 'Schattieren hat nichts geändert: in der Palette gibt es keinen dunkleren (bzw. helleren) Ton dieser Farbe. Wähle die Farbreihe selbst — tippe die Farben in der Farbzeile an.',
     'shade.noMask':     'Schattieren geht nicht in einer Maske.',
     'info.index':       'Index {i}',
@@ -1892,7 +1892,7 @@ const MSG = {
     'shade.genDone':    '{n} tones created and chosen as the ramp — {added} of them new in the palette.',
     'shade.swTitle':    '{hex} — tap to take the colour out of the ramp',
     'shade.needRamp':   'Shade: one colour alone is not a ramp yet — tap at least one more, e.g. a lighter red. Or “Clear”: then it works automatically.',
-    'shade.nothingRamp': 'Shading changed nothing: pixels in colours that are not in the ramp stay as they are — and at the darkest (or lightest) colour it stops.',
+    'shade.nothingRamp': 'Shading changed nothing: these pixels are already at the last colour of the ramp — it stops there. Right click runs the ramp back.',
     'shade.nothingAuto': 'Shading changed nothing: the palette has no darker (or lighter) shade of that colour. Pick the ramp yourself — tap the colours in the colour bar.',
     'shade.noMask':     'Shading does not work in a mask.',
     'info.index':       'index {i}',
