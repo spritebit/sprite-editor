@@ -1,4 +1,4 @@
-# 3.2.29
+# 3.2.30
 
 ## Deutsch
 
@@ -8,6 +8,16 @@
 ## English
 
 - Drag the timeline taller or shorter: at its top edge (at the bottom edge when docked at the top). You see more or fewer layers at once — the thumbnails keep their size. Double-click the edge for the default height again.
+- Small improvements and fixes.
+
+# 3.2.29
+
+## Deutsch
+
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
 - Small improvements and fixes.
 
 # 3.2.28
