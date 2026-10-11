@@ -255,7 +255,13 @@ function applyTool(x, y) {
   if (ppActive()) { paintPixelPerfect(x, y, state.tool === 'eraser' ? 0 : state.curColor); return; }
   if (state.tool === 'brush')  { paintBrush(x, y);  return; }
   if (state.tool === 'spray')  { paintSpray(x, y);  return; }
-  if (state.tool === 'shade')  { paintShade(x, y); shadeAt = { x, y }; return; }
+  if (state.tool === 'shade') {
+    paintShade(x, y);
+    // Neue Stelle: die Wartezeit fürs Halten beginnt hier von vorn.
+    if (!shadeAt || shadeAt.x !== x || shadeAt.y !== y) shadeStill = performance.now();
+    shadeAt = { x, y };
+    return;
+  }
   if (state.tool === 'fill')   { floodFill(x, y);   return; }
   if (state.tool === 'eraser') {
     const prev = state.curColor;
@@ -387,14 +393,21 @@ function startShade(dark) {
   shadeBegin(dark ? -1 : 1);
   // Gedrückt halten geht weiter: alle SHADE_HOLD_MS eine Stufe, dort, wo
   // der Pinsel gerade ist — wie wiederholtes Tippen (render.js shadeRepeat).
+  // Nur solange der Zeiger stillsteht: sonst liefe ein langsamer Strich
+  // stellenweise bis ans Ende der Reihe.
   clearInterval(shadeTimer);
   shadeTimer = setInterval(() => {
-    if (state.isDrawing && state.tool === 'shade' && shadeAt) shadeRepeat(shadeAt.x, shadeAt.y);
-  }, SHADE_HOLD_MS);
+    if (!state.isDrawing || state.tool !== 'shade' || !shadeAt) return;
+    const now = performance.now();
+    if (now - shadeStill < SHADE_HOLD_MS) return;
+    shadeStill = now;
+    shadeRepeat(shadeAt.x, shadeAt.y);
+  }, SHADE_HOLD_MS / 5);
   return true;
 }
 const SHADE_HOLD_MS = 350;
 let shadeTimer = 0;
+let shadeStill = 0;
 /** @type {{x: number, y: number} | null} */
 let shadeAt = null;
 
