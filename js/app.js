@@ -945,6 +945,11 @@ const KEYMAP = [
   { when: e => !!TOOL_KEYS[e.key.toLowerCase()], run: e => setTool(TOOL_KEYS[e.key.toLowerCase()]) },
 ];
 
+// Häkchen „Pixelraster anzeigen“ im Menü „Ansicht“.
+function syncGridItem() {
+  $('grid-btn').setAttribute('aria-checked', String(state.showGrid));
+}
+
 function handleKey(e) {
   for (const rule of KEYMAP) {
     if (rule === KEY_BARRIER) {
@@ -1199,6 +1204,13 @@ function initToolbar() {
   };
   $('bg-dark-btn').addEventListener('click', () => setBg('dark'));
   $('bg-bw-btn').addEventListener('click', () => setBg('bw'));
+  // Pixelraster anzeigen (Menü „Ansicht“): ohne Häkchen ein sauberes Bild ohne die feinen Linien.
+  $('grid-btn').addEventListener('click', () => {
+    state.showGrid = !state.showGrid;
+    syncGridItem();
+    renderEditor();
+    saveState();
+  });
 
   $('undo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); undo(); });
   $('redo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); redo(); });
@@ -2009,6 +2021,7 @@ function syncUiFromState() {
   $('tolerance-val').textContent = state.wandTolerance + '%';
   $('bg-dark-btn').classList.toggle('is-active', state.editorBg === 'dark');
   $('bg-bw-btn').classList.toggle('is-active', state.editorBg === 'bw');
+  syncGridItem();
   setBrushSize(state.brushSize);
   const fmtSel = $('output-format');
   if (fmtSel) { fmtSel.value = state.outputFormat; syncFormatUI(); }
