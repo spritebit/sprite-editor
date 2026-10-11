@@ -493,6 +493,7 @@ export const MSG_AT = {
   // Timeline
   'tl.frameTitle':     'Frame {i} · {ms} ms — antippn zum Wöhln, ziagn zum Vaschiabn',
   'tl.gripTitle':      'Ziagn: Vorschaubuidln größa (noch untn) oder klana (noch obn). Doppelklick: wieda passend zur Breitn',
+  'tl.heightGripTitle': 'Ziagn: Timeline höcha oder niedriga — mehr oder weniga Ebenen, de Vorschaubuidln bleibn gleich groß. Doppelklick: wieda Standardhöh',
   'tl.delOne':         'Frame weghaun',
   'tl.delMany':        '{n} markierte Frames weghaun',
   'tl.lastFrame':      'Da letzte Frame bleibt — a Sprite braucht mindestens oan.',
