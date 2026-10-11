@@ -1,3 +1,13 @@
+# 3.2.32
+
+## Deutsch
+
+- Übersichtlichere Timeline am Handy: Die Knöpfe stehen jetzt in drei Reitern — Frames, Ebenen und Zellen —, Abspielen und Einstellungen bleiben immer sichtbar. Im Raster zeigen „Frames →" und „Ebenen ↓", was was ist, und jede Ebene hat wieder Schloss und den Schalter „Durchgehend".
+
+## English
+
+- A clearer timeline on phones: the buttons now sit in three tabs — Frames, Layers and Cels — while play and settings stay visible. In the grid, “Frames →” and “Layers ↓” show what is what, and every layer has its lock and the “Continuous” toggle again.
+
 # 3.2.31
 
 ## Deutsch
