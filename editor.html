@@ -427,7 +427,14 @@
       <div class="bar-zone" data-zone="bottom">
 
       <!-- Timeline — Frames des aktiven Sprites, Abspielen, Onion Skin (js/frames.js) -->
-      <div id="timeline">
+      <div id="timeline" data-mtab="frames">
+        <!-- Nur am Handy: Reiter, die die Knöpfe nach Frames, Ebenen und
+             Zellen aufteilen (js/frames.js initMobileTabs, styles.css 17). -->
+        <div class="tl-mtabs" role="tablist" data-i18n-attr="aria-label:tm.title" aria-label="Timeline">
+          <button type="button" class="tl-mtab" role="tab" data-tab="frames" aria-selected="true" data-i18n="tl.frames">Frames</button>
+          <button type="button" class="tl-mtab" role="tab" data-tab="layers" aria-selected="false" data-i18n="ly.title">Ebenen</button>
+          <button type="button" class="tl-mtab" role="tab" data-tab="cels" aria-selected="false" data-i18n="tl.cels">Zellen</button>
+        </div>
         <div class="btn-group tl-transport">
           <button class="btn" id="tl-first" data-i18n-attr="title:tl.first" title="Zum ersten Frame (Pos1)"><span class="ico" data-icon="first"></span></button>
           <button class="btn" id="tl-prev" data-i18n-attr="title:tl.prev" title="Voriger Frame (, oder ←)"><span class="ico" data-icon="prev"></span></button>

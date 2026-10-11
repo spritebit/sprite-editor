@@ -1070,6 +1070,8 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
   background: var(--surface-1);
 }
 .tl-corner-btns { display: flex; gap: 2px; }
+/* Reiter und Wegweiser gibt es nur am Handy (Abschnitt 17). */
+.tl-mtabs, .tl-corner-frames { display: none; }
 .tl-corner-btns .icon-btn { width: 22px; height: 22px; padding: 0; }
 .tl-corner-btns svg { width: 13px; height: 13px; }
 .tl-layer.is-dragging { z-index: 4; opacity: 0.9; box-shadow: var(--shadow-md); cursor: grabbing; }
@@ -2795,9 +2797,58 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
   }
   /* Das Raster steht in seiner eigenen Zeile unter den Knoepfen; die
      Ebenen-Spalte ist schmal (Auge und Name), die Zeilen fingerhoch. */
-  #timeline > .tl-frames { flex: 1 1 100%; --tl-lw: 92px; --tl-row: 30px; max-height: calc(var(--tl-cell, 44px) + 4 * 32px + 6px); }
-  #timeline .tl-lock,
-  #timeline .tl-cont { display: none; }
+  /* Die Ebenen-Spalte ist breit genug für Auge, Schloss, Durchgehend und
+     einen kurzen Namen. */
+  #timeline > .tl-frames { flex: 1 1 100%; --tl-lw: 140px; --tl-row: 30px; max-height: calc(var(--tl-cell, 44px) + 4 * 32px + 6px); }
+
+  /* Reiter (js/frames.js initMobileTabs): oben stehen nur Griff, Abspielen,
+     die Reiter Frames · Ebenen · Zellen und das ⚙. Darunter die Knöpfe des
+     offenen Reiters, ganz unten das Raster. So steht nie „+ Kopie Papierkorb"
+     zweimal ohne Erklärung untereinander. */
+  #timeline > * { order: 3; }
+  #timeline > .bar-handle { order: -2; }
+  #timeline > .tl-transport { display: contents; }
+  #tl-play { order: -1; }
+  #timeline > .tl-mtabs { order: 0; display: flex; flex: 1 1 auto; min-width: 0; }
+  #timeline > #tl-settings { order: 1; }
+  #timeline::after { content: ''; order: 2; flex: 1 1 100%; height: 0; }
+  #tl-first, #tl-prev, #tl-next, #tl-last { order: 3; }
+  #timeline > .tl-frames { order: 99; }
+  .tl-mtabs {
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+  }
+  .tl-mtab {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 34px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: none;
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .tl-mtab[aria-selected="true"] { background: var(--accent-bg); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  #timeline[data-mtab="frames"] :is(.tl-lyops, .tl-lymask, #tl-op-field, .tl-celops),
+  #timeline[data-mtab="layers"] :is(#tl-first, #tl-prev, #tl-next, #tl-last, .tl-edit, #tl-onion, #tl-tag, #tl-go-field, #tl-fps-field, .tl-celops),
+  #timeline[data-mtab="cels"] :is(#tl-first, #tl-prev, #tl-next, #tl-last, .tl-edit, #tl-onion, #tl-tag, #tl-go-field, #tl-fps-field, .tl-lyops, .tl-lymask, #tl-op-field) { display: none; }
+  /* Ecke des Rasters: Wegweiser statt Knöpfe — die Ebenen-Knöpfe stehen
+     im Reiter „Ebenen". */
+  #timeline .tl-corner { justify-content: space-between; padding: 2px 4px 4px 6px; }
+  #timeline .tl-corner-frames { display: block; align-self: flex-end; }
+  #timeline .tl-corner-frames::after { content: ' →'; }
+  #timeline .tl-corner-label::after { content: ' ↓'; }
+  #timeline .tl-corner-btns { display: none; }
+  #timeline :is(.tl-eye, .tl-lock, .tl-cont) { width: 26px; height: 26px; }
   /* Timeline-Menü am Handy: ein Blatt von unten über die ganze Breite. */
   .tl-menu {
     left: 0 !important; right: 0; bottom: 0; top: auto !important;
@@ -2807,7 +2858,6 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
     padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
   }
   .tl-menu .btn { min-height: 38px; }
-  #timeline .tl-eye { width: 28px; height: 28px; }
   .tl-go-field { margin-left: 0; }
   /* Die zweite Zeile soll eine bleiben: enge Felder und kleinere Knoepfe
      (siehe unten) schaffen den Platz dafuer — und damit auch fuer "ms" und
@@ -2821,7 +2871,8 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
   #timeline .tl-num input { -moz-appearance: textfield; appearance: textfield; }
   #timeline .tl-num .field-value { min-width: 0; }
   #timeline .tl-num .field-label { display: none; }
-  #timeline #tl-fps-field .field-label { display: inline; }
+  #timeline #tl-fps-field .field-label,
+  #timeline #tl-op-field .field-label { display: inline; }
   /* Beim Sprungfeld bleibt nur der Anfangsbuchstabe stehen: "Frame" waere
      hier zu lang, drei nackte Zahlen nebeneinander zu wenig. */
   #timeline #tl-go-field .field-label {
@@ -2867,10 +2918,9 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
      zweite Zeile am Stueck aufs Display. */
   #timeline .btn,
   #timeline .icon-btn { min-width: 38px; min-height: 38px; }
-  /* Ausnahme: die drei Ebenen-Knöpfe in der Ecke des Rasters — die Spalte
-     ist am Handy nur 92 px breit, 38 px je Knopf passten nicht hinein. */
-  #timeline .tl-corner-btns .icon-btn { min-width: 0; min-height: 0; width: 28px; height: 28px; }
-  #timeline .tl-corner-label { display: none; }
+  /* Ausnahme: Auge, Schloss und Durchgehend in den Ebenen-Zeilen — drei
+     mal 38 px passten nicht in die Spalte; die Zeile ist 30 px hoch. */
+  #timeline .tl-layer .icon-btn { min-width: 0; min-height: 0; }
   /* Finger statt Strg/Shift: der Schalter fuer die Mehrfachauswahl. Dafuer
      fallen die Schritt-Knoepfe weg — den Nachbar-Frame tippt man direkt an,
      und die Leiste bleibt zweizeilig. */

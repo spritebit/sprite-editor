@@ -465,10 +465,12 @@ function makeThumb() {
 
 // Ecke links oben: Überschrift und die Knöpfe für Ebenen — dieselben
 // Aktionen wie im Ebenen-Panel, nur dort, wo man die Ebenen gerade sieht.
+// Am Handy stehen statt der Knöpfe zwei Wegweiser: „Frames →" über den
+// Bildchen, „Ebenen ↓" über den Zeilen (styles.css, Abschnitt 17).
 function makeCorner() {
   const c = document.createElement('div');
   c.className = 'tl-corner';
-  c.innerHTML = '<span class="tl-corner-label"></span><span class="tl-corner-btns">'
+  c.innerHTML = '<span class="tl-corner-frames"></span><span class="tl-corner-label"></span><span class="tl-corner-btns">'
     + '<button type="button" class="icon-btn" data-act="add"></button>'
     + '<button type="button" class="icon-btn" data-act="dup"></button>'
     + '<button type="button" class="icon-btn" data-act="del"></button></span>';
@@ -484,6 +486,7 @@ function makeCorner() {
 // Texte der Ecke — bei jedem Zeichnen, damit ein Sprachwechsel greift.
 function syncCorner(sp) {
   corner.querySelector('.tl-corner-label').textContent = t('tl.layers');
+  corner.querySelector('.tl-corner-frames').textContent = t('tl.framesHead');
   corner.querySelectorAll('button').forEach(b => {
     const act = /** @type {HTMLElement} */ (b).dataset.act;
     b.title = t({ add: 'tl.lyAdd', dup: 'tl.lyDup', del: 'tl.lyDel' }[act]);
@@ -1378,7 +1381,30 @@ function makeHeightGrip() {
   return grip;
 }
 
+// Handy: die Knöpfe der Timeline stehen in drei Reitern — Frames, Ebenen,
+// Zellen. Welcher offen ist, steht als data-mtab an #timeline; styles.css
+// blendet den Rest aus. Am Rechner sind die Reiter unsichtbar und alles
+// steht wie gehabt nebeneinander.
+const MTAB_KEY = 'sprite_editor_tl_tab';
+function initMobileTabs() {
+  const tl = $('timeline');
+  const tabs = [...tl.querySelectorAll('.tl-mtab')];
+  const show = name => {
+    if (!tabs.some(b => b.dataset.tab === name)) name = 'frames';
+    tl.dataset.mtab = name;
+    tabs.forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  };
+  let saved = null;
+  try { saved = localStorage.getItem(MTAB_KEY); } catch {}
+  show(saved || 'frames');
+  tabs.forEach(b => b.addEventListener('click', () => {
+    show(b.dataset.tab);
+    try { localStorage.setItem(MTAB_KEY, b.dataset.tab); } catch {}
+  }));
+}
+
 export function initFrames() {
+  initMobileTabs();
   heightGrip = makeHeightGrip();
   $('timeline').append(heightGrip);
   window.addEventListener('resize', fitRows);
