@@ -78,6 +78,9 @@ export const state = {
   // shadeSoft = runder Pinsel mit Verlauf (Mitte mehr Stufen als der Rand).
   /** @type {string[]} */
   shadeRamp:     [],
+  // Pinselform für Pinsel, Radierer und Schattieren: rund statt eckig
+  // (js/brushshape.js).
+  brushRound:    false,
   shadeUp:       false,
   shadeSoft:     false,
   maskEdit:      false,    // Werkzeuge malen in die Maske der aktiven Ebene (js/mask.js)

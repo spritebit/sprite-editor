@@ -50,6 +50,7 @@ const PRECACHE = [
   'js/app.js',
   'js/aseprite.js',
   'js/bitty.js',
+  'js/brushshape.js',
   'js/calc.js',
   'js/cels.js',
   'js/codegen.js',

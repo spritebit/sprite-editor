@@ -24,6 +24,7 @@ import { showInfoToast } from './toast.js';
 import { createPalettePicker } from './palpicker.js';
 import { createPixelPerfect, ppAdd } from './pixelperfect.js';
 import { makeShader, toggleRamp, softLevel, rampLevels, holdSteps } from './shade.js';
+import { inRound } from './brushshape.js';
 import { recordPalettes, startPaletteEdit, endPaletteEdit } from './history.js';
 
 // Weiterreichen, damit bestehende Importe aus render.js gültig bleiben.
@@ -544,6 +545,9 @@ export function paintBrush(x, y) {
   const lo = -Math.floor((state.brushSize - 1) / 2);
   const hi =  Math.floor(state.brushSize / 2);
   const threshold = state.brushStrength / 100;
+  // Runder Pinsel (js/brushshape.js): Pixel außerhalb des Kreises fallen weg.
+  const round = state.brushRound && state.brushSize > 2;
+  const n = state.brushSize;
   let changed = false;
   // Ohne Symmetrie direkt und nur im Bild — bei großen Pinseln (bis 300 px,
   // also 90 000 Zellen je Tupfer) spart das den Umweg über mirrored().
@@ -552,6 +556,7 @@ export function paintBrush(x, y) {
     for (let py = Math.max(0, y + lo); py <= Math.min(H - 1, y + hi); py++) {
       const row = grid[py];
       for (let px = Math.max(0, x + lo); px <= Math.min(W - 1, x + hi); px++) {
+        if (round && !inRound(px - x, py - y, n)) continue;
         if (threshold < 1 && Math.random() > threshold) continue;
         if (row[px] !== value) { row[px] = value; changed = true; }
       }
@@ -562,6 +567,7 @@ export function paintBrush(x, y) {
   // Mit Symmetrie: nur Zellen im Bild — außerhalb liegt auch kein Spiegelbild.
   for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
     for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
+      if (round && !inRound(dx, dy, n)) continue;
       if (threshold < 1 && Math.random() > threshold) continue;
       for (const [px, py] of mirrored(x + dx, y + dy)) {
         changed = setCell(grid, px, py, state.curColor) || changed;
@@ -614,6 +620,7 @@ export function shadeEnd() {
 
 // Alle Pixel unter dem Pinsel bei (x, y) mit ihrem Gewicht: 1 — mit
 // „Verlauf" die Stufen dort (Mitte am meisten, Rand 1; 0 = außerhalb).
+// Ein runder Pinsel (js/brushshape.js) lässt die Ecken weg.
 function shadeCells(x, y, fn) {
   const grid = getGrid();
   const H = grid.length, W = grid[0].length;
@@ -626,7 +633,7 @@ function shadeCells(x, y, fn) {
   for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
     for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
       const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
-      if (!level) continue;
+      if (!level || (!soft && state.brushRound && !inRound(dx, dy, state.brushSize))) continue;
       for (const [px, py] of mirrored(x + dx, y + dy)) fn(px, py, py * W + px, level, levels);
     }
   }

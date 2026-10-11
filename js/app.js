@@ -325,6 +325,7 @@ function updateToolUI() {
   $('brush-size-group').hidden = !hasSize;
   $('strength-group').hidden   = !hasSize || state.tool === 'shade';
   $('shade-group').hidden      = state.tool !== 'shade';
+  syncBrushShape();
   $('tolerance-group').hidden  = !needsTolerance;
   $('select-group').hidden     = !isSelectTool(state.tool);
   $('shape-group').hidden      = !isShapeTool(state.tool);
@@ -497,8 +498,9 @@ function updateBrushCursor(e) {
   } else {
     const lo = -Math.floor((state.brushSize - 1) / 2);
     left = (c.x + lo) * cs; top = (c.y + lo) * cs;
-    // Schattieren mit Verlauf wirkt rund (js/shade.js softLevel).
-    size = state.brushSize * cs; round = tool === 'shade' && state.shadeSoft;
+    // Runder Pinsel — und Schattieren mit Verlauf — wirken rund.
+    size = state.brushSize * cs;
+    round = state.brushSize > 2 && (state.brushRound || (tool === 'shade' && state.shadeSoft));
   }
   el.className = 'tool-' + tool;
   el.style.left = left + 'px';
@@ -520,6 +522,16 @@ let sizeDrag = null;
 function syncFillVisible() {
   $('fill-visible-btn').classList.toggle('is-active', state.fillVisible);
   $('fill-visible-btn').setAttribute('aria-pressed', String(state.fillVisible));
+}
+
+// Pinselform: eckig oder rund (js/brushshape.js). Spray ist immer rund —
+// dort gibt es die Wahl nicht.
+function syncBrushShape() {
+  for (const [id, on] of /** @type {[string, boolean][]} */ ([['brush-square-btn', !state.brushRound], ['brush-round-btn', state.brushRound]])) {
+    $(id).classList.toggle('is-active', on);
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+  $('brush-shape').hidden = state.tool === 'spray';
 }
 
 function setBrushSize(n) {
@@ -1099,6 +1111,14 @@ function initToolbar() {
     renderShadeRamp();
     saveState();
   });
+
+  for (const [id, round] of /** @type {[string, boolean][]} */ ([['brush-square-btn', false], ['brush-round-btn', true]])) {
+    $(id).addEventListener('click', () => {
+      state.brushRound = round;
+      syncBrushShape();
+      saveState();
+    });
+  }
 
   $('shade-clear-btn').addEventListener('click', () => {
     state.shadeRamp = [];

@@ -1455,6 +1455,10 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 #shape-group .btn,
 #shade-group .btn { padding: 5px 8px; }
 #shade-gen-count { width: 3.4rem; }
+/* Pinselform (js/brushshape.js): zwei kleine Icon-Knöpfe hinter der Größe. */
+#brush-shape .btn { padding: 5px 7px; }
+#brush-shape[hidden] { display: none; }
+#brush-square-btn.is-active, #brush-round-btn.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-line); }
 
 /* Schattieren (js/shade.js): die Farbreihe als kleine Felder. */
 .shade-ramp { display: flex; align-items: center; gap: 3px; min-height: 22px; }

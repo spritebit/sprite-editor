@@ -173,6 +173,7 @@ function buildPayload(withSprites = true) {
       pixelPerfect: state.pixelPerfect,
       shadeRamp: state.shadeRamp,
       shadeUp: state.shadeUp,
+      brushRound: state.brushRound,
       shadeSoft: state.shadeSoft,
       tileMode: state.tileMode,
       tileAuto: state.tileAuto,
@@ -659,6 +660,7 @@ function applyPayload(payload) {
     if (typeof ui.pixelPerfect === 'boolean') state.pixelPerfect = ui.pixelPerfect;
     state.shadeRamp = normalizeRamp(ui.shadeRamp);
     if (typeof ui.shadeUp === 'boolean') state.shadeUp = ui.shadeUp;
+    if (typeof ui.brushRound === 'boolean') state.brushRound = ui.brushRound;
     if (typeof ui.shadeSoft === 'boolean') state.shadeSoft = ui.shadeSoft;
     if (ui.tileMode === 'pixel' || ui.tileMode === 'tiles') state.tileMode = ui.tileMode;
     if (ui.tileAuto === 'auto' || ui.tileAuto === 'manual') state.tileAuto = ui.tileAuto;
