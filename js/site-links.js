@@ -31,8 +31,8 @@
   // Schreibt tools/deploy.py: web = package.json, desktop = neueste
   // veröffentlichte Release (höchster v…-Tag von spritebit-rs).
   var VERSIONS = {
-    web:     '3.5.0',
-    desktop: '1.5.0',
+    web:     '3.6.0',
+    desktop: '1.6.0',
   };
 
   // Abgeleitete Adressen
