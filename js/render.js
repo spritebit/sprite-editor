@@ -273,7 +273,7 @@ export function renderEditor() {
   // Bei sehr kleinen Zellen weg, sonst wird alles Raster.
   const lines = document.getElementById('editor-gridlines');
   if (lines) {
-    lines.hidden = cs < 6;
+    lines.hidden = cs < 6 || !state.showGrid;
     lines.style.width = W * cs + 'px';
     lines.style.height = H * cs + 'px';
     lines.style.setProperty('--cell', cs + 'px');

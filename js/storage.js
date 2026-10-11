@@ -167,6 +167,7 @@ function buildPayload(withSprites = true) {
       curColor:  state.curColor,
       cellSize:  state.cellSize,
       editorBg:  state.editorBg,
+      showGrid: state.showGrid,
       tool:      state.tool,
       outputFormat: state.outputFormat,
       mirror:    state.mirror,
@@ -655,6 +656,7 @@ function applyPayload(payload) {
     if (ui.curColor != null) state.curColor = ui.curColor;
     if (ui.cellSize) state.cellSize = ui.cellSize;
     if (ui.editorBg) state.editorBg = ui.editorBg;
+    if (typeof ui.showGrid === 'boolean') state.showGrid = ui.showGrid;
     if (ui.tool) state.tool = ui.tool;
     if (ui.outputFormat) state.outputFormat = ui.outputFormat;
     if (ui.mirror) state.mirror = ui.mirror;

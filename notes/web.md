@@ -1,3 +1,15 @@
+# 3.6.0
+
+## Deutsch
+
+- Menü „Ansicht“ → „Pixelraster anzeigen“: ohne Häkchen verschwinden die feinen Linien zwischen den Pixeln, und du siehst das Bild sauber.
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
+- “View” menu → “Show pixel grid”: unchecked, the thin lines between pixels disappear and you see the picture clean.
+- Small improvements and fixes.
+
 # 3.5.0
 
 ## Deutsch
