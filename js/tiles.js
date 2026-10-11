@@ -5,7 +5,8 @@
 // steht einmal im Kachelsatz der Ebene; malt man eine Kachel an, ändern
 // sich alle Stellen mit, an denen sie liegt.
 //
-//   layer.tileset = { tw, th, tiles: [grid th×tw, …] }   // Kachel k = tiles[k-1]
+//   layer.tileset = { tw, th, tiles: [grid th×tw, …], lib? }   // Kachel k = tiles[k-1]
+//   lib = Name des Satzes in der Bibliothek, aus dem er kommt (js/tilelib.js)
 //
 // Kachel 0 ist „leer“ und steht nicht in der Liste. Die Ebene speichert
 // weiter ganz normale Pixel (frames[].cels) — welche Kachel wo liegt, ergibt
@@ -32,7 +33,9 @@ export const DEFAULT_TILE = 16;
 export const blankTileset = (tw = DEFAULT_TILE, th = tw) => ({ tw, th, tiles: [] });
 
 /** Tiefe Kopie (Undo, Duplizieren). */
-export const copyTileset = ts => (ts ? { tw: ts.tw, th: ts.th, tiles: ts.tiles.map(g => g.map(r => r.slice())) } : null);
+export const copyTileset = ts => (ts
+  ? { tw: ts.tw, th: ts.th, tiles: ts.tiles.map(g => g.map(r => r.slice())), ...(ts.lib ? { lib: ts.lib } : {}) }
+  : null);
 
 /**
  * Aus dem Speicherstand oder einer fremden Datei. Unbrauchbares → null
@@ -45,7 +48,7 @@ export function normalizeTileset(ts) {
   const ok = g => Array.isArray(g) && g.length === th
     && g.every(r => Array.isArray(r) && r.length === tw && r.every(v => typeof v === 'number' || typeof v === 'string'));
   const tiles = (Array.isArray(ts.tiles) ? ts.tiles : []).filter(ok).map(g => g.map(r => r.slice()));
-  return { tw, th, tiles };
+  return { tw, th, tiles, ...(typeof ts.lib === 'string' && ts.lib.trim() ? { lib: ts.lib.trim() } : {}) };
 }
 
 /** Wie viele ganze Kacheln passen in W × H? */

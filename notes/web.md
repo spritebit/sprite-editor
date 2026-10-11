@@ -1,3 +1,17 @@
+# 3.4.0
+
+## Deutsch
+
+- Kachelsätze wiederverwenden: Im Panel „Kacheln“ speicherst du den Satz einer Tilemap-Ebene unter einem Namen in die Bibliothek des Projekts — und holst ihn mit „Neue Ebene“ in jeden anderen Sprite oder legst seine Kacheln mit „Übernehmen“ in eine andere Ebene. Gespeichert werden die Farben, der Satz passt also auch zu einer anderen Palette.
+- Kachelsätze als Datei für andere Projekte speichern und laden — laden geht auch mit einem fremden Kachelbild (PNG), das in Kacheln zerschnitten wird.
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
+- Reuse tile sets: in the “Tiles” panel you save a tilemap layer’s set under a name to the project library — and bring it into any other sprite with “New layer”, or put its tiles into another layer with “Apply”. Colors are stored, so the set fits a different palette too.
+- Save and load tile sets as files for other projects — loading also works with a foreign tile image (PNG), which is cut into tiles.
+- Small improvements and fixes.
+
 # 3.3.1
 
 ## Deutsch
