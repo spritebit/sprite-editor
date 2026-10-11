@@ -1611,6 +1611,9 @@ kbd {
    ohnehin gross in der Zeile ueber der Ueberschrift. */
 @media (max-width: 400px) {
   .topbar .brand-name { display: none; }
+  /* Sonst rutschen die Flaggen in eine zweite Zeile; die Version steht
+     unten am großen Knopf noch einmal. */
+  .topbar .btn .ver { display: none; }
 }
 
 /* ── Rechtliches: Impressum, Datenschutz ───────────────────────────── */
@@ -1940,4 +1943,70 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
     margin-top: 0.6rem;
     font-size: var(--fs-sm);
   }
+}
+
+/* ══ 18 · Startseite am Handy: alles auf die Mitte ══════════════════
+   Unter 720px steht alles in einer Spalte — links ausgerichtet wirkte das
+   ausgefranst (einzelne Knöpfe allein in der nächsten Zeile, Text hier,
+   Bild da). Nur die Startseite (body.home); Listen mit Strich links
+   (.facts) und die Karten-Texte bleiben linksbündig, die liest man. */
+@media (max-width: 720px) {
+  .home .hero-text,
+  .home .hero-cta,
+  .home .band > .eyebrow,
+  .home .band > h2,
+  .home .band > .section-lead,
+  .home .try-text,
+  .home .swap-text,
+  .home .closer-inner { text-align: center; }
+
+  .home .eyebrow { justify-content: center; }
+  .home .lead,
+  .home .section-lead,
+  .home .closer-inner h2,
+  .home .closer-inner .lead,
+  .home .closer-inner .note { margin-inline: auto; }
+
+  /* Kopf: Chips, Knöpfe, kleine Links */
+  .home .hero-chips,
+  .home .cta-sub,
+  .home .cta-gh { justify-content: center; }
+  .home .hero-cta { justify-self: center; width: 100%; }
+
+  /* 01 · Raster und 02 · Skizze: Bedienleisten mittig */
+  .home .try-board { justify-items: center; }
+  .home .try-tools,
+  .home .sketch-tools,
+  .home .pal-row { justify-content: center; }
+  .home .sketch-sizes { margin-left: 0; }
+  /* Farben eine Zeile, Radierer/Leeren/Beispiel darunter — sonst steht
+     „Beispiel“ allein in der zweiten Zeile. */
+  .home .try-swatches { flex-basis: 100%; justify-content: center; }
+  /* Vier Paletten als 2 × 2 statt 3 + 1 */
+  .home .pal-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 22rem); margin-inline: auto; }
+  .home .pal-btn { justify-content: center; }
+  .home .try-text { justify-items: center; }
+  .home .bitty-hi { justify-content: center; text-align: left; }
+  .home .facts { text-align: left; }
+  /* „Im Editor weitermalen“ in 01 und 02 gleich: volle Breite */
+  .home .try-text > .btn,
+  .home .swap-text > .btn { align-self: stretch; justify-self: stretch; justify-content: center; }
+
+  /* Mehr entdecken: Symbol, Titel und Satz mittig */
+  .home .teaser { justify-items: center; text-align: center; }
+
+  /* Abschluss */
+  .home .closer-inner { align-items: center; }
+  .home .closer-inner .cta-row { justify-content: center; width: 100%; }
+
+  /* Kulissen-Vermerk */
+  .home .scene-credit { text-align: center; }
+
+  /* Fuß: Marke und Satz mittig, Spalten bleiben zweispaltig */
+  .home .foot-about { text-align: center; }
+  .home .foot-tag { margin-inline: auto; }
+  .home .foot-cols { text-align: center; }
+  .home .foot-col a,
+  .home .foot-linkbtn { text-align: center; }
+  .home .foot-meta { justify-content: center; text-align: center; }
 }
