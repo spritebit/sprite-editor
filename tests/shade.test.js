@@ -63,3 +63,18 @@ test('Gleicher Hex zweimal in der Palette: die erste Nummer gewinnt', () => {
   const pal = { 1: '#000000', 2: '#ffffff', 3: '#ffffff' };
   assert.equal(makeShader(pal, normalizeRamp(['#000000', '#ffffff']), 1)(1), 2);
 });
+
+test('Ohne Reihe: Automatik nimmt die nächste Stufe der Farbfamilie', () => {
+  // Rot in drei Stufen, Grün daneben — Grün darf nie herauskommen.
+  const pal = { 1: '#400000', 2: '#900000', 3: '#e04040', 4: '#00c000' };
+  assert.equal(makeShader(pal, [], 1)(2), 3);
+  assert.equal(makeShader(pal, [], -1)(2), 1);
+  assert.equal(makeShader(pal, [], 1)(3), 3);   // heller gibt es nicht
+  assert.equal(makeShader(pal, [], 1)(0), 0);   // leer bleibt leer
+});
+
+test('Ohne Reihe: freie Farben werden direkt heller bzw. dunkler', () => {
+  const up = makeShader(PAL, [], 1)('#606060');
+  assert.match(up, /^#[0-9a-f]{6}$/);
+  assert.ok(parseInt(up.slice(1, 3), 16) > 0x60);
+});

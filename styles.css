@@ -1238,6 +1238,11 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
    nur fuer Finger da (styles.css, Abschnitt Responsive). */
 #tl-multi { display: none; }
 .tl-num input { width: 4.5rem; }
+/* Deckkraft: drei Stellen, das „%" direkt dahinter statt hinter der
+   breiten Wertspalte. */
+#tl-op-field { gap: var(--sp-1); }
+#tl-op-field input { width: 3.5rem; }
+#tl-op-field .field-value { min-width: 0; }
 /* Sprungfeld: hier stehen nur Frame-Nummern, drei Stellen reichen. Das
    "/ n" klebt direkt am Feld statt hinter der breiten Wertspalte. */
 .tl-go-field { gap: var(--sp-1); margin-left: auto; }

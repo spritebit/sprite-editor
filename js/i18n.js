@@ -761,7 +761,7 @@ const STATIC = {
       + '<div><b>Pencil</b> — single pixels.</div>'
       + '<div><b>Brush</b> — an area; <i>strength</i> = density, <i>size</i> = edge length.</div>'
       + '<div><b>Spray</b> — random pixels; <i>strength</i> = amount per event.</div>'
-      + '<div><b>Shade</b> — as in Aseprite: tap two or more colours in the colour bar or the palette panel, e.g. three reds. That is the <i>ramp</i>, always sorted from dark to light. Painting moves each pixel one step along it: left click lighter, right click darker (on phones via <i>Lighter/Darker</i>). Pixels in other colours stay untouched, and each pixel changes only once per stroke.</div>'
+      + '<div><b>Shade</b> — makes existing pixels one step lighter (left click) or darker (right click; on phones via <i>Lighter/Darker</i>), each pixel only once per stroke. Without any setup it takes the next shade of the same colour family from the palette. As in Aseprite you can also set the <i>ramp</i> yourself: tap two or more colours in the colour bar or the palette panel, e.g. three reds — then only those count, always from dark to light, and pixels in other colours stay untouched.</div>'
       + '<div><b>Size</b> 1–300 with the slider or number field; <span class="kbd">Alt</span> + right-drag changes it right on the drawing area. An outline shows what brush, eraser and spray are about to hit.</div>'
       + '<div><b>Clean Stroke</b> — with the pencil (and the eraser at size 1) the L-shaped corners of a freehand line disappear: clean 1-pixel lines as if placed by hand.</div>'
       + '<div><b>Fill</b> — the connected area of the same value. With <b>Edges: all layers</b> the area ends wherever something changes in the visible image — the paint still goes into the active layer. That way you colour in a template (e.g. outlines on a layer of their own) area by area without touching it.</div>'
@@ -1226,9 +1226,11 @@ const MSG = {
     'info.shapeDrag':   '{shape} {w}×{h} — {n} Pixel',
     'info.wandDeleted': 'Zauberstab: {n} Pixel gelöscht',
     'info.wandNone':    'Zauberstab: nichts gelöscht — Toleranz erhöhen?',
-    'shade.empty':      'Tippe Farben in der Farbzeile an',
+    'shade.empty':      'Automatisch — oder Farben in der Farbzeile antippen',
     'shade.swTitle':    '{hex} — antippen nimmt die Farbe aus der Reihe',
-    'shade.needRamp':   'Schattieren: wähle erst mindestens zwei Farben — tippe sie in der Farbzeile oder im Paletten-Panel an, z. B. drei Rottöne von dunkel bis hell.',
+    'shade.needRamp':   'Schattieren: eine Farbe allein ist noch keine Reihe — tippe mindestens eine zweite an, z. B. ein helleres Rot. Oder „Leeren“: dann geht es automatisch.',
+    'shade.nothingRamp': 'Schattieren hat nichts geändert: es verändert nur Pixel, deren Farbe in der Farbreihe steht — und am Ende der Reihe geht es nicht weiter. Male erst mit dem Stift, dann schattiere darüber.',
+    'shade.nothingAuto': 'Schattieren hat nichts geändert: es macht vorhandene Pixel heller oder dunkler, auf leere Stellen malt es nicht. Und gibt es in der Palette keinen helleren bzw. dunkleren Ton dieser Farbe, bleibt der Pixel — dann wähle die Farbreihe selbst.',
     'shade.noMask':     'Schattieren geht nicht in einer Maske.',
     'info.index':       'Index {i}',
     'info.pipetteAt':   'Pipette — ({x}, {y}) · {val}',
@@ -1876,9 +1878,11 @@ const MSG = {
     'info.shapeDrag':   '{shape} {w}×{h} — {n} pixels',
     'info.wandDeleted': 'Magic wand: {n} pixels erased',
     'info.wandNone':    'Magic wand: nothing erased — raise the tolerance?',
-    'shade.empty':      'Tap colours in the colour bar',
+    'shade.empty':      'Automatic — or tap colours in the colour bar',
     'shade.swTitle':    '{hex} — tap to take the colour out of the ramp',
-    'shade.needRamp':   'Shade: first pick at least two colours — tap them in the colour bar or the palette panel, e.g. three reds from dark to light.',
+    'shade.needRamp':   'Shade: one colour alone is not a ramp yet — tap at least one more, e.g. a lighter red. Or “Clear”: then it works automatically.',
+    'shade.nothingRamp': 'Shading changed nothing: it only changes pixels whose colour is in the ramp — and at the end of the ramp it stops. Paint with the pencil first, then shade over it.',
+    'shade.nothingAuto': 'Shading changed nothing: it makes existing pixels lighter or darker and does not paint on empty spots. If the palette has no lighter or darker shade of that colour, the pixel stays — then pick the ramp yourself.',
     'shade.noMask':     'Shading does not work in a mask.',
     'info.index':       'index {i}',
     'info.pipetteAt':   'Eyedropper — ({x}, {y}) · {val}',

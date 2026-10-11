@@ -16,7 +16,17 @@
 // Die Reihe speichert Hex-Werte statt Nummern — sie überlebt so das
 // Umsortieren der Palette und gilt auch für freie Farben im Bild.
 //
+// Ohne Reihe geht es automatisch: der Pixel nimmt die nächsthellere bzw.
+// -dunklere Farbe seiner Farbfamilie aus der Palette — dieselbe Suche wie
+// beim Kantenlicht (js/light.js paletteStep). Freie Farben werden direkt
+// ein Stück heller oder dunkler gerechnet.
+//
 // Reine Rechnung, ohne DOM — läuft unter Node (tests/shade.test.js).
+import { paletteStep, shiftHex } from './light.js';
+
+// So weit soll ein Schritt im Automatik-Modus gehen (Helligkeit 0..1):
+// klein genug für die nächste Stufe, groß genug, dass sich etwas tut.
+const AUTO_STEP = 0.1;
 
 const isHex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
 
@@ -67,16 +77,25 @@ export function valueHex(v, pal) {
   return isHex(v) ? v.toLowerCase() : null;
 }
 
+/** Automatik: nächste Stufe derselben Farbfamilie (siehe oben). */
+function autoShader(pal, sign) {
+  return v => {
+    if (typeof v === 'number') return v > 0 ? paletteStep(pal, v, sign, AUTO_STEP) ?? v : v;
+    return isHex(v) ? shiftHex(v, sign, AUTO_STEP) : v;
+  };
+}
+
 /**
  * Rechner für einen Strich: Pixelwert → Wert eine Stufe weiter. Liegt die
  * Zielfarbe in der Palette, kommt ihre Nummer heraus (die erste mit diesem
- * Hex), sonst der Hex-Wert als freie Farbe.
+ * Hex), sonst der Hex-Wert als freie Farbe. Leere Reihe → Automatik.
  * @param {Record<number, string>|string[]} pal
  * @param {string[]} ramp  sortiert (normalizeRamp)
  * @param {1|-1} sign  +1 heller, -1 dunkler
  * @returns {(v: number|string) => number|string}
  */
 export function makeShader(pal, ramp, sign) {
+  if (!ramp.length) return autoShader(pal, sign);
   const pos = new Map(ramp.map((h, i) => [h, i]));
   /** @type {Map<string, number>} */
   const idx = new Map();

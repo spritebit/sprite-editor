@@ -370,13 +370,25 @@ function renderShadeRamp() {
 }
 renderCallbacks.onShadeRamp = renderShadeRamp;
 
-// Schattieren ansetzen: true, wenn es losgehen kann. Ohne Reihe gibt es
-// nichts zu schieben — dann ein Hinweis statt eines stummen Strichs.
+// Schattieren ansetzen: true, wenn es losgehen kann. Ohne Reihe läuft es
+// automatisch (js/shade.js); eine Reihe mit nur einer Farbe kann nichts
+// schieben — dann ein Hinweis statt eines stummen Strichs.
 function startShade(dark) {
   if (editingMask()) { info(t('shade.noMask')); return false; }
-  if (state.shadeRamp.length < 2) { showInfoToast(t('shade.needRamp')); return false; }
+  if (state.shadeRamp.length === 1) { showInfoToast(t('shade.needRamp')); return false; }
   shadeBegin(dark ? -1 : 1);
   return true;
+}
+
+// Ein Strich, der nichts geändert hat, sagt, warum — sonst sähe es aus,
+// als ginge das Werkzeug nicht. Als Toast nur beim ersten Mal, danach in
+// der Statuszeile.
+let shadeNoteShown = false;
+function shadeNothing() {
+  const msg = t(state.shadeRamp.length ? 'shade.nothingRamp' : 'shade.nothingAuto');
+  if (shadeNoteShown) { info(msg); return; }
+  shadeNoteShown = true;
+  showInfoToast(msg);
 }
 
 // Symmetrie-Knöpfe und Achsenzustand zusammenhalten.
@@ -775,7 +787,7 @@ function initCanvasEvents() {
     }
     if (state.isDrawing || state.isErasing) commitStroke();
     ppEnd();
-    shadeEnd();
+    if (shadeEnd() === false) shadeNothing();
     lock = null;
     state.isDrawing = false;
     state.isErasing = false;

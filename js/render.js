@@ -595,12 +595,17 @@ export function paintSpray(x, y) {
 // jeder Pixel eine Stufe in der Farbreihe weiter (js/shade.js). Pro Strich
 // höchstens einmal je Pixel — sonst liefe die Farbe beim Hin- und Herfahren
 // bis ans Ende der Reihe durch.
-let shadeStroke = null; // { done: Set<number>, shader, sign } während eines Strichs
+let shadeStroke = null; // { done: Set<number>, shader, changed } während eines Strichs
 
 export function shadeBegin(sign) {
-  shadeStroke = { done: new Set(), shader: makeShader(getPal(), state.shadeRamp, sign) };
+  shadeStroke = { done: new Set(), shader: makeShader(getPal(), state.shadeRamp, sign), changed: false };
 }
-export function shadeEnd() { shadeStroke = null; }
+/** Strich beenden. Gibt zurück, ob er etwas geändert hat (null = kein Strich). */
+export function shadeEnd() {
+  const changed = shadeStroke ? shadeStroke.changed : null;
+  shadeStroke = null;
+  return changed;
+}
 
 export function paintShade(x, y) {
   if (!shadeStroke) return;
@@ -620,7 +625,7 @@ export function paintShade(x, y) {
       }
     }
   }
-  if (changed) afterPaint();
+  if (changed) { shadeStroke.changed = true; afterPaint(); }
 }
 
 export function floodFill(startX, startY) {
