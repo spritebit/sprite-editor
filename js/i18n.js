@@ -486,7 +486,7 @@ const STATIC = {
     'tool.spray':       'Spray',
     'tool.sprayTitle':  'Spray — random pixels (S)',
     'tool.shade':       'Shade',
-    'tool.shadeTitle':  'Shade — a pen that gets one step darker with every stroke: empty → lightest colour of the ramp, then darker (D)',
+    'tool.shadeTitle':  'Shade — a pen that works through the colour ramp with every stroke: empty → first colour, then the next (D)',
     'tool.shadeRamp':   'Ramp',
     'tool.shadeClear':  'Clear',
     'tool.shadeClearTitle': 'Clear the colour ramp',
@@ -495,6 +495,7 @@ const STATIC = {
     'tool.shadeGen':    'Shades',
     'tool.shadeGenTitle': 'Create matching darker and lighter tones from the current colour — shadows a little cooler, light a little warmer. They go into the palette and become the ramp.',
     'tool.shadeGenCount': 'How many tones in total',
+    'tool.shadeSortTitle': 'Sort the ramp by shades — light to dark. Otherwise it keeps the order in which you clicked the colours.',
     'tool.shadeSoft':   'Gradient',
     'tool.shadeSoftTitle': 'Gradient: round brush, several steps at once in the middle, fewer towards the edge — needs a size of 2 or more',
     'tool.fill':        'Fill',
@@ -763,7 +764,7 @@ const STATIC = {
       + '<div><b>Pencil</b> — single pixels.</div>'
       + '<div><b>Brush</b> — an area; <i>strength</i> = density, <i>size</i> = edge length.</div>'
       + '<div><b>Spray</b> — random pixels; <i>strength</i> = amount per event.</div>'
-      + '<div><b>Shade</b> — a pen that gets one step darker with every stroke. First set the <i>ramp</i>: tap two or more colours in the colour bar or the palette panel, e.g. three reds. An empty pixel gets the lightest of them on the first stroke, every further stroke over it makes it one step darker — or keep pressing without moving and it moves on step by step by itself, faster and faster; pixels in other colours (e.g. the outline) stay untouched. The ramp is shown in that order in the options row. Right click paints it the other way round, from dark to light — on phones the <b>⇄ Reverse</b> button does that. Without a ramp it paints with the current colour and then takes the next shade of the same colour from the palette. <b>Shades</b> creates matching darker and lighter tones from the current colour (shadows a little cooler, light a little warmer), puts them into the palette right next to the base colour and chooses them as the ramp. The button with the bars sorts the whole palette by shades — as in the colour bar. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
+      + '<div><b>Shade</b> — a pen that works through a <i>colour ramp</i> with every stroke. Build the ramp: tap two or more colours in the colour bar or the palette panel, e.g. three reds — in the order they should follow each other. An empty pixel gets the first colour on the first stroke, every further stroke over it the next one — or keep pressing without moving and it moves on by itself, faster and faster. Pixels in other colours (e.g. the outline) stay untouched. Right click runs the ramp the other way round; on phones the <b>⇄ Reverse</b> button does that. The button with the bars sorts the ramp by shades, light to dark — it never happens by itself. <b>Shades</b> creates matching lighter and darker tones from the current colour (light a little warmer, shadows a little cooler), adds them to the palette and chooses them as the ramp. Without a ramp it paints with the current colour and then takes the next darker shade of the same colour. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
       + '<div><b>Size</b> 1–300 with the slider or number field; <span class="kbd">Alt</span> + right-drag changes it right on the drawing area. An outline shows what brush, eraser and spray are about to hit.</div>'
       + '<div><b>Clean Stroke</b> — with the pencil (and the eraser at size 1) the L-shaped corners of a freehand line disappear: clean 1-pixel lines as if placed by hand.</div>'
       + '<div><b>Fill</b> — the connected area of the same value. With <b>Edges: all layers</b> the area ends wherever something changes in the visible image — the paint still goes into the active layer. That way you colour in a template (e.g. outlines on a layer of their own) area by area without touching it.</div>'

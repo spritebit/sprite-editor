@@ -45,9 +45,8 @@ import {
   openPaletteModal, initPaletteModal, deleteCustomPalette,
   previewPalette, assignPalette, forkPreviewPalette, addFreeColorsToPalette,
   createPaletteFromImport, appendPaletteColor, setPaletteColor, removePaletteColor,
-  addCurrentColorToPalette, addColorsToPalette, sortPaletteByShades, reorderPalette,
+  addCurrentColorToPalette, addColorsToPalette,
 } from './palettes.js';
-import { groupAround } from './palorder.js';
 import {
   initTemplate, tplLoaded, tplHasOffscreen,
   startTplDrag, tplDragging, updateTplDrag, endTplDrag, getTplOffset,
@@ -59,7 +58,7 @@ import {
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
-import { holdDelay, HOLD_MIN_MS, makeShades } from './shade.js';
+import { holdDelay, HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
 import { openReduceModal, initReduceModal } from './reduce.js';
 import { zoomAt, fitZoomToArea, isPanMode, setPanTool, initPan, initPinch } from './view.js';
@@ -341,9 +340,10 @@ function updateToolUI() {
 }
 
 // ── Schattieren: Options-Zeile (js/shade.js) ──
-// Die Farbreihe als kleine Felder in Mal-Reihenfolge; ein Tipp nimmt eine
-// Farbe wieder heraus. Gewählt wird in der Farbzeile oder im Paletten-Panel
-// (render.js pickSwatch). Dazu Umdrehen und Verlauf.
+// Die Farbreihe als kleine Felder in Mal-Reihenfolge — so, wie man die
+// Farben angeklickt hat; ein Tipp nimmt eine wieder heraus. Gewählt wird
+// in der Farbzeile oder im Paletten-Panel (render.js pickSwatch). Dazu
+// Abstufungen, nach Farbstufen ordnen, Umdrehen (Finger) und Verlauf.
 function renderShadeRamp() {
   const box = $('shade-ramp');
   if (!box) return;
@@ -356,7 +356,7 @@ function renderShadeRamp() {
     box.append(hint);
   }
   // In Mal-Reihenfolge: links die Farbe, die ein leerer Pixel bekommt.
-  for (const hex of shadeUp() ? ramp : [...ramp].reverse()) {
+  for (const hex of shadeUp() ? [...ramp].reverse() : ramp) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'shade-sw';
@@ -372,6 +372,7 @@ function renderShadeRamp() {
     box.append(b);
   }
   $('shade-clear-btn').disabled = !ramp.length;
+  $('shade-sort-btn').disabled = ramp.length < 2;
   for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-rev-btn', shadeUp()], ['shade-soft-btn', state.shadeSoft]])) {
     $(id).classList.toggle('is-active', on);
     $(id).setAttribute('aria-pressed', String(on));
@@ -385,14 +386,15 @@ renderCallbacks.onShadeRamp = renderShadeRamp;
 const TOUCH = window.matchMedia('(pointer: coarse)');
 const shadeUp = () => state.shadeUp && TOUCH.matches;
 
-// Schattieren ansetzen: true, wenn es losgehen kann. `dark` = Richtung
-// dunkler (leer → hellste Farbe, dann dunkler; js/shade.js). Ohne Reihe
-// läuft es mit der aktuellen Farbe; eine Reihe mit nur einer Farbe kann
-// nichts schieben — dann ein Hinweis statt eines stummen Strichs.
-function startShade(dark) {
+// Schattieren ansetzen: true, wenn es losgehen kann. `along` = die Reihe
+// entlang (Linksklick: leer → erste Farbe, dann die nächste; js/shade.js),
+// sonst andersherum. Ohne Reihe läuft es mit der aktuellen Farbe und wird
+// dunkler bzw. heller; eine Reihe mit nur einer Farbe kann nichts schieben
+// — dann ein Hinweis statt eines stummen Strichs.
+function startShade(along) {
   if (editingMask()) { info(t('shade.noMask')); return false; }
   if (state.shadeRamp.length === 1) { showInfoToast(t('shade.needRamp')); return false; }
-  shadeBegin(dark ? -1 : 1);
+  shadeBegin(along ? -1 : 1);
   // Gedrückt halten geht weiter, dort, wo der Pinsel gerade ist — wie
   // wiederholtes Tippen (render.js shadeRepeat), erst langsam, dann immer
   // schneller (js/shade.js holdDelay). Nur solange der Zeiger stillsteht:
@@ -1090,18 +1092,19 @@ function initToolbar() {
     if (!base) { showInfoToast(t('shade.genNeedColor')); return; }
     const hexes = makeShades(base, Number($('shade-gen-count').value) || 2);
     const added = addColorsToPalette(hexes);
-    // Die Töne rücken in der Palette gleich neben ihre Grundfarbe — dunkel
-    // davor, hell dahinter; der Rest der Palette bleibt, wie er ist.
-    const pal = getPal(), size = paletteSize(pal);
-    const idx = hex => { for (let i = 1; i <= size; i++) if (pal[i]?.toLowerCase() === hex) return i; return null; };
-    reorderPalette(groupAround(size, idx(base.toLowerCase()), hexes.map(idx).filter(i => i != null)));
-    state.shadeRamp = hexes;
+    state.shadeRamp = hexes;   // hell → dunkel
     renderShadeRamp();
     syncShadeMarks();
     saveState();
     showInfoToast(t('shade.genDone', { n: hexes.length, added }));
   });
-  $('shade-sort-btn').addEventListener('click', () => sortPaletteByShades());
+  // Nach Farbstufen: die Farbreihe von hell nach dunkel ordnen. Von selbst
+  // passiert das nie — wer seine Reihe anders zusammenstellt, behält sie.
+  $('shade-sort-btn').addEventListener('click', () => {
+    state.shadeRamp = sortRamp(state.shadeRamp);
+    renderShadeRamp();
+    saveState();
+  });
 
   $('shade-clear-btn').addEventListener('click', () => {
     state.shadeRamp = [];

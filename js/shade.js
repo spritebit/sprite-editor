@@ -1,20 +1,19 @@
 // ════════════════════════════════════════════════════════════════════
 // SHADE — Schattieren: ein Stift, der mit jedem Strich dunkler wird
 // ════════════════════════════════════════════════════════════════════
-// Man wählt eine Farbreihe (state.shadeRamp, Hex-Werte) — z. B. vier
-// Rottöne. Dann ist das Werkzeug ein Stift, der sich durch die Reihe
-// arbeitet (Richtung „dunkler", Standard für Linksklick):
-//   leerer Pixel          → die hellste Farbe der Reihe
-//   Farbe aus der Reihe   → eine Stufe dunkler, an der dunkelsten Schluss
+// Man stellt eine Farbreihe zusammen (state.shadeRamp, Hex-Werte) — z. B.
+// vier Rottöne, in der Reihenfolge, in der man sie anklickt. Dann ist das
+// Werkzeug ein Stift, der sich durch die Reihe arbeitet (Linksklick):
+//   leerer Pixel          → die erste Farbe der Reihe
+//   Farbe aus der Reihe   → die nächste, an der letzten Schluss
 //   andere Farbe          → bleibt (z. B. die Umrisslinie)
-// Richtung „heller" (Rechtsklick) genau andersherum: leer → dunkelste,
-// dann jeweils eine Stufe heller. Pro Strich ändert sich jeder Pixel
-// höchstens einmal (render.js paintShade merkt sich die berührten Zellen);
-// wer dunkler will, setzt neu an und malt drüber.
+// Rechtsklick geht die Reihe andersherum. Pro Strich ändert sich jeder
+// Pixel höchstens einmal (render.js paintShade merkt sich die berührten
+// Zellen); wer weiter will, setzt neu an und malt drüber.
 //
-// Anders als in Aseprite zählt nicht die Reihenfolge in der Palette: die
-// Reihe ist immer nach Helligkeit sortiert. So stimmen „heller" und
-// „dunkler", egal wie die Palette geordnet ist.
+// Die Reihenfolge bestimmt man selbst — so lassen sich auch Verläufe mit
+// wanderndem Farbton bauen. Der Knopf „nach Farbstufen" (sortRamp) ordnet
+// sie auf Wunsch von hell nach dunkel.
 //
 // Die Reihe speichert Hex-Werte statt Nummern — sie überlebt so das
 // Umsortieren der Palette und gilt auch für freie Farben im Bild.
@@ -42,7 +41,7 @@ function luma(hex) {
 
 /**
  * Reihe bereinigen: nur gültige Hex-Werte, klein geschrieben, ohne
- * Doppelte, von dunkel nach hell.
+ * Doppelte. Die Reihenfolge bleibt.
  * @param {unknown} ramp
  * @returns {string[]}
  */
@@ -54,20 +53,29 @@ export function normalizeRamp(ramp) {
     const h = v.toLowerCase();
     if (!out.includes(h)) out.push(h);
   }
-  return out.sort((a, b) => luma(a) - luma(b) || (a < b ? -1 : 1));
+  return out;
 }
 
 /**
- * Farbe in die Reihe aufnehmen oder wieder herausnehmen.
+ * Reihe nach Farbstufen ordnen: von hell nach dunkel — so geht ein leerer
+ * Pixel beim Linksklick mit der hellsten los und wird dann dunkler.
+ * @param {string[]} ramp
+ */
+export function sortRamp(ramp) {
+  return normalizeRamp(ramp).sort((a, b) => luma(b) - luma(a) || (a < b ? -1 : 1));
+}
+
+/**
+ * Farbe hinten an die Reihe hängen oder wieder herausnehmen.
  * @param {string[]} ramp
  * @param {string} hex
- * @returns {string[]} neue, sortierte Reihe
+ * @returns {string[]}
  */
 export function toggleRamp(ramp, hex) {
   if (!isHex(hex)) return normalizeRamp(ramp);
   const h = hex.toLowerCase();
   const cur = normalizeRamp(ramp);
-  return cur.includes(h) ? cur.filter(c => c !== h) : normalizeRamp([...cur, h]);
+  return cur.includes(h) ? cur.filter(c => c !== h) : [...cur, h];
 }
 
 /**
@@ -95,15 +103,17 @@ function autoShader(pal, sign, cur) {
  * Zielfarbe in der Palette, kommt ihre Nummer heraus (die erste mit diesem
  * Hex), sonst der Hex-Wert als freie Farbe. Leere Reihe → Automatik.
  * @param {Record<number, string>|string[]} pal
- * @param {string[]} ramp  sortiert (normalizeRamp)
- * @param {1|-1} sign  +1 heller, -1 dunkler
+ * @param {string[]} ramp  in Mal-Reihenfolge (erste = für leere Pixel)
+ * @param {1|-1} sign  -1 die Reihe entlang (Linksklick), +1 andersherum;
+ *   ohne Reihe: -1 dunkler, +1 heller
  * @param {number|string} [cur]  aktuelle Farbe — nur die Automatik malt
  *   damit in leere Pixel
  * @returns {(v: number|string) => number|string}
  */
 export function makeShader(pal, ramp, sign, cur = 0) {
   if (!ramp.length) return autoShader(pal, sign, cur);
-  const pos = new Map(ramp.map((h, i) => [h, i]));
+  const order = sign < 0 ? ramp : [...ramp].reverse();
+  const pos = new Map(order.map((h, i) => [h, i]));
   /** @type {Map<string, number>} */
   const idx = new Map();
   for (const k of Object.keys(pal)) {
@@ -111,18 +121,15 @@ export function makeShader(pal, ramp, sign, cur = 0) {
     const h = i > 0 && isHex(pal[i]) ? pal[i].toLowerCase() : null;
     if (h && !idx.has(h)) idx.set(h, i);
   }
-  // Leerer Pixel: dort beginnt die Reihe — dunkler fängt hell an, heller dunkel.
-  const start = ramp[sign < 0 ? ramp.length - 1 : 0];
-  const first = idx.get(start) ?? start;
+  // Leerer Pixel: dort beginnt die Reihe.
+  const first = idx.get(order[0]) ?? order[0];
   return v => {
     if (v === 0) return first;
     const h = valueHex(v, pal);
     if (!h) return v;
     const i = pos.get(h);
-    if (i == null) return v;
-    const j = i + sign;
-    if (j < 0 || j >= ramp.length) return v;
-    const target = ramp[j];
+    if (i == null || i + 1 >= order.length) return v;
+    const target = order[i + 1];
     return idx.get(target) ?? target;
   };
 }
@@ -189,8 +196,9 @@ export const SHADE_GEN_STEP = 0.12;
 /**
  * @param {string} hex  Grundfarbe "#rrggbb"
  * @param {number} [n]  wie viele Töne je Seite
- * @returns {string[]}  dunkel → hell, mit der Grundfarbe in der Mitte;
- *   ohne Doppelte (ganz nah an Schwarz oder Weiß fallen Stufen zusammen)
+ * @returns {string[]}  hell → dunkel (Mal-Reihenfolge), mit der Grundfarbe
+ *   in der Mitte; ohne Doppelte (ganz nah an Schwarz oder Weiß fallen
+ *   Stufen zusammen)
  */
 export function makeShades(hex, n = 2) {
   if (!isHex(hex)) return [];
@@ -202,5 +210,5 @@ export function makeShades(hex, n = 2) {
     out.unshift(dark);
     out.push(light);
   }
-  return normalizeRamp(out);
+  return sortRamp(out);
 }

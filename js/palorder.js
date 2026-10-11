@@ -106,23 +106,3 @@ export function shadeOrder(pal, n) {
   items.sort((a, b) => a.group - b.group || a.l - b.l || a.i - b.i);
   return [...items.map(x => x.i), ...missing];
 }
-
-// ── Gruppe zusammenrücken ───────────────────────────────────────────
-/**
- * Reihenfolge, in der die Nummern `group` (in dieser Abfolge) zusammen an
- * der Stelle von `base` stehen; alles andere behält seine Reihenfolge.
- * Steht `base` nicht in `group` oder fehlt es, kommt die Gruppe ans Ende.
- * Für erzeugte Abstufungen (js/shade.js): sie rücken neben ihre Grundfarbe.
- * @param {number} n  Größe der Palette
- * @param {number|null} base
- * @param {number[]} group  Nummern 1..n, z. B. dunkel → hell
- * @returns {number[]}  alte Nummern in neuer Reihenfolge
- */
-export function groupAround(n, base, group) {
-  const g = [...new Set(group.filter(i => i >= 1 && i <= n))];
-  const rest = Array.from({ length: n }, (_, k) => k + 1).filter(i => !g.includes(i));
-  if (base == null || !g.includes(base)) return [...rest, ...g];
-  // Vor der Grundfarbe stehen so viele Nicht-Gruppen-Farben wie vorher.
-  const at = rest.filter(i => i < base).length;
-  return [...rest.slice(0, at), ...g, ...rest.slice(at)];
-}
