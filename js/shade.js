@@ -159,3 +159,20 @@ export function softLevel(dx, dy, size, levels) {
 export function rampLevels(ramp) {
   return ramp.length ? ramp.length : AUTO_LEVELS;
 }
+
+// ── Gedrückt halten ──────────────────────────────────────────────────
+// Hält man still, geht es Stufe um Stufe weiter — erst langsam, dann
+// immer schneller: jede Pause ist um HOLD_FACTOR kürzer als die vorige,
+// aber nie kürzer als HOLD_MIN_MS. Eine Bewegung beginnt wieder bei 0.
+
+export const HOLD_FIRST_MS = 350;
+export const HOLD_FACTOR = 0.7;
+export const HOLD_MIN_MS = 60;
+
+/**
+ * Wartezeit vor dem Schritt Nummer `n` (0 = erster Schritt nach dem Ansetzen).
+ * @param {number} n
+ */
+export function holdDelay(n) {
+  return Math.max(HOLD_MIN_MS, HOLD_FIRST_MS * HOLD_FACTOR ** n);
+}

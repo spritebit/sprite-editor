@@ -58,6 +58,7 @@ import {
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
+import { holdDelay, HOLD_MIN_MS } from './shade.js';
 import { initExport } from './export.js';
 import { openReduceModal, initReduceModal } from './reduce.js';
 import { zoomAt, fitZoomToArea, isPanMode, setPanTool, initPan, initPinch } from './view.js';
@@ -257,8 +258,8 @@ function applyTool(x, y) {
   if (state.tool === 'spray')  { paintSpray(x, y);  return; }
   if (state.tool === 'shade') {
     paintShade(x, y);
-    // Neue Stelle: die Wartezeit fürs Halten beginnt hier von vorn.
-    if (!shadeAt || shadeAt.x !== x || shadeAt.y !== y) shadeStill = performance.now();
+    // Neue Stelle: das Halten beginnt hier von vorn — wieder langsam.
+    if (!shadeAt || shadeAt.x !== x || shadeAt.y !== y) { shadeStill = performance.now(); shadeSteps = 0; }
     shadeAt = { x, y };
     return;
   }
@@ -391,23 +392,24 @@ function startShade(dark) {
   if (editingMask()) { info(t('shade.noMask')); return false; }
   if (state.shadeRamp.length === 1) { showInfoToast(t('shade.needRamp')); return false; }
   shadeBegin(dark ? -1 : 1);
-  // Gedrückt halten geht weiter: alle SHADE_HOLD_MS eine Stufe, dort, wo
-  // der Pinsel gerade ist — wie wiederholtes Tippen (render.js shadeRepeat).
-  // Nur solange der Zeiger stillsteht: sonst liefe ein langsamer Strich
-  // stellenweise bis ans Ende der Reihe.
+  // Gedrückt halten geht weiter, dort, wo der Pinsel gerade ist — wie
+  // wiederholtes Tippen (render.js shadeRepeat), erst langsam, dann immer
+  // schneller (js/shade.js holdDelay). Nur solange der Zeiger stillsteht:
+  // sonst liefe ein langsamer Strich stellenweise bis ans Ende der Reihe.
   clearInterval(shadeTimer);
   shadeTimer = setInterval(() => {
     if (!state.isDrawing || state.tool !== 'shade' || !shadeAt) return;
     const now = performance.now();
-    if (now - shadeStill < SHADE_HOLD_MS) return;
+    if (now - shadeStill < holdDelay(shadeSteps)) return;
     shadeStill = now;
+    shadeSteps++;
     shadeRepeat(shadeAt.x, shadeAt.y);
-  }, SHADE_HOLD_MS / 5);
+  }, HOLD_MIN_MS / 3);
   return true;
 }
-const SHADE_HOLD_MS = 350;
 let shadeTimer = 0;
 let shadeStill = 0;
+let shadeSteps = 0;   // Halte-Schritte seit der letzten Bewegung
 /** @type {{x: number, y: number} | null} */
 let shadeAt = null;
 

@@ -3,7 +3,7 @@
 //   npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS } from '../js/shade.js';
+import { normalizeRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS, holdDelay, HOLD_FIRST_MS, HOLD_MIN_MS } from '../js/shade.js';
 
 // Drei Rottöne, absichtlich nicht nach Helligkeit sortiert, dazu Grün.
 const PAL = { 1: '#FF8080', 2: '#800000', 3: '#FF0000', 4: '#00FF00' };
@@ -101,4 +101,11 @@ test('Verlauf: Mitte die meisten Stufen, zum Rand weniger, außen keine', () => 
   assert.equal(softLevel(3, 3, 7, 4), 0);   // Ecke liegt außerhalb des Kreises
   assert.equal(rampLevels([]), AUTO_LEVELS);
   assert.equal(rampLevels(['#000000', '#ffffff']), 2);
+});
+
+test('Gedrückt halten: jede Pause kürzer als die vorige, bis zur Untergrenze', () => {
+  assert.equal(holdDelay(0), HOLD_FIRST_MS);
+  assert.ok(holdDelay(1) < holdDelay(0) && holdDelay(2) < holdDelay(1));
+  assert.equal(Math.round(holdDelay(1)), 245);
+  assert.equal(holdDelay(50), HOLD_MIN_MS);
 });
