@@ -4,7 +4,8 @@
 // Die Rechnung steckt in js/tiles.js; hier hängt sie an der Oberfläche:
 //   • Panel: Tilemap-Ebene anlegen/umwandeln, Modus, Kachelliste, Export
 //   • Modus „Kacheln“: Stift setzt die gewählte Kachel, Radierer (und
-//     Rechtsklick) leert, Füllen füllt Kacheln, Alt nimmt eine Kachel auf
+//     Rechtsklick) leert, Füllen füllt Kacheln, Alt nimmt eine Kachel auf;
+//     gedreht/gespiegelt (Z, Umschalt+Z, X, Y) wird die Fassung gesetzt
 //   • Raster der Kacheln über der Zeichenfläche
 //   • Abgleich nach jedem Undo-Schritt (history.js → syncSprite)
 //   • Bibliothek: Kachelsätze speichern, in andere Ebenen/Sprites laden,
@@ -12,7 +13,8 @@
 import { state, sprites, tilesetLib, getSprite, getPal, getPaletteByName, blankLike, defaultLayer } from './state.js';
 import {
   TILE_SIZES, DEFAULT_TILE, blankTileset, buildTileset, mapSize, mapOf, tileAt, placeTile, fillTiles,
-  pruneUnused, syncSprite, atlasGrid, godotScene, tilemapJson,
+  NO_XF, isPlainXf, orientTile, turnXf, tileIndex,
+  pruneUnused, copyTileset, syncSprite, atlasGrid, godotScene, tilemapJson,
 } from './tiles.js';
 import { recordOp, beginStroke, commitStroke, historyCallbacks } from './history.js';
 import { renderAll, renderEditor, renderCallbacks, cellFromEvent } from './render.js';
@@ -54,6 +56,34 @@ function cellOf(e) {
   return cx < cols && cy < rows ? { cx, cy } : null;
 }
 
+/** Lage für diesen Satz: 90°/270° nur bei quadratischen Kacheln. */
+function xfFor(ts) {
+  const xf = state.tileXf || NO_XF;
+  return ts.tw === ts.th ? xf : { ...xf, rot: xf.rot & 2 };
+}
+
+/** Die gewählte Kachel so, wie sie gesetzt wird (Raster) — oder null. */
+function shownTile(ts) {
+  const tile = ts.tiles[state.tile - 1];
+  return tile ? orientTile(tile, xfFor(ts)) : null;
+}
+
+/** Nummer der Kachel, die gesetzt wird — eine neue Fassung kommt in den Satz. */
+function placedK(ts) {
+  const xf = xfFor(ts);
+  return isPlainXf(xf) ? state.tile : tileIndex(ts, orientTile(ts.tiles[state.tile - 1], xf));
+}
+
+/** Lage weiterdrehen (Knöpfe und Tasten Z, Umschalt+Z, X, Y). */
+export function turnTile(op) {
+  const ts = activeTileset();
+  if (!ts) return;
+  if ((op === 'cw' || op === 'ccw') && ts.tw !== ts.th) { showInfoToast(t('tile.xfSquare')); return; }
+  state.tileXf = op === 'reset' ? { ...NO_XF } : turnXf(state.tileXf, op);
+  renderTilePanel();
+  renderEditor();
+}
+
 function stamp(c) {
   if (!c || !drag) return;
   if (drag.last && drag.last.cx === c.cx && drag.last.cy === c.cy) return;
@@ -74,7 +104,8 @@ export function tilePointerDown(e) {
   const sp = getSprite();
   if (e.altKey) {
     const k = tileAt(ts, sp.grid, c.cx, c.cy);
-    if (k > 0) { state.tile = k; renderTilePanel(); }
+    // Aufgenommen wird die Kachel, wie sie liegt — also normal.
+    if (k > 0) { state.tile = k; state.tileXf = { ...NO_XF }; renderTilePanel(); }
     showInfoToast(k > 0 ? t('tile.picked', { k }) : t('tile.pickedEmpty'));
     return;
   }
@@ -83,13 +114,13 @@ export function tilePointerDown(e) {
   commitFloat();
   clearSelection();
   if (state.tool === 'fill') {
-    recordOp(() => fillTiles(ts, sp.grid, c.cx, c.cy, erase ? 0 : state.tile));
+    recordOp(() => fillTiles(ts, sp.grid, c.cx, c.cy, erase ? 0 : placedK(ts)));
     renderAll();
     saveState();
     return;
   }
   beginStroke();
-  drag = { k: erase ? 0 : state.tile, last: null };
+  drag = { k: erase ? 0 : placedK(ts), last: null };
   stamp(c);
 }
 
@@ -132,7 +163,7 @@ function drawTiles(ctx, W, H, r) {
   }
   // Modus „Kacheln“: die gewählte Kachel als Vorschau unter dem Zeiger.
   if (state.tileMode === 'tiles' && hover && !drag) {
-    const tile = ts.tiles[state.tile - 1];
+    const tile = shownTile(ts);
     if (tile && state.tool !== 'eraser') paintGrid(ctx, tile, getPal(), hover.cx * ts.tw, hover.cy * ts.th, r, { alpha: 0.6, key: 'tile-hover' });
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.lineWidth = Math.max(1, r / 4);
@@ -187,6 +218,17 @@ function unmapLayer() {
 }
 
 function prune() {
+  // Erst zählen (an einer Kopie), dann nachfragen — die Nummern der
+  // übrigen Kacheln rücken dabei auf.
+  const sp = getSprite();
+  const cur = activeTileset();
+  if (!sp || !cur) return;
+  const unused = pruneUnused(copyTileset(cur), [...new Set(sp.frames.map(f => f.cels[sp.layer]))]);
+  if (!unused) { showInfoToast(t('tile.prunedNone')); return; }
+  showConfirmToast(unused === 1 ? t('tile.pruneAsk1') : t('tile.pruneAsk', { n: unused }), pruneNow, t('tile.pruneOk'));
+}
+
+function pruneNow() {
   let n = 0;
   structural(sp => {
     const ts = sp.layers[sp.layer].tileset;
@@ -437,6 +479,22 @@ export function renderTilePanel() {
     b.querySelector('span').textContent = String(i + 1);
   });
   $('tile-empty').hidden = ts.tiles.length > 0;
+  renderXf(ts);
+}
+
+// Zeile „gedreht/gespiegelt setzen“: nur im Modus „Kacheln setzen“.
+function renderXf(ts) {
+  const show = state.tileMode === 'tiles' && ts.tiles.length > 0;
+  $('tile-xf-row').hidden = !show;
+  const xf = xfFor(ts);
+  $('tile-xf-state').hidden = !show || isPlainXf(xf);
+  $('tile-xf-state').textContent = t('tile.xfState');
+  for (const id of ['tile-rot-ccw', 'tile-rot-cw']) $(id).disabled = ts.tw !== ts.th;
+  $('tile-xf-reset').disabled = isPlainXf(xf);
+  const tile = show && shownTile(ts);
+  const cv = $('tile-xf-prev');
+  if (tile) gridToCanvas(cv, tile, getPal());
+  cv.hidden = !tile;
 }
 
 function setMode(m) {
@@ -463,6 +521,11 @@ export function initTilemap() {
   $('tile-godot').addEventListener('click', exportGodot);
   $('tile-mode-pixel').addEventListener('click', () => setMode('pixel'));
   $('tile-mode-tiles').addEventListener('click', () => setMode('tiles'));
+  $('tile-rot-ccw').addEventListener('click', () => turnTile('ccw'));
+  $('tile-rot-cw').addEventListener('click', () => turnTile('cw'));
+  $('tile-flip-h').addEventListener('click', () => turnTile('h'));
+  $('tile-flip-v').addEventListener('click', () => turnTile('v'));
+  $('tile-xf-reset').addEventListener('click', () => turnTile('reset'));
   $('tile-lib-save').addEventListener('click', saveToLib);
   $('tile-lib-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveToLib(); });
   $('tile-lib-reload').addEventListener('click', () => { const ts = activeTileset(); if (ts?.lib) useFromLib(ts.lib); });

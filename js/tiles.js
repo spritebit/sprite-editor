@@ -87,6 +87,56 @@ function indexOf(ts) {
   return m;
 }
 
+// ── Kachel gedreht/gespiegelt setzen (wie in Tiled/Aseprite) ──────────
+// Die Lage gilt „im Pinsel“: gesetzt wird die gedrehte Fassung, die
+// Kachel im Satz bleibt. Ist die Fassung neu, wird sie eine eigene Kachel.
+//   xf = { rot: 0–3 (je 90° im Uhrzeigersinn), fx, fy }
+// Erst spiegeln, dann drehen. Beides gespiegelt = 180° gedreht, darum
+// kommt fx && fy nie vor — so hat jede Lage genau eine Schreibweise.
+
+export const NO_XF = Object.freeze({ rot: 0, fx: false, fy: false });
+
+/** Ist die Lage die normale? */
+export const isPlainXf = xf => !xf || (!xf.rot && !xf.fx && !xf.fy);
+
+/** Kachel in Lage xf (neues Raster; 90°/270° tauschen Breite und Höhe). */
+export function orientTile(t, xf) {
+  let g = t.map(r => r.slice());
+  if (xf?.fx) g = g.map(r => r.reverse());
+  if (xf?.fy) g.reverse();
+  for (let i = 0; i < ((xf?.rot || 0) & 3); i++) {
+    const h = g.length;
+    g = Array.from({ length: g[0].length }, (_, y) => Array.from({ length: h }, (_, x) => g[h - 1 - x][y]));
+  }
+  return g;
+}
+
+/**
+ * Lage weiterdrehen, so wie man sie sieht: 'cw' / 'ccw' = 90° im / gegen
+ * den Uhrzeigersinn, 'h' = waagrecht spiegeln (links ↔ rechts), 'v' =
+ * senkrecht spiegeln (oben ↔ unten).
+ */
+export function turnXf(xf, op) {
+  let { rot = 0, fx = false, fy = false } = xf || {};
+  if (op === 'cw') rot += 1;
+  else if (op === 'ccw') rot += 3;
+  // Spiegeln nach dem Drehen = vor dem Drehen spiegeln und andersherum drehen.
+  else if (op === 'h') { rot = (4 - rot) & 3; fx = !fx; }
+  else if (op === 'v') { rot = (4 - rot) & 3; fy = !fy; }
+  if (fx && fy) { fx = fy = false; rot += 2; }
+  return { rot: rot & 3, fx, fy };
+}
+
+/** Nummer einer Kachel im Satz — ist sie neu, kommt sie dazu. Leer → 0. */
+export function tileIndex(ts, t) {
+  const key = gridKey(t);
+  if (isBlankKey(key)) return 0;
+  const k = indexOf(ts).get(key);
+  if (k) return k;
+  ts.tiles.push(t.map(r => r.slice()));
+  return ts.tiles.length;
+}
+
 /** Welche Kachel liegt wo? 0 = leer, -1 = Inhalt, der (noch) keine Kachel ist. */
 export function mapOf(ts, g) {
   const { cols, rows } = mapSize(ts, g[0].length, g.length);

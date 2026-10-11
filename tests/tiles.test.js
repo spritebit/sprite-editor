@@ -184,3 +184,47 @@ test('Godot: tile_map_data, Kachelbild und Szene', () => {
   assert.deepEqual(j.layers[0].data, [1, 2, 1, 0, 1, 0]);
   assert.equal(j.layers[0].atlas, 'level_boden.png');
 });
+
+test('Kachel gedreht und gespiegelt: jede Lage so, wie man sie sieht', async () => {
+  const { orientTile, turnXf, NO_XF, isPlainXf } = await import('../js/tiles.js');
+  const t = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+  assert.deepEqual(orientTile(t, { rot: 1 }), [[7, 4, 1], [8, 5, 2], [9, 6, 3]]);
+  assert.deepEqual(orientTile(t, { fx: true }), [[3, 2, 1], [6, 5, 4], [9, 8, 7]]);
+  assert.deepEqual(orientTile([[1, 2]], { rot: 1 }), [[1], [2]], '90° tauscht Breite und Höhe');
+  // Was man sieht, gespiegelt/gedreht = die neue Lage — von jeder Lage aus.
+  const see = {
+    cw: g => orientTile(g, { rot: 1 }),
+    ccw: g => orientTile(g, { rot: 3 }),
+    h: g => orientTile(g, { fx: true }),
+    v: g => orientTile(g, { fy: true }),
+  };
+  const all = new Set();
+  let xf = NO_XF;
+  for (const op of ['cw', 'h', 'cw', 'v', 'ccw', 'h', 'v', 'cw', 'cw', 'h', 'ccw', 'v']) {
+    for (const rot of [0, 1, 2, 3]) for (const fx of [false, true]) {
+      const a = { rot, fx, fy: false };
+      const b = turnXf(a, op);
+      assert.ok(!(b.fx && b.fy), 'nie beides gespiegelt');
+      assert.deepEqual(orientTile(t, b), see[op](orientTile(t, a)), `${op} von ${JSON.stringify(a)}`);
+    }
+    xf = turnXf(xf, op);
+    all.add(JSON.stringify(orientTile(t, xf)));
+  }
+  assert.ok(isPlainXf(turnXf(turnXf(NO_XF, 'h'), 'h')));
+  assert.ok(isPlainXf(turnXf(turnXf(NO_XF, 'cw'), 'ccw')));
+  assert.ok(all.size > 4, 'verschiedene Lagen');
+});
+
+test('Gedrehte Fassung wird eine eigene Kachel, die alte bleibt', async () => {
+  const { tileIndex, orientTile, placeTile, buildTileset, mapOf } = await import('../js/tiles.js');
+  const g = [[1, 2, 0, 0], [3, 4, 0, 0]];
+  const ts = buildTileset(2, 2, [g]);
+  const turned = orientTile(ts.tiles[0], { rot: 2 });
+  assert.equal(tileIndex(ts, turned), 2);
+  assert.equal(tileIndex(ts, turned), 2, 'schon da → gleiche Nummer');
+  assert.equal(tileIndex(ts, [[0, 0], [0, 0]]), 0);
+  placeTile(ts, g, 1, 0, 2);
+  assert.deepEqual(g, [[1, 2, 4, 3], [3, 4, 2, 1]]);
+  assert.deepEqual(mapOf(ts, g), [[1, 2]]);
+  assert.deepEqual(ts.tiles[0], [[1, 2], [3, 4]]);
+});
