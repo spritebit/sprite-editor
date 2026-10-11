@@ -531,6 +531,11 @@ const STATIC = {
     'tool.shapeFillTitle': 'Draw rectangle and ellipse filled instead of outlined',
     'tool.selLabel':    'Selection',
     'tool.selAll':      'All',
+    'tool.selOp':       'Mode',
+    'tool.selOpNew':    'New',
+    'tool.selOpNewTitle': 'New selection — replaces the current one',
+    'tool.selOpAddTitle': 'Add — take more areas into the selection (hold Shift)',
+    'tool.selOpSubTitle': 'Subtract — take areas out of the selection (hold Ctrl)',
     'tool.selAllTitle': 'Select all (Ctrl+A)',
     'tool.selCut':      'Cut',
     'tool.selCutTitle': 'Cut (Ctrl+X)',
@@ -777,6 +782,7 @@ const STATIC = {
       + '<div><b>Marquee</b> (<span class="kbd">A</span>) drags a rectangle open.</div>'
       + '<div><b>Lasso</b> (<span class="kbd">L</span>) traces a free shape; letting go closes it and everything inside belongs to it — even with a wobbly line.</div>'
       + '<div><b>Color select</b> (<span class="kbd">K</span>) takes the connected similar area under the click; <i>tolerance</i> decides how much comes along.</div>'
+      + '<div><b>Several areas</b>: with <span class="kbd">Shift</span> the new shape is added to the selection, with <span class="kbd">Ctrl</span> it is subtracted — with all three tools, mixed too. On phones <b>New · + · −</b> in the options row do the same.</div>'
       + '<div>Grab inside the selection and drag → the area is <b>cut out</b> and <b>floats</b>. It stays in the air until you set it down — until then you can move, rotate and flip it as often as you like without damaging anything underneath.</div>'
       + '<div>It is <b>set down</b> when you deselect (<span class="kbd">Esc</span>), on a new selection, when you switch tool or sprite — or automatically when the tab closes.</div>'
       + '<div><span class="kbd">Alt</span>+drag leaves the original in place — you move a <b>copy</b>.</div>'

@@ -378,6 +378,12 @@
 
         <div class="tool-group" id="select-group" hidden>
           <span class="field-label" data-i18n="tool.selLabel">Auswahl</span>
+          <!-- Mehrere Bereiche: neu, hinzufügen (Umschalt), abziehen (Strg) — js/selcombine.js -->
+          <div class="btn-group" role="group" data-i18n-attr="aria-label:tool.selOp" aria-label="Modus">
+            <button class="btn is-active" id="sel-op-new" aria-pressed="true" data-i18n="tool.selOpNew" data-i18n-attr="title:tool.selOpNewTitle" title="Neue Auswahl — ersetzt die bisherige">Neu</button>
+            <button class="btn" id="sel-op-add" aria-pressed="false" data-i18n-attr="title:tool.selOpAddTitle;aria-label:tool.selOpAddTitle" title="Hinzufügen — weitere Bereiche zur Auswahl nehmen (Umschalt gedrückt halten)" aria-label="Hinzufügen — weitere Bereiche zur Auswahl nehmen (Umschalt gedrückt halten)">+</button>
+            <button class="btn" id="sel-op-sub" aria-pressed="false" data-i18n-attr="title:tool.selOpSubTitle;aria-label:tool.selOpSubTitle" title="Abziehen — Bereiche aus der Auswahl nehmen (Strg gedrückt halten)" aria-label="Abziehen — Bereiche aus der Auswahl nehmen (Strg gedrückt halten)">−</button>
+          </div>
           <div class="btn-group">
             <button class="btn" id="sel-all-btn"    data-i18n-attr="title:tool.selAllTitle"    title="Alles auswählen (Strg+A)"><span class="ico" data-icon="selAll"></span><span class="btn-label" data-i18n="tool.selAll">Alles</span></button>
             <button class="btn" id="sel-cut-btn"    data-i18n-attr="title:tool.selCutTitle"    title="Ausschneiden (Strg+X)"><span class="ico" data-icon="cut"></span><span class="btn-label" data-i18n="tool.selCut">Ausschneiden</span></button>
@@ -1219,6 +1225,7 @@
       <div><b>Auswahl</b> (<span class="kbd">A</span>) zieht ein Rechteck auf.</div>
       <div><b>Lasso</b> (<span class="kbd">L</span>) umfährt eine freie Form; beim Loslassen wird sie geschlossen und alles darin gehört dazu — auch bei krakeliger Linie.</div>
       <div><b>Farbwahl</b> (<span class="kbd">K</span>) nimmt die zusammenhängende ähnliche Fläche unter dem Klick; die <i>Toleranz</i> bestimmt, wie viel mitgeht.</div>
+      <div><b>Mehrere Bereiche</b>: mit <span class="kbd">Umschalt</span> kommt die neue Form zur Auswahl dazu, mit <span class="kbd">Strg</span> wird sie abgezogen — mit allen drei Werkzeugen, auch gemischt. Am Handy stellen <b>Neu · + · −</b> in der Options-Zeile dasselbe ein.</div>
       <div>In die Auswahl fassen und ziehen → der Bereich wird <b>ausgeschnitten</b> und <b>schwebt</b>. Er bleibt in der Luft, bis du ihn absetzt — solange lässt er sich beliebig oft verschieben, drehen und spiegeln, ohne dass darunter etwas kaputtgeht.</div>
       <div><b>Abgesetzt</b> wird beim Abwählen (<span class="kbd">Esc</span>), bei einer neuen Auswahl, beim Werkzeug- oder Sprite-Wechsel — oder automatisch beim Schließen des Tabs.</div>
       <div><span class="kbd">Alt</span>+Ziehen lässt das Original stehen — man verschiebt eine <b>Kopie</b>.</div>

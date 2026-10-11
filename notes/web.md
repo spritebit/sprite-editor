@@ -3,11 +3,13 @@
 ## Deutsch
 
 - Neues Werkzeug Schattieren (D), wie in Aseprite: Tippe in der Farbzeile mehrere Farben an, z. B. drei Rottöne — das ist die Farbreihe. Beim Malen wird jeder Pixel eine Stufe heller (Linksklick) oder dunkler (Rechtsklick), Pixel in anderen Farben bleiben, wie sie sind. Am Handy wählst du die Richtung mit „Heller" und „Dunkler".
+- Mehrere Bereiche auswählen: Mit Umschalt kommt eine neue Auswahl zur bestehenden dazu, mit Strg wird sie abgezogen — bei Rechteck, Lasso und Farbwahl. Am Handy gibt es dafür die Knöpfe „Neu", „+" und „−".
 - Kleinere Verbesserungen und Fehlerbehebungen.
 
 ## English
 
 - New Shade tool (D), as in Aseprite: tap several colours in the colour bar, e.g. three reds — that is the ramp. Painting moves each pixel one step lighter (left click) or darker (right click); pixels in other colours stay as they are. On phones you pick the direction with “Lighter” and “Darker”.
+- Select several areas: with Shift a new selection is added to the current one, with Ctrl it is subtracted — for marquee, lasso and color select. On phones use the “New”, “+” and “−” buttons.
 - Small improvements and fixes.
 
 # 3.2.32

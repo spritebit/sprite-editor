@@ -272,6 +272,20 @@ function applyTool(x, y) {
 const SELECT_TOOLS = ['select', 'lasso', 'magic'];
 const SHAPE_TOOLS  = ['line', 'rect', 'ellipse'];
 const isSelectTool = t => SELECT_TOOLS.includes(t);
+
+// Auswahl-Modus beim Ansetzen: Umschalt legt dazu, Strg (Mac: Cmd) zieht
+// ab — sonst gilt der Knopf in der Options-Zeile (für Finger).
+/** @type {'new'|'add'|'sub'} */
+let selOp = 'new';
+const selOpFor = e => e.shiftKey ? 'add' : (e.ctrlKey || e.metaKey) ? 'sub' : selOp;
+
+function setSelOp(op) {
+  selOp = op;
+  for (const [id, o] of /** @type {[string, string][]} */ ([['sel-op-new', 'new'], ['sel-op-add', 'add'], ['sel-op-sub', 'sub']])) {
+    $(id).classList.toggle('is-active', o === op);
+    $(id).setAttribute('aria-pressed', String(o === op));
+  }
+}
 const isShapeTool  = t => SHAPE_TOOLS.includes(t);
 
 function setTool(tool) {
@@ -596,6 +610,11 @@ function initCanvasEvents() {
     // ── Shift+Alt+Links mit Schablone = verschieben ──
     if (e.shiftKey && e.altKey && tplLoaded()) { startTplDrag(e); return; }
 
+    // Hinzufügen/Abziehen beginnt immer eine neue Form — auch über der
+    // bestehenden Auswahl, die dann nicht verschoben wird. Die Anfasser
+    // gewinnen trotzdem: Umschalt am Anfasser hält das Seitenverhältnis.
+    const op = isSelectTool(state.tool) ? selOpFor(e) : 'new';
+
     // ── Auswahl anfassen (vor der Pipette, damit Alt+Ziehen kopiert) ──
     if (isSelectTool(state.tool)) {
       // Anfasser an Ecken und Kanten: skalieren (js/scale.js).
@@ -607,7 +626,7 @@ function initCanvasEvents() {
         return;
       }
       const c = cellFromEventClamped(e);
-      if (isInSelection(c.x, c.y)) {
+      if (op === 'new' && isInSelection(c.x, c.y)) {
         if (layerBlocked()) return;
         startMove(e, e.altKey);
         info(selectionInfo(t(e.altKey ? 'info.dragCopy' : 'info.move')));
@@ -634,17 +653,17 @@ function initCanvasEvents() {
 
     // ── Auswahl aufziehen / lassoen / nach Farbe wählen ──
     if (state.tool === 'select') {
-      startMarquee(e);
+      startMarquee(e, op);
       info(selectionInfo(t('info.marquee')));
       return;
     }
     if (state.tool === 'lasso') {
-      startLasso(e);
+      startLasso(e, op);
       info(t('info.lassoStart'));
       return;
     }
     if (state.tool === 'magic') {
-      const n = selectByColor(e);
+      const n = selectByColor(e, op);
       updateSelectionUI();
       info(n ? t('info.colorSel', { n, extra: selection.rect ? ' · ' + selectionInfo() : '' })
              : t('info.colorSelNone'));
@@ -727,7 +746,7 @@ function initCanvasEvents() {
     if (isSelectTool(state.tool)) {
       const h = handleAt(e);
       $('editor-canvas-wrap').dataset.handle = h || '';
-      $('editor-canvas-wrap').classList.toggle('is-move', !h && isInSelection(c.x, c.y));
+      $('editor-canvas-wrap').classList.toggle('is-move', selOpFor(e) === 'new' && !h && isInSelection(c.x, c.y));
     }
     const cur = getGrid()[c.y][c.x];
     const val = typeof cur === 'string' ? cur : t('info.index', { i: cur });
@@ -1010,6 +1029,10 @@ function initToolbar() {
     syncFillVisible();
     saveState();
   });
+
+  $('sel-op-new').addEventListener('click', () => setSelOp('new'));
+  $('sel-op-add').addEventListener('click', () => setSelOp('add'));
+  $('sel-op-sub').addEventListener('click', () => setSelOp('sub'));
 
   $('shade-clear-btn').addEventListener('click', () => {
     state.shadeRamp = [];

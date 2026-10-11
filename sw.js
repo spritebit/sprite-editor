@@ -103,6 +103,7 @@ const PRECACHE = [
   'js/render.js',
   'js/scale.js',
   'js/search.js',
+  'js/selcombine.js',
   'js/selection.js',
   'js/shade.js',
   'js/site-links.js',

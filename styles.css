@@ -1457,7 +1457,8 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 }
 .shade-sw:hover { border-color: var(--text); }
 .shade-empty { font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; }
-#shade-light-btn.is-active, #shade-dark-btn.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-line); }
+#shade-light-btn.is-active, #shade-dark-btn.is-active,
+#sel-op-new.is-active, #sel-op-add.is-active, #sel-op-sub.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-line); }
 /* Farben der Reihe in Farbzeile, Palette und Bildfarben: ein Strich
    darunter. Die Markierung der Malfarbe tritt beim Schattieren zurück —
    sie spielt dann keine Rolle. */

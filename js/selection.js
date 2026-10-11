@@ -32,6 +32,7 @@ import { HANDLES, handlePos, dragHandle, scaleGrid } from './scale.js';
 import { remapCells, samePalette } from './remap.js';
 import { showInfoToast } from './toast.js';
 import { MAX_SIDE } from './state.js';
+import { combineSel } from './selcombine.js';
 import { t } from './i18n.js';
 
 // Zwischenablage — modul-lokal, überlebt Sprite-Wechsel, aber keinen Reload.
@@ -239,32 +240,70 @@ function rasterizePath(path) {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Mehrere Bereiche: hinzufügen (Umschalt) und abziehen (Strg)
+// ────────────────────────────────────────────────────────────────────
+// `op` legt beim Ansetzen fest, was mit der neuen Form passiert: 'new'
+// ersetzt die Auswahl, 'add' legt sie dazu, 'sub' zieht sie ab (Rechnung in
+// js/selcombine.js). Bis zum Loslassen merkt sich `base` die Auswahl von
+// vorher; Rechteck und Lasso zeigen beim Ziehen schon das Ergebnis.
+/** @type {{op: 'new'|'add'|'sub', base: {rect: any, mask: any} | null, drag: any}} */
+const combine = { op: 'new', base: null, drag: null };
+
+function beginCombine(op) {
+  combine.op = op;
+  combine.base = op !== 'new' && selection.rect
+    ? { rect: { ...selection.rect }, mask: selection.mask ? selection.mask.map(r => r.slice()) : null }
+    : null;
+  combine.drag = null;
+}
+
+// Neue Form `sel` anwenden. Gibt false zurück, wenn nichts übrig bleibt.
+function applyCombine(sel) {
+  const res = combine.op === 'new' ? sel : combineSel(combine.base, sel, combine.op);
+  if (!res) { clearSelection(); return false; }
+  selection.rect = res.rect;
+  selection.mask = res.mask;
+  return true;
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Zeiger-Aktionen
 // ────────────────────────────────────────────────────────────────────
 
-// Rechteck aufziehen.
-export function startMarquee(e) {
+// Rechteck aufziehen. `op`: 'new' | 'add' | 'sub' (siehe oben).
+export function startMarquee(e, op = 'new') {
   commitFloat(); // was noch schwebt, wird abgesetzt
+  beginCombine(op);
   const c = cellFromEventClamped(e);
-  selection.mask = null;
   selection.path = null;
   selection.anchor = c;
-  selection.rect = rectFromCells(c, c);
+  combine.drag = rectFromCells(c, c);
   selection.mode = 'marquee';
-  renderEditor();
+  showMarquee();
 }
 
 export function updateMarquee(e) {
   if (selection.mode !== 'marquee' || !selection.anchor) return;
-  selection.rect = rectFromCells(selection.anchor, cellFromEventClamped(e));
+  combine.drag = rectFromCells(selection.anchor, cellFromEventClamped(e));
+  showMarquee();
+}
+
+// Beim Ziehen schon das Ergebnis zeigen — beim Abziehen also mit Loch.
+function showMarquee() {
+  if (!applyCombine({ rect: combine.drag, mask: null })) {
+    // Alles abgezogen: wenigstens das gezogene Rechteck als Rahmen zeigen.
+    selection.rect = { ...combine.drag };
+    selection.mask = null;
+  }
   renderEditor();
 }
 
-// Freihandform ziehen.
-export function startLasso(e) {
+// Freihandform ziehen. Beim Hinzufügen und Abziehen bleibt die bisherige
+// Auswahl stehen, bis die Spur geschlossen ist.
+export function startLasso(e, op = 'new') {
   commitFloat();
-  selection.mask = null;
-  selection.rect = null;
+  beginCombine(op);
+  if (op === 'new') { selection.mask = null; selection.rect = null; }
   selection.anchor = null;
   selection.path = [cellFromEventClamped(e)];
   selection.mode = 'lasso';
@@ -329,9 +368,11 @@ export function endSelectionPointer() {
     selection.mode = null;
     selection.path = null;
     const res = path.length ? rasterizePath(path) : null;
-    // Ein einzelner Klick ist keine Form → das gilt als abwählen.
-    if (!res || path.length < 2) clearSelection();
-    else { selection.rect = res.rect; selection.mask = res.mask; }
+    // Ein einzelner Klick ist keine Form → das gilt als abwählen (beim
+    // Hinzufügen und Abziehen bleibt die Auswahl dann einfach, wie sie war).
+    if (!res || path.length < 2) { if (combine.op === 'new') clearSelection(); }
+    else applyCombine(res);
+    combine.base = null;
     renderEditor();
     return;
   }
@@ -339,8 +380,14 @@ export function endSelectionPointer() {
   if (selection.mode === 'marquee') {
     selection.mode = null;
     selection.anchor = null;
-    // Klick ohne Ziehen = abwählen (sonst hinge man an einer 1×1-Auswahl fest).
-    if (selection.rect && selection.rect.w === 1 && selection.rect.h === 1) clearSelection();
+    const d = combine.drag;
+    // Klick ohne Ziehen = abwählen (sonst hinge man an einer 1×1-Auswahl
+    // fest). Beim Hinzufügen und Abziehen zählt dagegen auch ein Pixel.
+    if (combine.op === 'new') {
+      if (d && d.w === 1 && d.h === 1) clearSelection();
+    } else if (d) applyCombine({ rect: d, mask: null });
+    combine.base = null;
+    combine.drag = null;
     renderEditor();
   }
 }
@@ -410,12 +457,17 @@ export function updateScale(e) {
 // Derselbe Bereich, den der Zauberstab löschen würde — nur dass er hier zur
 // Auswahl wird und man ihn danach verschieben, drehen oder umfärben kann.
 // Die Toleranz kommt aus demselben Regler.
-export function selectByColor(e) {
+export function selectByColor(e, op = 'new') {
   commitFloat();
+  beginCombine(op);
   const c = cellFromEventClamped(e);
   const grid = getGrid();
   const { hit, count } = magicWandRegion(grid, getPal(), c.x, c.y, state.wandTolerance);
-  if (!count) { clearSelection(); renderEditor(); return 0; }
+  if (!count) {
+    if (op === 'new') clearSelection();
+    renderEditor();
+    return 0;
+  }
 
   let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
   for (let y = 0; y < hit.length; y++) for (let x = 0; x < hit[y].length; x++) {
@@ -436,8 +488,8 @@ export function selectByColor(e) {
 
   selection.path = null;
   selection.mode = null;
-  selection.rect = rect;
-  selection.mask = mask;
+  applyCombine({ rect, mask });
+  combine.base = null;
   renderEditor();
   return count;
 }
