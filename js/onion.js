@@ -9,6 +9,8 @@
 //   thumbs      Vorschaubilder in der Kopfzeile — aus spart Höhe
 //   thumbSize   Kantenlänge der Vorschaubilder in px, per Griff am Rand der
 //               Timeline gezogen; 0 = passend zur Breite (js/frames.js)
+//   rows        so viele Ebenen-Zeilen zeigt die Timeline, per Griff an
+//               ihrem Rand gezogen; 0 = bis sechs, dann scrollen
 //   onion:
 //     mode      'tint' rot/blau gefärbt | 'color' in echten Farben
 //     opacity   Deckkraft des nächsten Nachbarn (0.1–0.9)
@@ -25,14 +27,17 @@ export const ONION_MAX = 3;
 // Grenzen für die gezogene Größe der Vorschaubilder (thumbSize).
 export const THUMB_SIZE_MIN = 30;
 export const THUMB_SIZE_MAX = 128;
+// Grenze für die gezogene Höhe der Timeline (rows), in Ebenen-Zeilen.
+export const TL_ROWS_MAX = 60;
 
 /** @typedef {{mode: 'tint'|'color', opacity: number, step: number, before: number, after: number, loopTag: boolean, layerOnly: boolean, front: boolean}} OnionOpts */
-/** @typedef {{firstFrame: number, thumbs: boolean, thumbSize: number, onion: OnionOpts}} TlOpts */
+/** @typedef {{firstFrame: number, thumbs: boolean, thumbSize: number, rows: number, onion: OnionOpts}} TlOpts */
 
 export const TL_DEFAULTS = Object.freeze({
   firstFrame: 1,
   thumbs: true,
   thumbSize: 0,
+  rows: 0,
   onion: Object.freeze({
     mode: 'tint', opacity: 0.3, step: 0.3, before: 1, after: 1,
     loopTag: false, layerOnly: false, front: false,
@@ -59,6 +64,7 @@ export function normalizeTlOpts(raw) {
     firstFrame: raw?.firstFrame === 0 ? 0 : 1,
     thumbs: raw?.thumbs !== false,
     thumbSize: raw?.thumbSize ? Math.round(num(raw.thumbSize, THUMB_SIZE_MIN, THUMB_SIZE_MAX, 0)) : 0,
+    rows: raw?.rows ? Math.round(num(raw.rows, 1, TL_ROWS_MAX, 0)) : 0,
     onion: {
       mode: o.mode === 'color' ? /** @type {const} */ ('color') : /** @type {const} */ ('tint'),
       opacity: num(o.opacity, 0.1, 0.9, d.onion.opacity),

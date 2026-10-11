@@ -26,7 +26,7 @@ import {
   rangeOf, rangeSize, inRange, clampRange, canShift, shiftCels, clearCels, copyCels, pasteCels,
   linkCels, unlinkCels,
 } from './cels.js';
-import { frameLabel, THUMB_SIZE_MIN, THUMB_SIZE_MAX } from './onion.js';
+import { frameLabel, THUMB_SIZE_MIN, THUMB_SIZE_MAX, TL_ROWS_MAX } from './onion.js';
 import { TAG_COLORS, TAG_DIRS, tagsInsert, tagsDelete, tagAt, tagLanes, nextPlayFrame } from './tags.js';
 import {
   setActiveLayer, toggleVisible, toggleLocked, toggleContinuous, addLayer, duplicateLayer, deleteLayer,
@@ -391,10 +391,44 @@ function fitThumbs() {
   const min = mobile ? CELL_MIN_TOUCH : CELL_MIN;
   const fixed = !mobile && state.tlOpts.thumbSize;
   const next = fixed || Math.max(min, Math.min(CELL_MAX, room));
-  if (next === cell) return;
-  cell = next;
-  box.style.setProperty('--tl-cell', cell + 'px');
-  thumbs.forEach(b => sizeThumb(b.firstChild));
+  if (next !== cell) {
+    cell = next;
+    box.style.setProperty('--tl-cell', cell + 'px');
+    thumbs.forEach(b => sizeThumb(b.firstChild));
+  }
+  fitRows();
+}
+
+// Höhe der Timeline (tlOpts.rows): so viele Ebenen-Zeilen unter der
+// Kopfzeile, gezogen am Rand der Timeline (makeHeightGrip). Die Kopfzeile
+// mit den Vorschaubildern bleibt, wie sie ist — mehr Höhe heißt mehr
+// Ebenen. 0 = Vorgabe aus styles.css (bis sechs, dann scrollen). Gilt nur
+// quer über oder unter der Zeichenfläche; seitlich, schwebend und am Handy
+// regelt das Layout die Höhe.
+const rowPx = box => (parseFloat(getComputedStyle(box).getPropertyValue('--tl-row')) || 22) + 2;
+const headPx = box => (parseFloat(box.style.getPropertyValue('--tl-tagh')) || 0)
+  + (state.tlOpts.thumbs ? cell : 18) + 6;
+
+function canSetRows() {
+  const tl = $('timeline');
+  return !!tl && !isMobileLayout() && !tl.classList.contains('is-vertical')
+    && !tl.classList.contains('is-floating') && !tl.closest('.bar-zone--side, .rail-pins');
+}
+
+function fitRows() {
+  const box = $('tl-frames');
+  if (!box) return;
+  const on = canSetRows();
+  if (heightGrip) heightGrip.hidden = !on;
+  const rows = on ? state.tlOpts.rows : 0;
+  box.style.height = rows ? headPx(box) + rows * rowPx(box) + 'px' : '';
+  box.style.maxHeight = rows ? 'none' : '';
+}
+
+/** Zeilen, die gerade zu sehen sind — Ausgangspunkt beim Ziehen. */
+function shownRows(box) {
+  if (state.tlOpts.rows) return state.tlOpts.rows;
+  return Math.max(1, Math.round((box.clientHeight - headPx(box)) / rowPx(box)));
 }
 
 function makeThumb() {
@@ -1277,7 +1311,57 @@ function makeThumbGrip() {
   return grip;
 }
 
+// Griff am Rand der Timeline, der zur Zeichenfläche zeigt (unten angedockt:
+// Oberkante, oben: Unterkante). Ziehen ändert die Höhe zeilenweise.
+// Doppelklick: wieder die Vorgabe.
+let heightGrip = null;
+function makeHeightGrip() {
+  const grip = document.createElement('div');
+  grip.className = 'tl-hgrip';
+  grip.setAttribute('role', 'separator');
+  grip.setAttribute('aria-orientation', 'horizontal');
+  grip.title = t('tl.heightGripTitle');
+  grip.addEventListener('pointerdown', e => {
+    const box = $('tl-frames');
+    if (!box || e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const tl = /** @type {HTMLElement} */ ($('timeline'));
+    const r = tl.getBoundingClientRect();
+    // Griff oben: nach oben ziehen = höher. Griff unten: nach unten = höher.
+    const sign = e.clientY < r.top + r.height / 2 ? -1 : 1;
+    const sy = e.clientY, r0 = shownRows(box), step = rowPx(box);
+    // Die Zeichenfläche soll nie ganz verschwinden: höchstens 70 % des Fensters.
+    const max = Math.max(1, Math.min(TL_ROWS_MAX, Math.floor((innerHeight * 0.7 - headPx(box)) / step)));
+    document.body.classList.add('is-dragging-ui', 'is-resizing-ui');
+    grip.classList.add('is-active');
+    const move = ev => {
+      const rows = Math.max(1, Math.min(max, r0 + Math.round(sign * (ev.clientY - sy) / step)));
+      if (rows === state.tlOpts.rows) return;
+      state.tlOpts.rows = rows;
+      fitRows();
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      document.body.classList.remove('is-dragging-ui', 'is-resizing-ui');
+      grip.classList.remove('is-active');
+      saveState();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  });
+  grip.addEventListener('dblclick', () => {
+    state.tlOpts.rows = 0;
+    fitRows();
+    saveState();
+  });
+  return grip;
+}
+
 export function initFrames() {
+  heightGrip = makeHeightGrip();
+  $('timeline').append(heightGrip);
   $('tl-first').addEventListener('click', firstFrame);
   $('tl-prev').addEventListener('click', prevFrame);
   $('tl-next').addEventListener('click', nextFrame);

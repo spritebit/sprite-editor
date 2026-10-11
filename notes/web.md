@@ -1,3 +1,15 @@
+# 3.2.30
+
+## Deutsch
+
+- Timeline höher oder niedriger ziehen: am oberen Rand der Timeline (oben angedockt am unteren). So siehst du mehr oder weniger Ebenen auf einmal — die Vorschaubilder behalten dabei ihre Größe. Doppelklick auf den Rand stellt wieder die Standardhöhe ein.
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
+- Drag the timeline taller or shorter: at its top edge (at the bottom edge when docked at the top). You see more or fewer layers at once — the thumbnails keep their size. Double-click the edge for the default height again.
+- Small improvements and fixes.
+
 # 3.2.29
 
 ## Deutsch

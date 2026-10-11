@@ -7,7 +7,7 @@
 //   npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeTlOpts, defaultTlOpts, onionFrames, frameLabel, TL_DEFAULTS } from '../js/onion.js';
+import { normalizeTlOpts, defaultTlOpts, onionFrames, frameLabel, TL_DEFAULTS, TL_ROWS_MAX } from '../js/onion.js';
 
 const sprite = (n, tags = []) => ({ frames: Array.from({ length: n }, () => ({})), tags });
 const opts = onion => ({ ...defaultTlOpts(), onion: { ...TL_DEFAULTS.onion, ...onion } });
@@ -57,6 +57,14 @@ test('normalizeTlOpts: Unsinn wird Vorgabe, Grenzen halten', () => {
   assert.equal(o.onion.after, TL_DEFAULTS.onion.after);
   assert.equal(o.onion.front, true);
   assert.deepEqual(normalizeTlOpts(null), defaultTlOpts());
+});
+
+test('normalizeTlOpts: Höhe der Timeline in Zeilen (rows)', () => {
+  assert.equal(normalizeTlOpts({}).rows, 0, 'fehlt = Vorgabe');
+  assert.equal(normalizeTlOpts({ rows: 9.4 }).rows, 9);
+  assert.equal(normalizeTlOpts({ rows: 999 }).rows, TL_ROWS_MAX);
+  assert.equal(normalizeTlOpts({ rows: -3 }).rows, 1);
+  assert.equal(normalizeTlOpts({ rows: 'x' }).rows, 0);
 });
 
 test('frameLabel zählt ab 0 oder 1', () => {

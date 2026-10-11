@@ -1012,6 +1012,24 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 }
 .tl-grip:hover, .is-resizing-ui .tl-grip { background: linear-gradient(var(--accent), var(--accent)) center / 100% 2px no-repeat; }
 .tl-grip[hidden] { display: none; }
+/* Rand der Timeline zur Zeichenfläche hin (js/frames.js makeHeightGrip):
+   ziehen = Höhe, also mehr oder weniger Ebenen-Zeilen. Die Vorschaubilder
+   behalten ihre Größe. Unten angedockt an der Oberkante, sonst unten. */
+#timeline:not(.is-floating) { position: relative; }
+.tl-hgrip {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 4;
+  height: 6px;
+  cursor: row-resize;
+  touch-action: none;
+  background: linear-gradient(var(--accent), var(--accent)) center / 100% 2px no-repeat;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.bar-zone[data-zone="bottom"] > #timeline > .tl-hgrip { top: -1px; bottom: auto; }
+.tl-hgrip:hover, .tl-hgrip.is-active { opacity: 1; }
+.tl-hgrip[hidden] { display: none; }
 /* Das Raster (js/frames.js): links je Ebene eine Beschriftung, oben je
    Frame ein Bildchen, darunter je Ebene und Frame eine Zelle. Es steht in
    einer eigenen Zeile unter den Knöpfen und nimmt die ganze Breite.
