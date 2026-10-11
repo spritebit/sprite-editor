@@ -1,3 +1,17 @@
+# 3.2.33
+
+## Deutsch
+
+- Neues Werkzeug Schattieren (D): ein Stift, der sich mit jedem Strich durch eine Farbreihe arbeitet. Tippe in der Farbzeile Farben in der Reihenfolge an, in der sie aufeinander folgen sollen, z. B. drei Rottöne — ein leerer Pixel bekommt zuerst die erste, jeder weitere Strich darüber die nächste. Gedrückt halten wirkt wie eine Airbrush: wo der Pinsel länger bleibt, geht es von selbst weiter, immer schneller; Rechtsklick läuft die Reihe andersherum. „Abstufungen" erzeugt aus einer Farbe passende hellere und dunklere Töne, der Balken-Knopf ordnet die Reihe nach Farbstufen, „Verlauf" macht den Pinsel weich. Umrisse und andere Farben bleiben unberührt.
+- Mehrere Bereiche auswählen: Mit Umschalt kommt eine neue Auswahl zur bestehenden dazu, mit Strg wird sie abgezogen — bei Rechteck, Lasso und Farbwahl. Am Handy gibt es dafür die Knöpfe „Neu", „+" und „−".
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
+- New Shade tool (D): a pen that works through a colour ramp with every stroke. Tap colours in the colour bar in the order they should follow each other, e.g. three reds — an empty pixel first gets the first one, every further stroke over it the next. Keeping it pressed works like an airbrush: wherever the brush stays longer it moves on by itself, faster and faster; right click runs the ramp the other way round. “Shades” creates matching lighter and darker tones from one colour, the bars button sorts the ramp by shades, “Gradient” makes the brush soft. Outlines and other colours stay untouched.
+- Select several areas: with Shift a new selection is added to the current one, with Ctrl it is subtracted — for marquee, lasso and color select. On phones use the “New”, “+” and “−” buttons.
+- Small improvements and fixes.
+
 # 3.2.32
 
 ## Deutsch

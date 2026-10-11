@@ -99,6 +99,7 @@ export const STATIC_AT = {
   'tool.brushTitle':   'Pinsl — a Flächn, Stärke = wia dicht (B)',
   'tool.spray':        'Spray',
   'tool.sprayTitle':   'Spray — zfällige Pixel (S)',
+  'tool.shade':        'Schattiern',
   'tool.fill':         'Aufülln',
   'tool.fillTitle':    'Aufülln — de ganze zammhängende Flächn (F)',
   'tool.eraser':       'Radiergummi',

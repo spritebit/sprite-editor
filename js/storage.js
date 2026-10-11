@@ -25,6 +25,7 @@ import { packSprite, unpackSprite, packSum } from './pack.js';
 import { readAse, writeAse } from './aseprite.js';
 import { t } from './i18n.js';
 import { MATERIALS } from './gamejson.js';
+import { normalizeRamp } from './shade.js';
 
 // Welches Projekt gerade dran ist (js/projects.js) — steht für die ganze
 // Sitzung fest; gewechselt wird per Neustart (switchProject).
@@ -170,6 +171,9 @@ function buildPayload(withSprites = true) {
       shapeFill: state.shapeFill,
       fillVisible: state.fillVisible,
       pixelPerfect: state.pixelPerfect,
+      shadeRamp: state.shadeRamp,
+      shadeUp: state.shadeUp,
+      shadeSoft: state.shadeSoft,
       tileMode: state.tileMode,
       tileAuto: state.tileAuto,
       onion:      state.onion,
@@ -653,6 +657,9 @@ function applyPayload(payload) {
     if (typeof ui.shapeFill === 'boolean') state.shapeFill = ui.shapeFill;
     if (typeof ui.fillVisible === 'boolean') state.fillVisible = ui.fillVisible;
     if (typeof ui.pixelPerfect === 'boolean') state.pixelPerfect = ui.pixelPerfect;
+    state.shadeRamp = normalizeRamp(ui.shadeRamp);
+    if (typeof ui.shadeUp === 'boolean') state.shadeUp = ui.shadeUp;
+    if (typeof ui.shadeSoft === 'boolean') state.shadeSoft = ui.shadeSoft;
     if (ui.tileMode === 'pixel' || ui.tileMode === 'tiles') state.tileMode = ui.tileMode;
     if (ui.tileAuto === 'auto' || ui.tileAuto === 'manual') state.tileAuto = ui.tileAuto;
     if (typeof ui.onion === 'boolean') state.onion = ui.onion;

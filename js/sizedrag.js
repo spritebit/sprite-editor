@@ -24,7 +24,7 @@ export const MAX_SIZE = 300;
 export const SLIDER_STEPS = 1000;
 
 /** Werkzeuge mit einstellbarer Größe. */
-export const SIZED_TOOLS = ['brush', 'spray', 'eraser'];
+export const SIZED_TOOLS = ['brush', 'spray', 'eraser', 'shade'];
 
 /**
  * Neue Größe aus dem Mausweg seit dem Start.

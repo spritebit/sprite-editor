@@ -40,6 +40,6 @@ test('eingetippte Größe wird begrenzt und gerundet', () => {
   assert.equal(clampSize('abc'), 1);
 });
 
-test('nur Pinsel, Spray und Radierer haben eine Größe', () => {
-  assert.deepEqual(SIZED_TOOLS, ['brush', 'spray', 'eraser']);
+test('nur Pinsel, Spray, Radierer und Schattieren haben eine Größe', () => {
+  assert.deepEqual(SIZED_TOOLS, ['brush', 'spray', 'eraser', 'shade']);
 });

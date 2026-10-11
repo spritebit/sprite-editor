@@ -340,6 +340,38 @@ export function addCurrentColorToPalette() {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Erzeugte Abstufungen in die Palette (Schattieren, js/shade.js)
+// ────────────────────────────────────────────────────────────────────
+// Farben, die es in der Sprite-Palette noch nicht gibt, kommen hinten
+// dazu; schon gemalte freie Pixel in diesen Farben bekommen die neue
+// Nummer — wie bei „+ In Palette“. Ein Undo-Schritt. Gibt zurück, wie
+// viele neu sind (passt nicht alles hinein, kommen nur so viele, wie Platz ist).
+export function addColorsToPalette(hexes) {
+  const sp = getSprite();
+  if (!sp) return 0;
+  const pal = getPal();
+  const size = paletteSize(pal);
+  const have = new Set();
+  for (let i = 1; i <= size; i++) if (pal[i]) have.add(pal[i].toLowerCase());
+  const fresh = [...new Set(hexes.map(h => h.toLowerCase()))].filter(h => !have.has(h)).slice(0, MAX_COLORS - size);
+  if (!fresh.length) return 0;
+  commitFloat();
+  recordPalettes(() => {
+    const name = ownPaletteOf(sp);
+    const idx = new Map(fresh.map((h, k) => [h, size + 1 + k]));
+    for (const [h, i] of idx) customPalettes[name][i] = h;
+    for (const row of allGrids(sp).flat()) for (let x = 0; x < row.length; x++) {
+      const c = row[x];
+      if (typeof c === 'string' && idx.has(c.toLowerCase())) row[x] = idx.get(c.toLowerCase());
+    }
+  });
+  state.palPreview = null;
+  renderAll();
+  saveState();
+  return fresh.length;
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Löschen
 // ────────────────────────────────────────────────────────────────────
 export function deleteCustomPalette(name) {

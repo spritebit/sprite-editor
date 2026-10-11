@@ -28,7 +28,7 @@ import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
   cellFromEvent, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
-  ppActive, ppBegin, ppEnd, paintPixelPerfect,
+  ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeDwell, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
 import {
@@ -45,7 +45,7 @@ import {
   openPaletteModal, initPaletteModal, deleteCustomPalette,
   previewPalette, assignPalette, forkPreviewPalette, addFreeColorsToPalette,
   createPaletteFromImport, appendPaletteColor, setPaletteColor, removePaletteColor,
-  addCurrentColorToPalette,
+  addCurrentColorToPalette, addColorsToPalette,
 } from './palettes.js';
 import {
   initTemplate, tplLoaded, tplHasOffscreen,
@@ -58,6 +58,7 @@ import {
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
+import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
 import { openReduceModal, initReduceModal } from './reduce.js';
 import { zoomAt, fitZoomToArea, isPanMode, setPanTool, initPan, initPinch } from './view.js';
@@ -255,6 +256,11 @@ function applyTool(x, y) {
   if (ppActive()) { paintPixelPerfect(x, y, state.tool === 'eraser' ? 0 : state.curColor); return; }
   if (state.tool === 'brush')  { paintBrush(x, y);  return; }
   if (state.tool === 'spray')  { paintSpray(x, y);  return; }
+  if (state.tool === 'shade') {
+    paintShade(x, y);
+    shadeAt = { x, y };
+    return;
+  }
   if (state.tool === 'fill')   { floodFill(x, y);   return; }
   if (state.tool === 'eraser') {
     const prev = state.curColor;
@@ -271,6 +277,20 @@ function applyTool(x, y) {
 const SELECT_TOOLS = ['select', 'lasso', 'magic'];
 const SHAPE_TOOLS  = ['line', 'rect', 'ellipse'];
 const isSelectTool = t => SELECT_TOOLS.includes(t);
+
+// Auswahl-Modus beim Ansetzen: Umschalt legt dazu, Strg (Mac: Cmd) zieht
+// ab — sonst gilt der Knopf in der Options-Zeile (für Finger).
+/** @type {'new'|'add'|'sub'} */
+let selOp = 'new';
+const selOpFor = e => e.shiftKey ? 'add' : (e.ctrlKey || e.metaKey) ? 'sub' : selOp;
+
+function setSelOp(op) {
+  selOp = op;
+  for (const [id, o] of /** @type {[string, string][]} */ ([['sel-op-new', 'new'], ['sel-op-add', 'add'], ['sel-op-sub', 'sub']])) {
+    $(id).classList.toggle('is-active', o === op);
+    $(id).setAttribute('aria-pressed', String(o === op));
+  }
+}
 const isShapeTool  = t => SHAPE_TOOLS.includes(t);
 
 function setTool(tool) {
@@ -300,18 +320,105 @@ function updateToolUI() {
   // Die Hand malt nicht, sie schiebt nur — das weiss die Ansicht.
   setPanTool(state.tool === 'pan');
 
-  const hasSize = ['brush', 'spray', 'eraser'].includes(state.tool);
+  const hasSize = SIZED_TOOLS.includes(state.tool);
   const needsTolerance = state.tool === 'wand' || state.tool === 'magic';
   $('brush-size-group').hidden = !hasSize;
-  $('strength-group').hidden   = !hasSize;
+  $('strength-group').hidden   = !hasSize || state.tool === 'shade';
+  $('shade-group').hidden      = state.tool !== 'shade';
   $('tolerance-group').hidden  = !needsTolerance;
   $('select-group').hidden     = !isSelectTool(state.tool);
   $('shape-group').hidden      = !isShapeTool(state.tool);
   $('fill-group').hidden       = state.tool !== 'fill';
   $('pixel-perfect-group').hidden = !['pencil', 'eraser'].includes(state.tool);
   if (!isSelectTool(state.tool)) $('editor-canvas-wrap').classList.remove('is-move');
+  syncShadeMarks();
+  renderShadeRamp();
   updateSelectionUI();
   refreshToolOpts();
+}
+
+// ── Schattieren: Options-Zeile (js/shade.js) ──
+// Die Farbreihe als kleine Felder in Mal-Reihenfolge — so, wie man die
+// Farben angeklickt hat; ein Tipp nimmt eine wieder heraus. Gewählt wird
+// in der Farbzeile oder im Paletten-Panel (render.js pickSwatch). Dazu
+// Abstufungen, nach Farbstufen ordnen, Umdrehen (Finger) und Verlauf.
+function renderShadeRamp() {
+  const box = $('shade-ramp');
+  if (!box) return;
+  box.innerHTML = '';
+  const ramp = state.shadeRamp;
+  if (!ramp.length) {
+    const hint = document.createElement('span');
+    hint.className = 'shade-empty';
+    hint.textContent = t('shade.empty');
+    box.append(hint);
+  }
+  // In Mal-Reihenfolge: links die Farbe, die ein leerer Pixel bekommt.
+  for (const hex of shadeUp() ? [...ramp].reverse() : ramp) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'shade-sw';
+    b.style.background = hex;
+    b.title = t('shade.swTitle', { hex });
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', () => {
+      state.shadeRamp = ramp.filter(h => h !== hex);
+      renderShadeRamp();
+      syncShadeMarks();
+      saveState();
+    });
+    box.append(b);
+  }
+  $('shade-clear-btn').disabled = !ramp.length;
+  $('shade-sort-btn').disabled = ramp.length < 2;
+  for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-rev-btn', shadeUp()], ['shade-soft-btn', state.shadeSoft]])) {
+    $(id).classList.toggle('is-active', on);
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+}
+renderCallbacks.onShadeRamp = renderShadeRamp;
+
+// „Umdrehen" gibt es nur für Finger — mit Maus malt Rechtsklick die Reihe
+// andersherum, auch im schmalen Fenster. Dort gilt die gemerkte
+// Einstellung darum nicht. Dieselbe Abfrage wie in styles.css.
+const TOUCH = window.matchMedia('(pointer: coarse)');
+const shadeUp = () => state.shadeUp && TOUCH.matches;
+
+// Schattieren ansetzen: true, wenn es losgehen kann. `along` = die Reihe
+// entlang (Linksklick: leer → erste Farbe, dann die nächste; js/shade.js),
+// sonst andersherum. Ohne Reihe läuft es mit der aktuellen Farbe und wird
+// dunkler bzw. heller; eine Reihe mit nur einer Farbe kann nichts schieben
+// — dann ein Hinweis statt eines stummen Strichs.
+function startShade(along) {
+  if (editingMask()) { info(t('shade.noMask')); return false; }
+  if (state.shadeRamp.length === 1) { showInfoToast(t('shade.needRamp')); return false; }
+  shadeBegin(along ? -1 : 1);
+  // Gedrückt halten wie eine Airbrush: die Pixel unter dem Pinsel sammeln
+  // Zeit und gehen damit weiter — auch beim langsamen Malen, gleichmäßig je
+  // Pixel (render.js shadeDwell, js/shade.js holdSteps).
+  clearInterval(shadeTimer);
+  let last = performance.now();
+  shadeTimer = setInterval(() => {
+    const now = performance.now();
+    const ms = now - last;
+    last = now;
+    if (state.isDrawing && state.tool === 'shade' && shadeAt) shadeDwell(shadeAt.x, shadeAt.y, ms);
+  }, HOLD_MIN_MS / 3);
+  return true;
+}
+let shadeTimer = 0;
+/** @type {{x: number, y: number} | null} */
+let shadeAt = null;
+
+// Ein Strich, der nichts geändert hat, sagt, warum — sonst sähe es aus,
+// als ginge das Werkzeug nicht. Als Toast nur beim ersten Mal, danach in
+// der Statuszeile.
+let shadeNoteShown = false;
+function shadeNothing() {
+  const msg = t(state.shadeRamp.length ? 'shade.nothingRamp' : 'shade.nothingAuto');
+  if (shadeNoteShown) { info(msg); return; }
+  shadeNoteShown = true;
+  showInfoToast(msg);
 }
 
 // Symmetrie-Knöpfe und Achsenzustand zusammenhalten.
@@ -377,7 +484,7 @@ function updateBrushCursor(e) {
   const el = $('brush-cursor');
   if (!el) return;
   const tool = state.tool;
-  if (!['brush', 'spray', 'eraser'].includes(tool)) { el.hidden = true; return; }
+  if (!SIZED_TOOLS.includes(tool)) { el.hidden = true; return; }
   const c = cellFromEvent(e);
   if (!c) { el.hidden = true; return; }
 
@@ -390,7 +497,8 @@ function updateBrushCursor(e) {
   } else {
     const lo = -Math.floor((state.brushSize - 1) / 2);
     left = (c.x + lo) * cs; top = (c.y + lo) * cs;
-    size = state.brushSize * cs; round = false;
+    // Schattieren mit Verlauf wirkt rund (js/shade.js softLevel).
+    size = state.brushSize * cs; round = tool === 'shade' && state.shadeSoft;
   }
   el.className = 'tool-' + tool;
   el.style.left = left + 'px';
@@ -520,6 +628,14 @@ function initCanvasEvents() {
         if (r.status === 'outside')          info(t('info.tplOutside'));
         else if (r.status === 'transparent') info(t('info.tplTransp'));
         else                                 info(t('info.tplPipette', { hex: r.hex }));
+      } else if (state.tool === 'shade') {
+        // Rechtsklick schattiert in die Gegenrichtung, statt zu radieren.
+        if (layerBlocked() || !startShade(shadeUp())) return;
+        state.isDrawing = true;
+        beginStroke();
+        const c = cellFromEvent(e);
+        if (c) applyTool(c.x, c.y);
+        lock = c ? { start: c, dir: null, last: c } : null;
       } else {
         if (layerBlocked()) return;
         commitFloat(); // sonst radiert man in ein Loch, unter dem noch etwas hängt
@@ -537,6 +653,11 @@ function initCanvasEvents() {
     // ── Shift+Alt+Links mit Schablone = verschieben ──
     if (e.shiftKey && e.altKey && tplLoaded()) { startTplDrag(e); return; }
 
+    // Hinzufügen/Abziehen beginnt immer eine neue Form — auch über der
+    // bestehenden Auswahl, die dann nicht verschoben wird. Die Anfasser
+    // gewinnen trotzdem: Umschalt am Anfasser hält das Seitenverhältnis.
+    const op = isSelectTool(state.tool) ? selOpFor(e) : 'new';
+
     // ── Auswahl anfassen (vor der Pipette, damit Alt+Ziehen kopiert) ──
     if (isSelectTool(state.tool)) {
       // Anfasser an Ecken und Kanten: skalieren (js/scale.js).
@@ -548,7 +669,7 @@ function initCanvasEvents() {
         return;
       }
       const c = cellFromEventClamped(e);
-      if (isInSelection(c.x, c.y)) {
+      if (op === 'new' && isInSelection(c.x, c.y)) {
         if (layerBlocked()) return;
         startMove(e, e.altKey);
         info(selectionInfo(t(e.altKey ? 'info.dragCopy' : 'info.move')));
@@ -575,17 +696,17 @@ function initCanvasEvents() {
 
     // ── Auswahl aufziehen / lassoen / nach Farbe wählen ──
     if (state.tool === 'select') {
-      startMarquee(e);
+      startMarquee(e, op);
       info(selectionInfo(t('info.marquee')));
       return;
     }
     if (state.tool === 'lasso') {
-      startLasso(e);
+      startLasso(e, op);
       info(t('info.lassoStart'));
       return;
     }
     if (state.tool === 'magic') {
-      const n = selectByColor(e);
+      const n = selectByColor(e, op);
       updateSelectionUI();
       info(n ? t('info.colorSel', { n, extra: selection.rect ? ' · ' + selectionInfo() : '' })
              : t('info.colorSelNone'));
@@ -620,6 +741,7 @@ function initCanvasEvents() {
       return;
     }
 
+    if (state.tool === 'shade' && !startShade(!shadeUp())) return;
     state.isDrawing = true;
     beginStroke();
     ppBegin();
@@ -667,7 +789,7 @@ function initCanvasEvents() {
     if (isSelectTool(state.tool)) {
       const h = handleAt(e);
       $('editor-canvas-wrap').dataset.handle = h || '';
-      $('editor-canvas-wrap').classList.toggle('is-move', !h && isInSelection(c.x, c.y));
+      $('editor-canvas-wrap').classList.toggle('is-move', selOpFor(e) === 'new' && !h && isInSelection(c.x, c.y));
     }
     const cur = getGrid()[c.y][c.x];
     const val = typeof cur === 'string' ? cur : t('info.index', { i: cur });
@@ -696,6 +818,9 @@ function initCanvasEvents() {
     }
     if (state.isDrawing || state.isErasing) commitStroke();
     ppEnd();
+    clearInterval(shadeTimer);
+    shadeAt = null;
+    if (shadeEnd() === false) shadeNothing();
     lock = null;
     state.isDrawing = false;
     state.isErasing = false;
@@ -725,7 +850,7 @@ function initCanvasEvents() {
 // Tastatur
 // ────────────────────────────────────────────────────────────────────
 const TOOL_KEYS = {
-  p: 'pencil', b: 'brush', s: 'spray', f: 'fill', e: 'eraser', w: 'wand',
+  p: 'pencil', b: 'brush', s: 'spray', d: 'shade', f: 'fill', e: 'eraser', w: 'wand',
   a: 'select', l: 'lasso', k: 'magic',
   i: 'line', r: 'rect', o: 'ellipse',
   h: 'pan',
@@ -947,6 +1072,48 @@ function initToolbar() {
   $('fill-visible-btn').addEventListener('click', () => {
     state.fillVisible = !state.fillVisible;
     syncFillVisible();
+    saveState();
+  });
+
+  $('sel-op-new').addEventListener('click', () => setSelOp('new'));
+  $('sel-op-add').addEventListener('click', () => setSelOp('add'));
+  $('sel-op-sub').addEventListener('click', () => setSelOp('sub'));
+
+  // Abstufungen aus der aktuellen Farbe: in die Palette und als Farbreihe.
+  $('shade-gen-btn').addEventListener('click', () => {
+    const c = state.curColor;
+    const base = typeof c === 'string' ? c : c ? getPal()[c] : null;
+    if (!base) { showInfoToast(t('shade.genNeedColor')); return; }
+    const hexes = makeShades(base, Number($('shade-gen-count').value) || 2);
+    const added = addColorsToPalette(hexes);
+    state.shadeRamp = hexes;   // hell → dunkel
+    renderShadeRamp();
+    syncShadeMarks();
+    saveState();
+    showInfoToast(t('shade.genDone', { n: hexes.length, added }));
+  });
+  // Nach Farbstufen: die Farbreihe von hell nach dunkel ordnen. Von selbst
+  // passiert das nie — wer seine Reihe anders zusammenstellt, behält sie.
+  $('shade-sort-btn').addEventListener('click', () => {
+    state.shadeRamp = sortRamp(state.shadeRamp);
+    renderShadeRamp();
+    saveState();
+  });
+
+  $('shade-clear-btn').addEventListener('click', () => {
+    state.shadeRamp = [];
+    renderShadeRamp();
+    syncShadeMarks();
+    saveState();
+  });
+  $('shade-rev-btn').addEventListener('click', () => {
+    state.shadeUp = !state.shadeUp;
+    renderShadeRamp();
+    saveState();
+  });
+  $('shade-soft-btn').addEventListener('click', () => {
+    state.shadeSoft = !state.shadeSoft;
+    renderShadeRamp();
     saveState();
   });
 

@@ -291,6 +291,7 @@
           <button class="tool-btn is-active" data-tool="pencil" aria-pressed="true" data-i18n-attr="title:tool.pencilTitle" title="Stift — einzelne Pixel (P)"><span class="tool-ico" data-icon="pencil"></span><span class="tool-name" data-i18n="tool.pencil">Stift</span></button>
           <button class="tool-btn" data-tool="brush"  aria-pressed="false" data-i18n-attr="title:tool.brushTitle" title="Pinsel — Fläche, Stärke = Dichte (B)"><span class="tool-ico" data-icon="brush"></span><span class="tool-name" data-i18n="tool.brush">Pinsel</span></button>
           <button class="tool-btn" data-tool="spray"  aria-pressed="false" data-i18n-attr="title:tool.sprayTitle" title="Spray — zufällige Pixel (S)"><span class="tool-ico" data-icon="spray"></span><span class="tool-name" data-i18n="tool.spray">Spray</span></button>
+          <button class="tool-btn" data-tool="shade"  aria-pressed="false" data-i18n-attr="title:tool.shadeTitle" title="Schattieren — ein Stift, der sich mit jedem Strich durch die Farbreihe arbeitet: leer → erste Farbe, dann die nächste (D)"><span class="tool-ico" data-icon="shade"></span><span class="tool-name" data-i18n="tool.shade">Schattieren</span></button>
           <button class="tool-btn" data-tool="fill"   aria-pressed="false" data-i18n-attr="title:tool.fillTitle" title="Füllen — Flood-Fill (F)"><span class="tool-ico" data-icon="fill"></span><span class="tool-name" data-i18n="tool.fill">Füllen</span></button>
           <button class="tool-btn" data-tool="eraser" aria-pressed="false" data-i18n-attr="title:tool.eraserTitle" title="Radierer (E)"><span class="tool-ico" data-icon="eraser"></span><span class="tool-name" data-i18n="tool.eraser">Radierer</span></button>
           <button class="tool-btn" data-tool="wand"   aria-pressed="false" data-i18n-attr="title:tool.wandTitle" title="Zauberstab — ähnliche Fläche löschen (W)"><span class="tool-ico" data-icon="wand"></span><span class="tool-name" data-i18n="tool.wand">Zauberstab</span></button>
@@ -363,8 +364,36 @@
                   title="Die Grenzen der Füllung kommen von allen sichtbaren Ebenen — gemalt wird in die aktive. So malst du eine Vorlage, die auf einer eigenen Ebene liegt, Fläche für Fläche aus.">Grenzen: alle Ebenen</button>
         </div>
 
+        <!-- Schattieren (js/shade.js): Farbreihe — gewählt durch Antippen in
+             der Farbzeile oder im Paletten-Panel — und Richtung. -->
+        <div class="tool-group" id="shade-group" hidden>
+          <span class="field-label" data-i18n="tool.shadeRamp">Farbreihe</span>
+          <div class="shade-ramp" id="shade-ramp"></div>
+          <button class="btn" id="shade-clear-btn" data-i18n="tool.shadeClear" data-i18n-attr="title:tool.shadeClearTitle" title="Farbreihe leeren">Leeren</button>
+          <!-- Aus der aktuellen Farbe passende Töne erzeugen (js/shade.js makeShades) -->
+          <div class="btn-group" role="group" data-i18n-attr="aria-label:tool.shadeGen" aria-label="Abstufungen erzeugen">
+            <button class="btn" id="shade-gen-btn" data-i18n="tool.shadeGen" data-i18n-attr="title:tool.shadeGenTitle" title="Aus der aktuellen Farbe passende dunklere und hellere Töne erzeugen — Schatten etwas kühler, Licht etwas wärmer. Sie kommen in die Palette und werden die Farbreihe.">Abstufungen</button>
+            <select id="shade-gen-count" class="input input--sm" data-i18n-attr="title:tool.shadeGenCount;aria-label:tool.shadeGenCount" title="Wie viele Töne insgesamt" aria-label="Wie viele Töne insgesamt">
+              <option value="1">3</option>
+              <option value="2" selected>5</option>
+              <option value="3">7</option>
+              <option value="4">9</option>
+            </select>
+          </div>
+          <!-- Dasselbe Icon wie „Nach Farbstufen“ in der Farbzeile — hier für die Farbreihe -->
+          <button type="button" class="btn" id="shade-sort-btn" data-i18n-attr="title:tool.shadeSortTitle;aria-label:tool.shadeSortTitle" title="Farbreihe nach Farbstufen ordnen — von hell nach dunkel. Sonst bleibt sie in der Reihenfolge, in der du die Farben angeklickt hast." aria-label="Farbreihe nach Farbstufen ordnen — von hell nach dunkel. Sonst bleibt sie in der Reihenfolge, in der du die Farben angeklickt hast."><span class="ico" data-icon="shades"></span></button>
+          <button class="btn" id="shade-rev-btn" aria-pressed="false" data-i18n="tool.shadeRev" data-i18n-attr="title:tool.shadeRevTitle" title="Farbreihe umdrehen: statt hell → dunkel geht es dunkel → hell (am Rechner per Rechtsklick)">⇄ Umdrehen</button>
+          <button class="btn" id="shade-soft-btn" aria-pressed="false" data-i18n="tool.shadeSoft" data-i18n-attr="title:tool.shadeSoftTitle" title="Verlauf: runder Pinsel, in der Mitte mehrere Stufen auf einmal, zum Rand hin weniger — braucht eine Größe ab 2">Verlauf</button>
+        </div>
+
         <div class="tool-group" id="select-group" hidden>
           <span class="field-label" data-i18n="tool.selLabel">Auswahl</span>
+          <!-- Mehrere Bereiche: neu, hinzufügen (Umschalt), abziehen (Strg) — js/selcombine.js -->
+          <div class="btn-group" role="group" data-i18n-attr="aria-label:tool.selOp" aria-label="Modus">
+            <button class="btn is-active" id="sel-op-new" aria-pressed="true" data-i18n="tool.selOpNew" data-i18n-attr="title:tool.selOpNewTitle" title="Neue Auswahl — ersetzt die bisherige">Neu</button>
+            <button class="btn" id="sel-op-add" aria-pressed="false" data-i18n-attr="title:tool.selOpAddTitle;aria-label:tool.selOpAddTitle" title="Hinzufügen — weitere Bereiche zur Auswahl nehmen (Umschalt gedrückt halten)" aria-label="Hinzufügen — weitere Bereiche zur Auswahl nehmen (Umschalt gedrückt halten)">+</button>
+            <button class="btn" id="sel-op-sub" aria-pressed="false" data-i18n-attr="title:tool.selOpSubTitle;aria-label:tool.selOpSubTitle" title="Abziehen — Bereiche aus der Auswahl nehmen (Strg gedrückt halten)" aria-label="Abziehen — Bereiche aus der Auswahl nehmen (Strg gedrückt halten)">−</button>
+          </div>
           <div class="btn-group">
             <button class="btn" id="sel-all-btn"    data-i18n-attr="title:tool.selAllTitle"    title="Alles auswählen (Strg+A)"><span class="ico" data-icon="selAll"></span><span class="btn-label" data-i18n="tool.selAll">Alles</span></button>
             <button class="btn" id="sel-cut-btn"    data-i18n-attr="title:tool.selCutTitle"    title="Ausschneiden (Strg+X)"><span class="ico" data-icon="cut"></span><span class="btn-label" data-i18n="tool.selCut">Ausschneiden</span></button>
@@ -460,13 +489,6 @@
           <button class="btn" id="tl-ly-merge" data-i18n-attr="title:ly.merge" title="Nach unten zusammenführen — in jedem Frame"><span class="ico" data-icon="mergeDown"></span></button>
           <button class="btn" id="tl-ly-merge-all" data-i18n-attr="title:ly.mergeAll" title="Alle sichtbaren Ebenen zusammenführen — in jedem Frame, auch Licht und Schatten; ausgeblendete bleiben"><span class="ico" data-icon="mergeAll"></span></button>
           <button class="btn" id="tl-ly-del" data-i18n-attr="title:ly.del" title="Ebene löschen"><span class="ico" data-icon="trash"></span></button>
-        </div>
-        <div class="btn-group tl-lymask" role="group" data-i18n-attr="aria-label:mask.label" aria-label="Maske">
-          <button class="btn" id="tl-mask-add" data-i18n-attr="title:mask.addTitle" title="Maske hinzufügen — damit blendest du Teile der Ebene aus, ohne sie zu löschen"><span class="ico" data-icon="mask"></span></button>
-          <button class="btn" id="tl-mask-edit" aria-pressed="false" hidden data-i18n-attr="title:mask.editTitle" title="Maske bearbeiten: Malen blendet aus, Radieren blendet wieder ein"><span class="ico" data-icon="brush"></span></button>
-          <button class="btn" id="tl-mask-on" hidden data-i18n-attr="title:mask.off" title="Maske ausschalten (alles sichtbar)"><span class="ico" data-icon="eye"></span></button>
-          <button class="btn" id="tl-mask-apply" hidden data-i18n-attr="title:mask.applyTitle" title="Maske anwenden: ausgeblendete Pixel werden gelöscht, die Maske verschwindet"><span class="ico" data-icon="check"></span></button>
-          <button class="btn" id="tl-mask-del" hidden data-i18n-attr="title:mask.delTitle" title="Maske löschen — alles wieder sichtbar"><span class="ico" data-icon="trash"></span></button>
         </div>
         <label class="field field--inline tl-num" id="tl-op-field" data-i18n-attr="title:ly.opacityTitle" title="Deckkraft der aktiven Ebene">
           <span class="field-label" data-i18n="ly.opacity">Deckkraft</span>
@@ -1190,6 +1212,7 @@
       <div><b>Stift</b> — einzelne Pixel.</div>
       <div><b>Pinsel</b> — Fläche; <i>Stärke</i> = Dichte, <i>Größe</i> = Kantenlänge.</div>
       <div><b>Spray</b> — zufällige Pixel; <i>Stärke</i> = Menge pro Ereignis.</div>
+      <div><b>Schattieren</b> — ein Stift, der sich mit jedem Strich durch eine <i>Farbreihe</i> arbeitet. Stell die Reihe zusammen: tippe in der Farbzeile oder im Paletten-Panel zwei oder mehr Farben an, z. B. drei Rottöne — in der Reihenfolge, in der sie aufeinander folgen sollen. Ein leerer Pixel bekommt beim ersten Strich die erste Farbe, jeder weitere Strich darüber die nächste — oder du hältst gedrückt: wie bei einer Airbrush wird es dort, wo der Pinsel länger bleibt, mit der Zeit immer schneller dunkler, auch beim langsamen Malen. Pixel in anderen Farben (z. B. die Umrisslinie) bleiben unberührt. Rechtsklick läuft die Reihe andersherum, am Handy macht das der Knopf <b>⇄ Umdrehen</b>. Der Knopf mit den Balken ordnet die Reihe nach Farbstufen, von hell nach dunkel — von selbst passiert das nie. <b>Abstufungen</b> erzeugt aus der aktuellen Farbe passende hellere und dunklere Töne (Licht etwas wärmer, Schatten etwas kühler), hängt sie an die Palette und wählt sie als Reihe. Ohne Reihe malt es mit der aktuellen Farbe und nimmt danach den nächstdunkleren Ton derselben Farbe. <b>Verlauf</b> macht den Pinsel rund und weich: in der Mitte geht es mehrere Stufen auf einmal, zum Rand hin weniger.</div>
       <div><b>Größe</b> 1–300 per Regler oder Zahlenfeld; <span class="kbd">Alt</span> + rechte Maustaste ziehen verstellt sie direkt auf der Zeichenfläche. Ein Umriss zeigt, was Pinsel, Radierer und Spray gleich treffen.</div>
       <div><b>Clean Stroke</b> — beim Stift (und beim Radierer mit Größe 1) verschwinden die L-Ecken einer freihändigen Linie: saubere 1-Pixel-Linien wie von Hand gesetzt.</div>
       <div><b>Füllen</b> — zusammenhängende gleiche Fläche. Mit <b>Grenzen: alle Ebenen</b> endet die Fläche dort, wo sich im sichtbaren Bild etwas ändert — gemalt wird trotzdem in die aktive Ebene. So malst du eine Vorlage (z. B. Umrisse auf einer eigenen Ebene) Fläche für Fläche aus, ohne sie anzufassen.</div>
@@ -1212,6 +1235,7 @@
       <div><b>Auswahl</b> (<span class="kbd">A</span>) zieht ein Rechteck auf.</div>
       <div><b>Lasso</b> (<span class="kbd">L</span>) umfährt eine freie Form; beim Loslassen wird sie geschlossen und alles darin gehört dazu — auch bei krakeliger Linie.</div>
       <div><b>Farbwahl</b> (<span class="kbd">K</span>) nimmt die zusammenhängende ähnliche Fläche unter dem Klick; die <i>Toleranz</i> bestimmt, wie viel mitgeht.</div>
+      <div><b>Mehrere Bereiche</b>: mit <span class="kbd">Umschalt</span> kommt die neue Form zur Auswahl dazu, mit <span class="kbd">Strg</span> wird sie abgezogen — mit allen drei Werkzeugen, auch gemischt. Am Handy stellen <b>Neu · + · −</b> in der Options-Zeile dasselbe ein.</div>
       <div>In die Auswahl fassen und ziehen → der Bereich wird <b>ausgeschnitten</b> und <b>schwebt</b>. Er bleibt in der Luft, bis du ihn absetzt — solange lässt er sich beliebig oft verschieben, drehen und spiegeln, ohne dass darunter etwas kaputtgeht.</div>
       <div><b>Abgesetzt</b> wird beim Abwählen (<span class="kbd">Esc</span>), bei einer neuen Auswahl, beim Werkzeug- oder Sprite-Wechsel — oder automatisch beim Schließen des Tabs.</div>
       <div><span class="kbd">Alt</span>+Ziehen lässt das Original stehen — man verschiebt eine <b>Kopie</b>.</div>
@@ -1343,7 +1367,7 @@
       <div class="sc-row"><b>Shift + Alt + Ziehen</b><span>Schablone verschieben</span></div>
       <div class="sc-row"><b>Shift + Alt + Rechtsklick</b><span>Schablonen-Pipette</span></div>
       <div class="sc-row"><b>0 – 9</b><span>Farb-Index wählen</span></div>
-      <div class="sc-row"><b>P B S F E W</b><span>Stift · Pinsel · Spray · Füllen · Radierer · Zauberstab</span></div>
+      <div class="sc-row"><b>P B S D F E W</b><span>Stift · Pinsel · Spray · Schattieren · Füllen · Radierer · Zauberstab</span></div>
       <div class="sc-row"><b>I R O</b><span>Linie · Rechteck · Ellipse</span></div>
       <div class="sc-row"><b>A L K</b><span>Auswahl · Lasso · Farbwahl</span></div>
       <div class="sc-row"><b>H</b><span>Hand — Ansicht verschieben, ohne zu zeichnen</span></div>

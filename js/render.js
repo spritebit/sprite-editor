@@ -23,6 +23,7 @@ import { iconSvg } from './icons.js';
 import { showInfoToast } from './toast.js';
 import { createPalettePicker } from './palpicker.js';
 import { createPixelPerfect, ppAdd } from './pixelperfect.js';
+import { makeShader, toggleRamp, softLevel, rampLevels, holdSteps } from './shade.js';
 import { recordPalettes, startPaletteEdit, endPaletteEdit } from './history.js';
 
 // Weiterreichen, damit bestehende Importe aus render.js gültig bleiben.
@@ -53,6 +54,8 @@ export const renderCallbacks = {
   // Wie viele Frames gerade markiert sind — der Export beschriftet sich danach.
   onFrameSelection:  (_n) => {},
   onRenderLayers:    () => {},
+  // Schattieren: die Farbreihe hat sich geändert (Options-Zeile, app.js).
+  onShadeRamp:       () => {},
   // Hilfslinien (guides.js) — zeichnet über Gitter und Auswahl.
   onDrawOverlay:     (_ctx, _W, _H, _cs) => {},
   // Tilemap-Ebenen (tilemap.js): Kachelraster und Vorschau; Panel „Kacheln“.
@@ -587,6 +590,77 @@ export function paintSpray(x, y) {
   if (changed) afterPaint();
 }
 
+// ── Schattieren ──────────────────────────────────────────────────────
+// Wie der Pinsel ein Quadrat in Pinselgröße, aber statt der Malfarbe geht
+// jeder Pixel in der Farbreihe weiter (js/shade.js). Wie weit, steht je
+// Pixel fest: eine Stufe fürs Drüberfahren (mit „Verlauf" in der Mitte
+// mehr), dazu Stufen für die Zeit, die der Pinsel schon über ihm war —
+// wie eine Airbrush (shadeDwell, js/shade.js holdSteps). `done` merkt
+// sich, wie viele er in diesem Strich schon gegangen ist; Hin- und
+// Herfahren allein treibt ihn darum nicht weiter.
+/** @type {{done: Map<number, number>, dwell: Map<number, number>, shader: (v: any) => any, changed: boolean} | null} */
+let shadeStroke = null;
+
+export function shadeBegin(sign) {
+  const cur = state.curColor;
+  shadeStroke = { done: new Map(), dwell: new Map(), shader: makeShader(getPal(), state.shadeRamp, sign, cur), changed: false };
+}
+/** Strich beenden. Gibt zurück, ob er etwas geändert hat (null = kein Strich). */
+export function shadeEnd() {
+  const changed = shadeStroke ? shadeStroke.changed : null;
+  shadeStroke = null;
+  return changed;
+}
+
+// Alle Pixel unter dem Pinsel bei (x, y) mit ihrem Gewicht: 1 — mit
+// „Verlauf" die Stufen dort (Mitte am meisten, Rand 1; 0 = außerhalb).
+function shadeCells(x, y, fn) {
+  const grid = getGrid();
+  const H = grid.length, W = grid[0].length;
+  const lo = -Math.floor((state.brushSize - 1) / 2);
+  const hi =  Math.floor(state.brushSize / 2);
+  const soft = state.shadeSoft && state.brushSize > 1;
+  const levels = rampLevels(state.shadeRamp);
+  // Bei gerader Größe liegt die Mitte zwischen zwei Pixeln.
+  const mid = (lo + hi) / 2;
+  for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
+    for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
+      const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
+      if (!level) continue;
+      for (const [px, py] of mirrored(x + dx, y + dy)) fn(px, py, py * W + px, level, levels);
+    }
+  }
+}
+
+// Gedrückt halten (app.js, alle paar Millisekunden): die Pixel unter dem
+// Pinsel sammeln Zeit — mit „Verlauf" die Mitte schneller als der Rand.
+export function shadeDwell(x, y, ms) {
+  if (!shadeStroke) return;
+  const { dwell } = shadeStroke;
+  const soft = state.shadeSoft && state.brushSize > 1;
+  shadeCells(x, y, (px, py, key, level, levels) => {
+    dwell.set(key, (dwell.get(key) || 0) + (soft ? ms * level / levels : ms));
+  });
+  paintShade(x, y);
+}
+
+export function paintShade(x, y) {
+  if (!shadeStroke) return;
+  const grid = getGrid();
+  const { done, dwell, shader } = shadeStroke;
+  let changed = false;
+  shadeCells(x, y, (px, py, key, level) => {
+    const want = level + holdSteps(dwell.get(key) || 0);
+    const have = done.get(key) || 0;
+    if (have >= want) return;
+    done.set(key, want);
+    let v = grid[py][px];
+    for (let k = have; k < want; k++) v = shader(v);
+    changed = setCell(grid, px, py, v) || changed;
+  });
+  if (changed) { shadeStroke.changed = true; afterPaint(); }
+}
+
 export function floodFill(startX, startY) {
   const grid = getGrid();
   const fill = state.curColor;
@@ -707,6 +781,7 @@ export function renderQuickPalette() {
     const el = document.createElement('button');
     el.type = 'button';
     el.dataset.idx = String(i);
+    if (i !== 0 && color) el.dataset.hex = color;
     el.className = 'qp-swatch' + (i === state.curColor ? ' is-active' : '') + (i === 0 ? ' is-transparent' : '');
     el.title = t('pal.quickTitle', { i, label: colorLabelShort(i, colorName(i)), extra: color && i !== 0 ? ' · ' + color : '' });
     if (i !== 0) el.style.background = color || 'var(--surface-3)';
@@ -716,7 +791,7 @@ export function renderQuickPalette() {
     idx.textContent = String(i);
     el.appendChild(idx);
 
-    el.addEventListener('click', () => { state.curColor = i; syncColorActive(); });
+    el.addEventListener('click', () => pickSwatch(i));
     qp.appendChild(el);
 
     if (i === PALETTE_GROUP_SPLIT) {
@@ -734,11 +809,12 @@ export function renderQuickPalette() {
       const el = document.createElement('button');
       el.type = 'button';
       el.dataset.idx = String(i);
+      if (pal[i]) el.dataset.hex = pal[i];
       el.className = 'qp-mini' + (i === state.curColor ? ' is-active' : '');
       el.style.background = pal[i] || 'var(--surface-3)';
       el.title = t('pal.miniTitle', { i, hex: pal[i] || '—' });
       el.setAttribute('aria-label', el.title);
-      el.addEventListener('click', () => { state.curColor = i; syncColorActive(); });
+      el.addEventListener('click', () => pickSwatch(i));
       more.appendChild(el);
     }
     qp.appendChild(more);
@@ -757,6 +833,7 @@ export function renderQuickPalette() {
       qp.appendChild(all);
     }
   }
+  syncShadeMarks();
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -811,6 +888,36 @@ export function syncColorActive() {
   if (state.showColor) renderEditor();
 }
 
+// ── Schattieren: Farbreihe in der Palette wählen (js/shade.js) ──────
+// Solange das Werkzeug „Schattieren" aktiv ist, nimmt ein Klick auf eine
+// Farbe sie in die Reihe auf oder wieder heraus — wie das Markieren in
+// der Palette von Aseprite. Sonst wählt er wie immer die Malfarbe.
+export function pickSwatch(v) {
+  if (state.tool === 'shade' && v !== 0) {
+    const hex = typeof v === 'number' ? getPal()[v] : v;
+    if (!hex) return;
+    state.shadeRamp = toggleRamp(state.shadeRamp, hex);
+    syncShadeMarks();
+    renderCallbacks.onShadeRamp?.();
+    renderCallbacks.onSave();
+    return;
+  }
+  state.curColor = v;
+  syncColorActive();
+}
+
+// Markiert die Farben der Reihe in Farbzeile, Paletten-Panel und den
+// Bildfarben. Außerhalb des Werkzeugs ist nichts markiert.
+export function syncShadeMarks() {
+  const on = state.tool === 'shade';
+  document.body.classList.toggle('is-shading', on);
+  const ramp = state.shadeRamp;
+  document.querySelectorAll('.qp-swatch, .qp-mini, .pal-sw, .fc-swatch').forEach(el => {
+    const hex = /** @type {HTMLElement} */ (el).dataset.hex?.toLowerCase();
+    el.classList.toggle('in-shade', on && !!hex && ramp.includes(hex));
+  });
+}
+
 // ────────────────────────────────────────────────────────────────────
 // BILDFARBEN — freie Farben im Sprite (Pixel mit eigenem Hex statt Index)
 // ────────────────────────────────────────────────────────────────────
@@ -848,7 +955,7 @@ function freeSwatch(hex, n, cls) {
   b.style.background = hex;
   b.title = t('fc.swatch', { hex, n });
   b.setAttribute('aria-label', b.title);
-  b.addEventListener('click', () => { state.curColor = hex; syncColorActive(); });
+  b.addEventListener('click', () => pickSwatch(hex));
   return b;
 }
 
@@ -927,6 +1034,7 @@ function syncFreeColorsActive() {
     el.classList.toggle('is-active', on);
   });
   document.getElementById('free-colors-btn')?.classList.toggle('is-active', hit);
+  syncShadeMarks();
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -992,6 +1100,7 @@ export function renderPalette() {
     sw.type = 'button';
     sw.className = 'pal-sw' + (i === 0 ? ' is-transparent' : '');
     sw.dataset.idx = String(i);
+    if (i !== 0 && color) sw.dataset.hex = color;
     if (i !== 0) sw.style.background = color || 'var(--surface-3)';
     sw.title = i === 0 ? colorLabel(0)
       : swInfo(i, name, color) + '\n' + t('pal.swEdit');
@@ -999,10 +1108,7 @@ export function renderPalette() {
 
     // Klick: damit malen. Aus der Sprite-Palette als Index, aus einer
     // Vorschau als freie Farbe — die Zeichnung ändert sich dadurch nie.
-    sw.addEventListener('click', () => {
-      state.curColor = i === 0 ? 0 : isSprite ? i : (color || '#888888');
-      syncColorActive();
-    });
+    sw.addEventListener('click', () => pickSwatch(i === 0 ? 0 : isSprite ? i : (color || '#888888')));
     // Doppelklick: Farbe ändern. Eine eingebaute Palette wird dafür kopiert.
     sw.addEventListener('dblclick', () => {
       if (i === 0) return;
@@ -1032,6 +1138,7 @@ export function renderPalette() {
     items.appendChild(add);
   }
   syncPaletteGridActive();
+  syncShadeMarks();
 }
 
 // Farbe ans Ende der angezeigten Palette; mit `pick` öffnet danach der

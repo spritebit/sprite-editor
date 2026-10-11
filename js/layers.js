@@ -383,10 +383,9 @@ export function renderLayers() {
   $('ly-merge').disabled = sp.layer === 0;
   $('ly-merge-all').disabled = sp.layers.filter(L => L.visible && L.opacity > 0).length < 2;
   const m = L.mask;
-  // Panel (ly-…) und Timeline-Leiste (tl-…) zeigen denselben Stand.
-  for (const pre of ['ly-', 'tl-']) {
-    const mk = id => $(pre + id);
-    if (!mk('mask-add')) continue;
+  // Die Maske gibt es nur im Ebenen-Panel, nicht in der Timeline.
+  {
+    const mk = id => $('ly-' + id);
     mk('mask-add').hidden = !!m;
     for (const id of ['mask-edit', 'mask-on', 'mask-apply', 'mask-del']) mk(id).hidden = !m;
     if (m) {
@@ -474,11 +473,6 @@ export function initLayers() {
   on('tl-ly-merge-all', mergeVisible);
   on('tl-ly-up', () => { const sp = getSprite(); if (sp) moveLayer(sp.layer, sp.layer + 1); });
   on('tl-ly-down', () => { const sp = getSprite(); if (sp) moveLayer(sp.layer, sp.layer - 1); });
-  on('tl-mask-add', addMask);
-  on('tl-mask-edit', () => toggleMaskEdit());
-  on('tl-mask-on', toggleMaskOn);
-  on('tl-mask-apply', applyMask);
-  on('tl-mask-del', deleteMask);
   $('tl-ly-opacity')?.addEventListener('change', e => {
     const sp = getSprite();
     const v = Number(/** @type {HTMLInputElement} */ (e.target).value);
