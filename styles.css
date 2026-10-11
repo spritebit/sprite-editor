@@ -2524,6 +2524,9 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 .tile-item:hover { border-color: var(--text-dim); }
 .tile-item.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-line); }
 .tile-info { font-variant-numeric: tabular-nums; }
+/* Kachelsatz-Bibliothek (js/tilemap.js): unter einem Strich, wie ein eigener Abschnitt. */
+.tile-lib { display: grid; gap: var(--sp-2); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--line); }
+.tile-lib [hidden] { display: none !important; }
 .gd-layout-row { display: flex; gap: var(--sp-1); }
 .gd-even { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); }
 .gd-even .input--num { width: 3.5rem; }

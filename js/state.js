@@ -35,6 +35,10 @@ export const sprites = {};
 //   customPalettes['neon'] = { 1:'#…', …, n:'#…' }   (n ≤ 255)
 export const customPalettes = {};
 
+// Kachelsatz-Bibliothek des Projekts (js/tilelib.js): Name → { tw, th,
+// tiles } mit Farben statt Nummern — passt so in jeden Sprite.
+export const tilesetLib = {};
+
 // Material je Palettenfarbe — nur für den Export "JSON (Spiel)".
 // Liegt NEBEN den Paletten statt darin, weil eine Palette überall als
 // reines Index → Hex-Objekt gelesen wird. Gilt auch für eingebaute Paletten.

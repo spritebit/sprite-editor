@@ -7,7 +7,9 @@
 //     Rechtsklick) leert, Füllen füllt Kacheln, Alt nimmt eine Kachel auf
 //   • Raster der Kacheln über der Zeichenfläche
 //   • Abgleich nach jedem Undo-Schritt (history.js → syncSprite)
-import { state, sprites, getSprite, getPal, getPaletteByName, blankLike, defaultLayer } from './state.js';
+//   • Bibliothek: Kachelsätze speichern, in andere Ebenen/Sprites laden,
+//     als Datei für andere Projekte (Rechnung in js/tilelib.js)
+import { state, sprites, tilesetLib, getSprite, getPal, getPaletteByName, blankLike, defaultLayer } from './state.js';
 import {
   TILE_SIZES, DEFAULT_TILE, blankTileset, buildTileset, mapSize, mapOf, tileAt, placeTile, fillTiles,
   pruneUnused, syncSprite, atlasGrid, godotScene, tilemapJson,
@@ -18,7 +20,8 @@ import { gridToCanvas, paintGrid } from './raster.js';
 import { commitFloat } from './selection.js';
 import { clearSelection } from './state.js';
 import { saveState } from './storage.js';
-import { showInfoToast } from './toast.js';
+import { showInfoToast, showConfirmToast } from './toast.js';
+import { toLib, fromLib, retile, freeLibName, tilesetFile, parseTilesetFile, tilesFromImage } from './tilelib.js';
 import { saveBlob } from './filesystem.js';
 import { zipBlob } from './zip.js';
 import { t, onLangChange } from './i18n.js';
@@ -202,6 +205,150 @@ function hint() {
   showInfoToast(W % ts.tw || H % ts.th ? t('tile.rest', { tw: ts.tw, th: ts.th }) : t('tile.created'));
 }
 
+// ── Bibliothek ──────────────────────────────────────────────────────
+// Eingesetzt wird immer eine Kopie (Farben → Nummern der Sprite-Palette);
+// die Ebene merkt sich in tileset.lib, woher sie kommt.
+
+const libSel = () => $('tile-lib-sel').value;
+
+function saveToLib() {
+  const ts = activeTileset();
+  if (!ts) return;
+  const sp = getSprite();
+  const name = $('tile-lib-name').value.trim() || freeLibName(tilesetLib, sp.layers[sp.layer].name);
+  const store = () => {
+    tilesetLib[name] = toLib(ts, getPal());
+    ts.lib = name;
+    saveState();
+    renderTilePanel();
+    showInfoToast(t('tlib.saved', { name, n: ts.tiles.length }));
+  };
+  // Einen anderen Satz gleichen Namens nur nach Rückfrage ersetzen —
+  // den eigenen (Zurückschreiben) ohne.
+  if (tilesetLib[name] && ts.lib !== name) showConfirmToast(t('tlib.replace', { name }), store);
+  else store();
+}
+
+function newLayerFromLib() {
+  const name = libSel();
+  const set = tilesetLib[name];
+  if (!set) return;
+  structural(sp => {
+    const at = sp.layer + 1;
+    const ts = { ...fromLib(set, getPaletteByName(sp.palette)), lib: name };
+    sp.layers.splice(at, 0, { ...defaultLayer(sp.layers.length + 1), name, tileset: ts });
+    sp.frames.forEach(f => f.cels.splice(at, 0, blankLike(f.cels[0])));
+    sp.layer = at;
+  });
+  // Wer einen fertigen Satz holt, will meist gleich Kacheln setzen.
+  state.tile = 1;
+  state.tileMode = 'tiles';
+  renderTilePanel();
+  showInfoToast(t('tlib.newLayerDone', { name }));
+}
+
+/** Kacheln aus der Bibliothek in die aktive Tilemap-Ebene legen. */
+function useFromLib(name) {
+  const set = tilesetLib[name];
+  const ts = activeTileset();
+  if (!set || !ts) return;
+  if (set.tw !== ts.tw || set.th !== ts.th) {
+    showInfoToast(t('tlib.sizeMismatch', { name, tw: set.tw, th: set.th, lw: ts.tw, lh: ts.th }));
+    return;
+  }
+  structural(sp => {
+    const li = sp.layer;
+    const L = sp.layers[li];
+    const tiles = fromLib(set, getPaletteByName(sp.palette)).tiles;
+    retile(L.tileset, tiles, [...new Set(sp.frames.map(f => f.cels[li]))]);
+    L.tileset.lib = name;
+  });
+  showInfoToast(t('tlib.used', { name }));
+}
+
+function deleteFromLib() {
+  const name = libSel();
+  if (!tilesetLib[name]) return;
+  showConfirmToast(t('tlib.confirmDel', { name }), () => {
+    delete tilesetLib[name];
+    saveState();
+    renderTilePanel();
+  });
+}
+
+async function exportLibSet() {
+  const name = libSel();
+  const set = tilesetLib[name];
+  if (!set) return;
+  const file = `${safe(name)}.tileset.json`;
+  const r = await saveBlob(new Blob([tilesetFile(name, set)], { type: 'application/json' }), file);
+  showInfoToast(t(r?.fallback ? 'tlib.exportedDl' : 'tlib.exported', { name: file }));
+}
+
+/** Datei laden: unsere .json — oder ein Kachelbild, zerschnitten in Kacheln. */
+async function importLibFile(file) {
+  if (!file) return;
+  const base = file.name.replace(/\.tileset\.json$|\.json$|\.png$/i, '');
+  let name = '', set = null;
+  if (/\.png$/i.test(file.name) || file.type === 'image/png') {
+    // Kachelgröße: die der aktiven Tilemap-Ebene, sonst die eingestellte.
+    const ts = activeTileset();
+    const { tw, th } = ts ? { tw: ts.tw, th: ts.th } : chosenSize();
+    const bmp = await createImageBitmap(file).catch(() => null);
+    if (!bmp) { showInfoToast(t('tlib.bad')); return; }
+    const cv = document.createElement('canvas');
+    cv.width = bmp.width;
+    cv.height = bmp.height;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+    ctx.drawImage(bmp, 0, 0);
+    set = tilesFromImage(ctx.getImageData(0, 0, bmp.width, bmp.height).data, bmp.width, bmp.height, tw, th);
+    name = base;
+  } else {
+    const r = parseTilesetFile(await file.text());
+    if (r) { set = r.set; name = r.name || base; }
+  }
+  if (!set || !set.tiles.length) { showInfoToast(t('tlib.bad')); return; }
+  name = freeLibName(tilesetLib, name);
+  tilesetLib[name] = set;
+  saveState();
+  $('tile-lib-sel').value = name;
+  renderTilePanel();
+  $('tile-lib-sel').value = name;
+  renderLib();
+  showInfoToast(t('tlib.imported', { name, n: set.tiles.length, tw: set.tw, th: set.th }));
+}
+
+function renderLib() {
+  const ts = activeTileset();
+  const sp = getSprite();
+  const names = Object.keys(tilesetLib).sort((a, b) => a.localeCompare(b));
+  const sel = $('tile-lib-sel');
+  const keep = sel.value;
+  sel.innerHTML = '';
+  for (const n of names) {
+    const s = tilesetLib[n];
+    const o = document.createElement('option');
+    o.value = n;
+    o.textContent = t('tlib.option', { name: n, tw: s.tw, th: s.th, n: s.tiles.length });
+    sel.append(o);
+  }
+  // Gewählt bleibt, was gewählt war — sonst der Satz, aus dem die Ebene kommt.
+  sel.value = names.includes(keep) ? keep : ts?.lib && names.includes(ts.lib) ? ts.lib : names[0] || '';
+  const has = names.length > 0;
+  $('tile-lib-pick-row').hidden = !has;
+  $('tile-lib-export').hidden = !has;
+  $('tile-lib-empty').hidden = has;
+  const picked = tilesetLib[sel.value];
+  $('tile-lib-use').disabled = !ts || !picked || picked.tw !== ts.tw || picked.th !== ts.th;
+  $('tile-lib-save-row').hidden = !ts;
+  const src = ts?.lib && tilesetLib[ts.lib] ? ts.lib : '';
+  $('tile-lib-reload').hidden = !src;
+  $('tile-lib-src').hidden = !src;
+  if (src) $('tile-lib-src').textContent = t('tlib.src', { name: src });
+  const nameIn = $('tile-lib-name');
+  if (ts && sp && document.activeElement !== nameIn) nameIn.value = ts.lib || sp.layers[sp.layer].name;
+}
+
 // ── Export für Godot ────────────────────────────────────────────────
 
 const safe = s => String(s).normalize('NFKD').replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase() || 'tiles';
@@ -246,6 +393,7 @@ export function renderTilePanel() {
   $('tile-off').hidden = !!ts;
   $('tile-on').hidden = !ts;
   $('tile-off-mask').hidden = !(sp && state.maskEdit);
+  renderLib();
   if (!ts) return;
   const g = sp.grid;
   const { cols, rows } = mapSize(ts, g[0].length, g.length);
@@ -315,6 +463,19 @@ export function initTilemap() {
   $('tile-godot').addEventListener('click', exportGodot);
   $('tile-mode-pixel').addEventListener('click', () => setMode('pixel'));
   $('tile-mode-tiles').addEventListener('click', () => setMode('tiles'));
+  $('tile-lib-save').addEventListener('click', saveToLib);
+  $('tile-lib-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveToLib(); });
+  $('tile-lib-reload').addEventListener('click', () => { const ts = activeTileset(); if (ts?.lib) useFromLib(ts.lib); });
+  $('tile-lib-sel').addEventListener('change', renderLib);
+  $('tile-lib-new').addEventListener('click', newLayerFromLib);
+  $('tile-lib-use').addEventListener('click', () => useFromLib(libSel()));
+  $('tile-lib-del').addEventListener('click', deleteFromLib);
+  $('tile-lib-export').addEventListener('click', exportLibSet);
+  $('tile-lib-file').addEventListener('change', e => {
+    const input = /** @type {HTMLInputElement} */ (e.target);
+    importLibFile(input.files?.[0]);
+    input.value = '';
+  });
   $('tile-auto').addEventListener('change', e => { state.tileAuto = e.target.value === 'manual' ? 'manual' : 'auto'; renderTilePanel(); saveState(); });
 
   const canvas = $('editor-canvas');

@@ -13,7 +13,7 @@
 // Payload (buildPayload). `version` darin erlaubt Migrationen, ohne alte
 // Saves zu zerschießen; geladen wird alles über applyPayload.
 import { layerForSave } from './mask.js';
-import { state, sprites, customPalettes, paletteMaterials, paletteColorNames, selectFirstSprite, paletteExists, makeSprite, flatGrid, framesForSave, makeSpriteId, getPaletteByName } from './state.js';
+import { state, sprites, customPalettes, tilesetLib, paletteMaterials, paletteColorNames, selectFirstSprite, paletteExists, makeSprite, flatGrid, framesForSave, makeSpriteId, getPaletteByName } from './state.js';
 import { normalizeTlOpts } from './onion.js';
 import { DEFAULT_PALETTE, completePalette } from './data.js';
 import { saveBlob } from './filesystem.js';
@@ -26,6 +26,7 @@ import { readAse, writeAse } from './aseprite.js';
 import { t } from './i18n.js';
 import { MATERIALS } from './gamejson.js';
 import { normalizeRamp } from './shade.js';
+import { normalizeLib } from './tilelib.js';
 
 // Welches Projekt gerade dran ist (js/projects.js) — steht für die ganze
 // Sitzung fest; gewechselt wird per Neustart (switchProject).
@@ -159,6 +160,7 @@ function buildPayload(withSprites = true) {
     customPalettes,
     paletteMaterials,
     paletteColorNames,
+    tilesetLib,
     ui: {
       curSprite: state.curSprite,
       openTabs:  state.openTabs,
@@ -620,6 +622,7 @@ function applyPayload(payload) {
         if (pal && typeof pal === 'object') customPalettes[name] = completePalette(pal);
       }
     }
+    Object.assign(tilesetLib, normalizeLib(payload.tilesetLib));
 
     // Materialien nur aus der festen Liste übernehmen — ein unbekannter Name
     // fiele sonst erst beim Export auf.

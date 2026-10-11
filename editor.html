@@ -950,6 +950,30 @@
             </div>
             <button class="btn btn--block btn--accent" id="tile-godot" data-i18n="tile.godot" data-i18n-attr="title:tile.godotTitle" title="ZIP mit Kachelbild (PNG), Godot-Szene (.tscn mit TileMapLayer) und JSON — den Ordner ins Godot-Projekt (res://) entpacken">Für Godot exportieren</button>
           </div>
+
+          <!-- Kachelsatz-Bibliothek des Projekts (js/tilelib.js, js/tilemap.js):
+               speichern, in andere Ebenen/Sprites laden, als Datei für andere Projekte. -->
+          <div class="tile-lib" id="tile-lib">
+            <span class="field-label" data-i18n="tlib.title">Bibliothek</span>
+            <p class="field-note" id="tile-lib-src" hidden></p>
+            <div class="field-controls gd-layout-row" id="tile-lib-save-row" hidden>
+              <input type="text" id="tile-lib-name" class="input input--sm" maxlength="40" autocomplete="off" data-i18n-attr="placeholder:tlib.name;title:tlib.name" placeholder="Name des Kachelsatzes" title="Name des Kachelsatzes">
+              <button class="btn" id="tile-lib-save" data-i18n="tlib.save" data-i18n-attr="title:tlib.saveTitle" title="Den Kachelsatz dieser Ebene in die Bibliothek des Projekts speichern — gleicher Name ersetzt">Speichern</button>
+              <button class="btn" id="tile-lib-reload" hidden data-i18n="tlib.reload" data-i18n-attr="title:tlib.reloadTitle" title="Die Kacheln aus der Bibliothek neu laden — die Anordnung bleibt">Neu laden</button>
+            </div>
+            <div class="field-controls gd-layout-row" id="tile-lib-pick-row">
+              <select id="tile-lib-sel" class="input input--sm" data-i18n-attr="title:tlib.selTitle" title="Gespeicherte Kachelsätze dieses Projekts — passen in jeden Sprite"></select>
+              <button class="btn" id="tile-lib-new" data-i18n="tlib.newLayer" data-i18n-attr="title:tlib.newLayerTitle" title="Neue Tilemap-Ebene mit diesem Kachelsatz">Neue Ebene</button>
+              <button class="btn" id="tile-lib-use" data-i18n="tlib.use" data-i18n-attr="title:tlib.useTitle" title="Diese Kacheln in die aktive Tilemap-Ebene legen — die Anordnung bleibt (gleiche Kachelgröße nötig)">Übernehmen</button>
+              <button class="btn btn--danger-soft" id="tile-lib-del" data-i18n-attr="title:tlib.delTitle;aria-label:tlib.delTitle" title="Gewählten Kachelsatz aus der Bibliothek löschen" aria-label="Gewählten Kachelsatz aus der Bibliothek löschen">×</button>
+            </div>
+            <p class="field-note" id="tile-lib-empty" data-i18n="tlib.empty">Noch keine gespeicherten Kachelsätze. Speichere den einer Tilemap-Ebene oder lade eine Datei — auch ein Kachelbild (PNG).</p>
+            <div class="btn-row">
+              <button class="btn" id="tile-lib-export" data-i18n="tlib.export" data-i18n-attr="title:tlib.exportTitle" title="Gewählten Kachelsatz als Datei speichern — für andere Projekte">Als Datei speichern</button>
+              <label class="btn" for="tile-lib-file" data-i18n="tlib.import" data-i18n-attr="title:tlib.importTitle" title="Kachelsatz-Datei (.json) oder Kachelbild (PNG) laden — ein Bild wird in Kacheln der eingestellten Größe zerschnitten">Datei laden …</label>
+              <input type="file" id="tile-lib-file" accept=".json,application/json,.png,image/png" hidden>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1304,6 +1328,7 @@
       <div><b>Pixel malen</b>: mit allen Werkzeugen die Kacheln bemalen. <i>Auto</i> legt beim Malen in eine leere Zelle eine neue Kachel an, <i>Manuell</i> ändert nur vorhandene.</div>
       <div><b>Kacheln setzen</b>: eine Kachel in der Liste wählen — dann setzt der Stift sie ins Raster, Radierer oder Rechtsklick leert eine Zelle, Füllen füllt eine Fläche, <span class="kbd">Alt</span>+Klick nimmt die Kachel unter dem Zeiger auf.</div>
       <div><b>Unbenutzte entfernen</b> räumt den Kachelsatz auf, <b>Normale Ebene</b> macht wieder eine gewöhnliche Ebene daraus (die Pixel bleiben).</div>
+      <div><b>Bibliothek</b>: „Speichern“ legt den Kachelsatz der aktiven Tilemap-Ebene unter einem Namen ins Projekt. Mit „Neue Ebene“ holst du ihn in jeden Sprite, „Übernehmen“ legt seine Kacheln in die aktive Tilemap-Ebene (die Anordnung bleibt). Gespeichert werden die Farben, nicht die Nummern — der Satz passt auch zu einer anderen Palette. Für andere Projekte: „Als Datei speichern“ und „Datei laden …“; laden geht auch mit einem fremden Kachelbild (PNG), das in Kacheln der eingestellten Größe zerschnitten wird.</div>
       <div><b>Für Godot exportieren</b>: Kachelbild (PNG), Szene <code>.tscn</code> mit einer <code>TileMapLayer</code> je Tilemap-Ebene und ein JSON für andere Engines. Den Ordner ins Godot-Projekt legen und die Szene öffnen (Godot 4.3 oder neuer). Exportiert wird der aktuelle Frame.</div>
     </div>
 
