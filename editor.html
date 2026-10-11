@@ -335,6 +335,11 @@
           <!-- 1–300 Pixel, Regler logarithmisch; Alt + rechte Maustaste ziehen geht auch (js/sizedrag.js) -->
           <input type="range" id="brush-size" min="0" max="1000" value="0" data-i18n-attr="title:tool.sizeTitle" title="Größe von Pinsel, Radierer und Spray — auch mit Alt + rechter Maustaste ziehen">
           <input type="number" id="brush-size-num" class="input input--num" min="1" max="300" value="1" data-i18n-attr="title:tool.sizeTitle" title="Größe von Pinsel, Radierer und Spray — auch mit Alt + rechter Maustaste ziehen">
+          <!-- Pinselform: eckig oder rund (js/brushshape.js) — Spray ist immer rund -->
+          <div class="btn-group" id="brush-shape" role="group" data-i18n-attr="aria-label:tool.shape" aria-label="Pinselform">
+            <button class="btn" id="brush-square-btn" aria-pressed="true" data-i18n-attr="title:tool.shapeSquare;aria-label:tool.shapeSquare" title="Eckiger Pinsel" aria-label="Eckiger Pinsel"><span class="ico" data-icon="square"></span></button>
+            <button class="btn" id="brush-round-btn" aria-pressed="false" data-i18n-attr="title:tool.shapeRound;aria-label:tool.shapeRound" title="Runder Pinsel — ab Größe 3 (3 px ist ein Plus)" aria-label="Runder Pinsel — ab Größe 3 (3 px ist ein Plus)"><span class="ico" data-icon="circle"></span></button>
+          </div>
         </div>
 
         <label class="field field--inline" id="strength-group" hidden>
@@ -1213,6 +1218,7 @@
       <div><b>Pinsel</b> — Fläche; <i>Stärke</i> = Dichte, <i>Größe</i> = Kantenlänge.</div>
       <div><b>Spray</b> — zufällige Pixel; <i>Stärke</i> = Menge pro Ereignis.</div>
       <div><b>Schattieren</b> — ein Stift, der sich mit jedem Strich durch eine <i>Farbreihe</i> arbeitet. Stell die Reihe zusammen: tippe in der Farbzeile oder im Paletten-Panel zwei oder mehr Farben an, z. B. drei Rottöne — in der Reihenfolge, in der sie aufeinander folgen sollen. Ein leerer Pixel bekommt beim ersten Strich die erste Farbe, jeder weitere Strich darüber die nächste — oder du hältst gedrückt: wie bei einer Airbrush wird es dort, wo der Pinsel länger bleibt, mit der Zeit immer schneller dunkler, auch beim langsamen Malen. Pixel in anderen Farben (z. B. die Umrisslinie) bleiben unberührt. Rechtsklick läuft die Reihe andersherum, am Handy macht das der Knopf <b>⇄ Umdrehen</b>. Der Knopf mit den Balken ordnet die Reihe nach Farbstufen, von hell nach dunkel — von selbst passiert das nie. <b>Abstufungen</b> erzeugt aus der aktuellen Farbe passende hellere und dunklere Töne (Licht etwas wärmer, Schatten etwas kühler), hängt sie an die Palette und wählt sie als Reihe. Ohne Reihe malt es mit der aktuellen Farbe und nimmt danach den nächstdunkleren Ton derselben Farbe. <b>Verlauf</b> macht den Pinsel rund und weich: in der Mitte geht es mehrere Stufen auf einmal, zum Rand hin weniger.</div>
+      <div><b>Pinselform</b> — Pinsel, Radierer und Schattieren malen eckig oder rund (die zwei Knöpfe hinter der Größe). Rund ist ab Größe 3 zu sehen: 3 px ist ein Plus, 5 px ein runder Fleck.</div>
       <div><b>Größe</b> 1–300 per Regler oder Zahlenfeld; <span class="kbd">Alt</span> + rechte Maustaste ziehen verstellt sie direkt auf der Zeichenfläche. Ein Umriss zeigt, was Pinsel, Radierer und Spray gleich treffen.</div>
       <div><b>Clean Stroke</b> — beim Stift (und beim Radierer mit Größe 1) verschwinden die L-Ecken einer freihändigen Linie: saubere 1-Pixel-Linien wie von Hand gesetzt.</div>
       <div><b>Füllen</b> — zusammenhängende gleiche Fläche. Mit <b>Grenzen: alle Ebenen</b> endet die Fläche dort, wo sich im sichtbaren Bild etwas ändert — gemalt wird trotzdem in die aktive Ebene. So malst du eine Vorlage (z. B. Umrisse auf einer eigenen Ebene) Fläche für Fläche aus, ohne sie anzufassen.</div>

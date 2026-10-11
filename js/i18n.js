@@ -492,6 +492,9 @@ const STATIC = {
     'tool.shadeClearTitle': 'Clear the colour ramp',
     'tool.shadeRev':    '⇄ Reverse',
     'tool.shadeRevTitle': 'Reverse the ramp: dark → light instead of light → dark (with a mouse: right click)',
+    'tool.shape':       'Brush shape',
+    'tool.shapeSquare': 'Square brush',
+    'tool.shapeRound':  'Round brush — from size 3 (3 px is a plus)',
     'tool.shadeGen':    'Shades',
     'tool.shadeGenTitle': 'Create matching darker and lighter tones from the current colour — shadows a little cooler, light a little warmer. They go into the palette and become the ramp.',
     'tool.shadeGenCount': 'How many tones in total',
@@ -765,6 +768,7 @@ const STATIC = {
       + '<div><b>Brush</b> — an area; <i>strength</i> = density, <i>size</i> = edge length.</div>'
       + '<div><b>Spray</b> — random pixels; <i>strength</i> = amount per event.</div>'
       + '<div><b>Shade</b> — a pen that works through a <i>colour ramp</i> with every stroke. Build the ramp: tap two or more colours in the colour bar or the palette panel, e.g. three reds — in the order they should follow each other. An empty pixel gets the first colour on the first stroke, every further stroke over it the next one — or keep pressing: like an airbrush, wherever the brush stays longer it moves on by itself, faster and faster, even while painting slowly. Pixels in other colours (e.g. the outline) stay untouched. Right click runs the ramp the other way round; on phones the <b>⇄ Reverse</b> button does that. The button with the bars sorts the ramp by shades, light to dark — it never happens by itself. <b>Shades</b> creates matching lighter and darker tones from the current colour (light a little warmer, shadows a little cooler), adds them to the palette and chooses them as the ramp. Without a ramp it paints with the current colour and then takes the next darker shade of the same colour. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
+      + '<div><b>Brush shape</b> — brush, eraser and shade paint square or round (the two buttons after the size). Round shows from size 3: 3 px is a plus, 5 px a round dot.</div>'
       + '<div><b>Size</b> 1–300 with the slider or number field; <span class="kbd">Alt</span> + right-drag changes it right on the drawing area. An outline shows what brush, eraser and spray are about to hit.</div>'
       + '<div><b>Clean Stroke</b> — with the pencil (and the eraser at size 1) the L-shaped corners of a freehand line disappear: clean 1-pixel lines as if placed by hand.</div>'
       + '<div><b>Fill</b> — the connected area of the same value. With <b>Edges: all layers</b> the area ends wherever something changes in the visible image — the paint still goes into the active layer. That way you colour in a template (e.g. outlines on a layer of their own) area by area without touching it.</div>'

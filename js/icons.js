@@ -25,6 +25,9 @@ export const ICONS = {
   line:    '<path d="M5 19L19 5"/>',
   rect:    '<rect x="3" y="5" width="18" height="14" rx="1.5"/>',
   ellipse: '<ellipse cx="12" cy="12" rx="9" ry="7"/>',
+  // Pinselform: gefüllte Spitze, eckig bzw. rund.
+  square:  `<rect x="6" y="6" width="12" height="12" rx="1" ${DOT}/>`,
+  circle:  `<circle cx="12" cy="12" r="6.5" ${DOT}/>`,
   // ── Auswahl ──
   // Hand: Ansicht schieben, ohne zu zeichnen.
   hand:    '<path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.3l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/>',
