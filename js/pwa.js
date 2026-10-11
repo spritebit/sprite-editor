@@ -74,7 +74,13 @@
     // Das Band schiebt die Seite herunter, statt die Kopfzeile zu verdecken.
     // Der Editor füllt genau den Bildschirm — er muss um dieselbe Höhe
     // kürzer werden, sonst rutscht die Timeline unten heraus.
-    document.documentElement.style.setProperty('--sb-banner', bar.offsetHeight + 'px');
+    // Beim Drehen oder Sprachwechsel bricht der Text anders um — Höhe
+    // jedes Mal neu messen.
+    var fit = function () {
+      document.documentElement.style.setProperty('--sb-banner', bar.offsetHeight + 'px');
+    };
+    fit();
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(bar);
     document.body.classList.add('sb-has-update');
   }
 
@@ -111,12 +117,12 @@
   }
 
   var BANNER_CSS = ''
-    + '.sb-update{position:fixed;top:0;left:0;right:0;z-index:2500;display:flex;align-items:center;gap:12px;'
+    + '.sb-update{position:fixed;top:0;left:0;right:0;z-index:2500;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;'
     + 'padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top));'
     + 'border-bottom:1px solid var(--accent-line,#2d4870);background:var(--accent-bg,#17253c);'
     + 'color:var(--text,#e6e6ea);font:14px/1.3 var(--font,system-ui,sans-serif);box-shadow:0 6px 20px rgba(0,0,0,.45)}'
-    + '.sb-update-text{flex:1;min-width:0}'
-    + '.sb-update-go{flex:none;padding:6px 12px;border:0;border-radius:8px;background:var(--accent,#6ea8fe);'
+    + '.sb-update-text{flex:1 1 16em;min-width:0}'
+    + '.sb-update-go{flex:none;margin-left:auto;padding:6px 12px;border:0;border-radius:8px;background:var(--accent,#6ea8fe);'
     + 'color:#0d1420;font:600 14px var(--font,system-ui,sans-serif);cursor:pointer}'
     + '.sb-update-x{flex:none;width:28px;height:28px;padding:0;border:0;border-radius:8px;background:transparent;'
     + 'color:var(--text-muted,#9a9aa6);font-size:20px;line-height:1;cursor:pointer}'
