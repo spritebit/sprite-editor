@@ -74,10 +74,12 @@ export const state = {
   fillVisible:   false,    // Füllen: Grenzen von allen sichtbaren Ebenen (js/fill.js)
   pixelPerfect:  false,    // Stift/Radierer 1 px: L-Ecken entfernen (js/pixelperfect.js)
   // Schattieren (js/shade.js): die Farbreihe als Hex-Werte, dunkel → hell;
-  // shadeDark = Linksklick macht dunkler statt heller (für Finger).
+  // shadeUp = Linksklick macht heller statt dunkler (für Finger);
+  // shadeSoft = runder Pinsel mit Verlauf (Mitte mehr Stufen als der Rand).
   /** @type {string[]} */
   shadeRamp:     [],
-  shadeDark:     false,
+  shadeUp:       false,
+  shadeSoft:     false,
   maskEdit:      false,    // Werkzeuge malen in die Maske der aktiven Ebene (js/mask.js)
   // Tilemap-Ebenen (js/tiles.js, js/tilemap.js): 'pixel' = Kacheln bemalen,
   // 'tiles' = Kacheln setzen; Auto legt beim Malen in leere Zellen neue an.

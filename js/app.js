@@ -28,7 +28,7 @@ import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
   cellFromEvent, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
-  ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, syncShadeMarks,
+  ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeRepeat, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
 import {
@@ -255,7 +255,7 @@ function applyTool(x, y) {
   if (ppActive()) { paintPixelPerfect(x, y, state.tool === 'eraser' ? 0 : state.curColor); return; }
   if (state.tool === 'brush')  { paintBrush(x, y);  return; }
   if (state.tool === 'spray')  { paintSpray(x, y);  return; }
-  if (state.tool === 'shade')  { paintShade(x, y);  return; }
+  if (state.tool === 'shade')  { paintShade(x, y); shadeAt = { x, y }; return; }
   if (state.tool === 'fill')   { floodFill(x, y);   return; }
   if (state.tool === 'eraser') {
     const prev = state.curColor;
@@ -333,9 +333,9 @@ function updateToolUI() {
 }
 
 // ── Schattieren: Options-Zeile (js/shade.js) ──
-// Die Farbreihe als kleine Felder, dunkel → hell; ein Tipp nimmt eine
+// Die Farbreihe als kleine Felder in Mal-Reihenfolge; ein Tipp nimmt eine
 // Farbe wieder heraus. Gewählt wird in der Farbzeile oder im Paletten-Panel
-// (render.js pickSwatch). Dazu die Richtung für Linksklick bzw. Finger.
+// (render.js pickSwatch). Dazu Umdrehen und Verlauf.
 function renderShadeRamp() {
   const box = $('shade-ramp');
   if (!box) return;
@@ -347,7 +347,8 @@ function renderShadeRamp() {
     hint.textContent = t('shade.empty');
     box.append(hint);
   }
-  for (const hex of ramp) {
+  // In Mal-Reihenfolge: links die Farbe, die ein leerer Pixel bekommt.
+  for (const hex of state.shadeUp ? ramp : [...ramp].reverse()) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'shade-sw';
@@ -363,22 +364,33 @@ function renderShadeRamp() {
     box.append(b);
   }
   $('shade-clear-btn').disabled = !ramp.length;
-  for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-light-btn', !state.shadeDark], ['shade-dark-btn', state.shadeDark]])) {
+  for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-rev-btn', state.shadeUp], ['shade-soft-btn', state.shadeSoft]])) {
     $(id).classList.toggle('is-active', on);
     $(id).setAttribute('aria-pressed', String(on));
   }
 }
 renderCallbacks.onShadeRamp = renderShadeRamp;
 
-// Schattieren ansetzen: true, wenn es losgehen kann. Ohne Reihe läuft es
-// automatisch (js/shade.js); eine Reihe mit nur einer Farbe kann nichts
-// schieben — dann ein Hinweis statt eines stummen Strichs.
+// Schattieren ansetzen: true, wenn es losgehen kann. `dark` = Richtung
+// dunkler (leer → hellste Farbe, dann dunkler; js/shade.js). Ohne Reihe
+// läuft es mit der aktuellen Farbe; eine Reihe mit nur einer Farbe kann
+// nichts schieben — dann ein Hinweis statt eines stummen Strichs.
 function startShade(dark) {
   if (editingMask()) { info(t('shade.noMask')); return false; }
   if (state.shadeRamp.length === 1) { showInfoToast(t('shade.needRamp')); return false; }
   shadeBegin(dark ? -1 : 1);
+  // Gedrückt halten geht weiter: alle SHADE_HOLD_MS eine Stufe, dort, wo
+  // der Pinsel gerade ist — wie wiederholtes Tippen (render.js shadeRepeat).
+  clearInterval(shadeTimer);
+  shadeTimer = setInterval(() => {
+    if (state.isDrawing && state.tool === 'shade' && shadeAt) shadeRepeat(shadeAt.x, shadeAt.y);
+  }, SHADE_HOLD_MS);
   return true;
 }
+const SHADE_HOLD_MS = 350;
+let shadeTimer = 0;
+/** @type {{x: number, y: number} | null} */
+let shadeAt = null;
 
 // Ein Strich, der nichts geändert hat, sagt, warum — sonst sähe es aus,
 // als ginge das Werkzeug nicht. Als Toast nur beim ersten Mal, danach in
@@ -467,7 +479,8 @@ function updateBrushCursor(e) {
   } else {
     const lo = -Math.floor((state.brushSize - 1) / 2);
     left = (c.x + lo) * cs; top = (c.y + lo) * cs;
-    size = state.brushSize * cs; round = false;
+    // Schattieren mit Verlauf wirkt rund (js/shade.js softLevel).
+    size = state.brushSize * cs; round = tool === 'shade' && state.shadeSoft;
   }
   el.className = 'tool-' + tool;
   el.style.left = left + 'px';
@@ -599,7 +612,7 @@ function initCanvasEvents() {
         else                                 info(t('info.tplPipette', { hex: r.hex }));
       } else if (state.tool === 'shade') {
         // Rechtsklick schattiert in die Gegenrichtung, statt zu radieren.
-        if (layerBlocked() || !startShade(!state.shadeDark)) return;
+        if (layerBlocked() || !startShade(state.shadeUp)) return;
         state.isDrawing = true;
         beginStroke();
         const c = cellFromEvent(e);
@@ -710,7 +723,7 @@ function initCanvasEvents() {
       return;
     }
 
-    if (state.tool === 'shade' && !startShade(state.shadeDark)) return;
+    if (state.tool === 'shade' && !startShade(!state.shadeUp)) return;
     state.isDrawing = true;
     beginStroke();
     ppBegin();
@@ -787,6 +800,8 @@ function initCanvasEvents() {
     }
     if (state.isDrawing || state.isErasing) commitStroke();
     ppEnd();
+    clearInterval(shadeTimer);
+    shadeAt = null;
     if (shadeEnd() === false) shadeNothing();
     lock = null;
     state.isDrawing = false;
@@ -1052,13 +1067,16 @@ function initToolbar() {
     syncShadeMarks();
     saveState();
   });
-  for (const [id, dark] of /** @type {[string, boolean][]} */ ([['shade-light-btn', false], ['shade-dark-btn', true]])) {
-    $(id).addEventListener('click', () => {
-      state.shadeDark = dark;
-      renderShadeRamp();
-      saveState();
-    });
-  }
+  $('shade-rev-btn').addEventListener('click', () => {
+    state.shadeUp = !state.shadeUp;
+    renderShadeRamp();
+    saveState();
+  });
+  $('shade-soft-btn').addEventListener('click', () => {
+    state.shadeSoft = !state.shadeSoft;
+    renderShadeRamp();
+    saveState();
+  });
 
   $('shape-fill-btn').addEventListener('click', () => {
     state.shapeFill = !state.shapeFill;

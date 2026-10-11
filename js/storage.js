@@ -172,7 +172,8 @@ function buildPayload(withSprites = true) {
       fillVisible: state.fillVisible,
       pixelPerfect: state.pixelPerfect,
       shadeRamp: state.shadeRamp,
-      shadeDark: state.shadeDark,
+      shadeUp: state.shadeUp,
+      shadeSoft: state.shadeSoft,
       tileMode: state.tileMode,
       tileAuto: state.tileAuto,
       onion:      state.onion,
@@ -657,7 +658,8 @@ function applyPayload(payload) {
     if (typeof ui.fillVisible === 'boolean') state.fillVisible = ui.fillVisible;
     if (typeof ui.pixelPerfect === 'boolean') state.pixelPerfect = ui.pixelPerfect;
     state.shadeRamp = normalizeRamp(ui.shadeRamp);
-    if (typeof ui.shadeDark === 'boolean') state.shadeDark = ui.shadeDark;
+    if (typeof ui.shadeUp === 'boolean') state.shadeUp = ui.shadeUp;
+    if (typeof ui.shadeSoft === 'boolean') state.shadeSoft = ui.shadeSoft;
     if (ui.tileMode === 'pixel' || ui.tileMode === 'tiles') state.tileMode = ui.tileMode;
     if (ui.tileAuto === 'auto' || ui.tileAuto === 'manual') state.tileAuto = ui.tileAuto;
     if (typeof ui.onion === 'boolean') state.onion = ui.onion;

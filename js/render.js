@@ -23,7 +23,7 @@ import { iconSvg } from './icons.js';
 import { showInfoToast } from './toast.js';
 import { createPalettePicker } from './palpicker.js';
 import { createPixelPerfect, ppAdd } from './pixelperfect.js';
-import { makeShader, toggleRamp } from './shade.js';
+import { makeShader, toggleRamp, softLevel, rampLevels } from './shade.js';
 import { recordPalettes, startPaletteEdit, endPaletteEdit } from './history.js';
 
 // Weiterreichen, damit bestehende Importe aus render.js gültig bleiben.
@@ -595,16 +595,30 @@ export function paintSpray(x, y) {
 // jeder Pixel eine Stufe in der Farbreihe weiter (js/shade.js). Pro Strich
 // höchstens einmal je Pixel — sonst liefe die Farbe beim Hin- und Herfahren
 // bis ans Ende der Reihe durch.
-let shadeStroke = null; // { done: Set<number>, shader, changed } während eines Strichs
+// Mit „Verlauf" merkt sich `done` je Pixel, wie viele Stufen er in diesem
+// Strich schon gegangen ist (js/shade.js softLevel).
+let shadeStroke = null; // { done: Map<number, number>, shader, changed } während eines Strichs
 
 export function shadeBegin(sign) {
-  shadeStroke = { done: new Set(), shader: makeShader(getPal(), state.shadeRamp, sign), changed: false };
+  const cur = state.curColor;
+  shadeStroke = { done: new Map(), shader: makeShader(getPal(), state.shadeRamp, sign, cur), changed: false, repeat: false };
 }
 /** Strich beenden. Gibt zurück, ob er etwas geändert hat (null = kein Strich). */
 export function shadeEnd() {
   const changed = shadeStroke ? shadeStroke.changed : null;
   shadeStroke = null;
   return changed;
+}
+
+// Gedrückt halten (app.js): wie ein neuer Tipp an derselben Stelle — die
+// Pixel unter dem Pinsel dürfen noch eine Stufe weiter. Mit Verlauf geht
+// dabei jeder Pixel des Kreises eine Stufe; die Mitte erreicht das Ende
+// der Reihe trotzdem zuerst, der Verlauf bleibt also sichtbar.
+export function shadeRepeat(x, y) {
+  if (!shadeStroke) return;
+  shadeStroke.done = new Map();
+  shadeStroke.repeat = true;
+  paintShade(x, y);
 }
 
 export function paintShade(x, y) {
@@ -614,14 +628,24 @@ export function paintShade(x, y) {
   const lo = -Math.floor((state.brushSize - 1) / 2);
   const hi =  Math.floor(state.brushSize / 2);
   const { done, shader } = shadeStroke;
+  const soft = state.shadeSoft && state.brushSize > 1;
+  const levels = rampLevels(state.shadeRamp);
+  // Bei gerader Größe liegt die Mitte zwischen zwei Pixeln.
+  const mid = (lo + hi) / 2;
   let changed = false;
   for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
     for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
+      let want = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
+      if (!want) continue;
+      if (shadeStroke.repeat) want = 1;
       for (const [px, py] of mirrored(x + dx, y + dy)) {
         const key = py * W + px;
-        if (done.has(key)) continue;
-        done.add(key);
-        changed = setCell(grid, px, py, shader(grid[py][px])) || changed;
+        const have = done.get(key) || 0;
+        if (have >= want) continue;
+        done.set(key, want);
+        let v = grid[py][px];
+        for (let k = have; k < want; k++) v = shader(v);
+        changed = setCell(grid, px, py, v) || changed;
       }
     }
   }

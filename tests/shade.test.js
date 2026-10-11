@@ -3,7 +3,7 @@
 //   npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRamp, toggleRamp, valueHex, makeShader } from '../js/shade.js';
+import { normalizeRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS } from '../js/shade.js';
 
 // Drei Rottöne, absichtlich nicht nach Helligkeit sortiert, dazu Grün.
 const PAL = { 1: '#FF8080', 2: '#800000', 3: '#FF0000', 4: '#00FF00' };
@@ -46,11 +46,22 @@ test('Am Ende der Reihe bleibt der Pixel, wie er ist', () => {
   assert.equal(makeShader(PAL, RAMP, -1)(2), 2);
 });
 
-test('Farben außerhalb der Reihe und leere Pixel bleiben unberührt', () => {
+test('Farben außerhalb der Reihe bleiben unberührt', () => {
   const up = makeShader(PAL, RAMP, 1);
   assert.equal(up(4), 4);
-  assert.equal(up(0), 0);
   assert.equal(up('#123456'), '#123456');
+});
+
+test('Wie ein Stift: leer → hellste Farbe, dann mit jedem Strich dunkler', () => {
+  const down = makeShader(PAL, RAMP, -1);
+  let v = 0;
+  const seen = [];
+  for (let i = 0; i < 4; i++) { v = down(v); seen.push(v); }
+  assert.deepEqual(seen, [1, 3, 2, 2]);   // hellrot, rot, dunkelrot, bleibt
+});
+
+test('Richtung heller: leer → dunkelste Farbe', () => {
+  assert.equal(makeShader(PAL, RAMP, 1)(0), 2);
 });
 
 test('Freie Farben: in der Reihe, aber nicht in der Palette → bleibt Hex', () => {
@@ -70,11 +81,24 @@ test('Ohne Reihe: Automatik nimmt die nächste Stufe der Farbfamilie', () => {
   assert.equal(makeShader(pal, [], 1)(2), 3);
   assert.equal(makeShader(pal, [], -1)(2), 1);
   assert.equal(makeShader(pal, [], 1)(3), 3);   // heller gibt es nicht
-  assert.equal(makeShader(pal, [], 1)(0), 0);   // leer bleibt leer
+  assert.equal(makeShader(pal, [], -1, 3)(0), 3);  // leer → aktuelle Farbe
+  assert.equal(makeShader(pal, [], -1)(0), 0);     // ohne Farbe bleibt leer
 });
 
 test('Ohne Reihe: freie Farben werden direkt heller bzw. dunkler', () => {
   const up = makeShader(PAL, [], 1)('#606060');
   assert.match(up, /^#[0-9a-f]{6}$/);
   assert.ok(parseInt(up.slice(1, 3), 16) > 0x60);
+});
+
+test('Verlauf: Mitte die meisten Stufen, zum Rand weniger, außen keine', () => {
+  const mid = softLevel(0, 0, 7, 4);
+  const near = softLevel(1, 0, 7, 4);
+  const edge = softLevel(3, 0, 7, 4);
+  assert.equal(mid, 4);
+  assert.ok(near <= mid && near >= edge);
+  assert.equal(edge, 1);
+  assert.equal(softLevel(3, 3, 7, 4), 0);   // Ecke liegt außerhalb des Kreises
+  assert.equal(rampLevels([]), AUTO_LEVELS);
+  assert.equal(rampLevels(['#000000', '#ffffff']), 2);
 });
