@@ -1,6 +1,6 @@
 // Tests für die Übergabe vom Probier-Raster der Startseite (js/fromstart.js).
 //
-// landing-demo.js schreibt das Bild in den Link, der Editor liest es hier.
+// js/landing-shared.js (startLink) schreibt das Bild in den Link, der Editor liest es hier.
 // Kaputte oder fremde Hashes dürfen nichts anlegen.
 //
 //   npm test

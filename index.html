@@ -198,7 +198,7 @@
   <p class="scene-credit" data-i18n="scene.credit">* Die Pixel-Art in den Kulissen dieser Seite stammt aus eigener Produktion — handgepixelt, ohne Zusatzstoffe.</p>
 
   <!-- ══════════════════════════════════════════════════════════════
-       01 — Mal los · ein kleines Raster zum Ausprobieren (js/landing-demo.js)
+       01 — Mal los · ein kleines Raster zum Ausprobieren (js/landing-paint.js)
        ═══════════════════════════════════════════════════════════ -->
   <section class="band" id="malen" aria-labelledby="h-malen">
     <p class="eyebrow" data-i18n-html="s1.eyebrow"><span class="st-num">01</span> Der erste Pixel</p>
@@ -235,7 +235,7 @@
   </section>
 
   <!-- ══════════════════════════════════════════════════════════════
-       02 — Skizze · aus einer Zeichnung wird Pixel-Art (js/landing-demo.js)
+       02 — Skizze · aus einer Zeichnung wird Pixel-Art (js/landing-sketch.js, js/sketch.js)
        ═══════════════════════════════════════════════════════════ -->
   <section class="band band--warm" id="farbe" aria-labelledby="h-farbe">
     <p class="eyebrow" data-i18n-html="s2.eyebrow"><span class="st-num">02</span> Skizze</p>
@@ -464,7 +464,9 @@
 <script src="js/landing-i18n.js"></script>
 <script src="js/landing-fx.js"></script>
 <script src="js/bitty.js"></script>
-<script src="js/landing-demo.js"></script>
+<!-- Demos der Abschnitte 01 und 02 — Module, laufen nach dem Parsen (window.Bitty steht dann schon). -->
+<script type="module" src="js/landing-paint.js"></script>
+<script type="module" src="js/landing-sketch.js"></script>
 <script src="js/pwa.js"></script>
 
 </body>

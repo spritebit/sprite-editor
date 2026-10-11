@@ -1278,7 +1278,7 @@ kbd {
 @media (max-width: 940px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .raster-card { margin-inline: 0; }
-  .swap, .sketch { grid-template-columns: minmax(0, 1fr); }
+  .swap { grid-template-columns: minmax(0, 1fr); }
   .swap-demo { width: min(100%, 20rem); justify-self: center; }
   .layer--deco-near { background-size: 510px 114px; height: 114px; }
   .layer--deco-far  { bottom: 30px; }
@@ -1298,6 +1298,10 @@ kbd {
 
 @media (max-width: 560px) {
   .cta-row .btn { flex: 1 1 100%; }
+  /* Lange Knopftexte („Desktop-App für Windows v1.2.2“) dürfen umbrechen, statt
+     über den Rand zu ragen — das Versions-Schild bleibt ganz. */
+  .cta-row .btn { white-space: normal; text-align: center; line-height: 1.25; }
+  .cta-row .btn .ver { white-space: nowrap; }
   .hero-cta .cta-row { display: grid; }
 }
 
@@ -1706,7 +1710,7 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 /* ── Kopf der Unterseiten: kleinere Kulisse ── */
 .stage--page { border-bottom: 0; }
 .stage--page .stage-inner { padding-block: clamp(3rem, 7vw, 5.5rem) clamp(4rem, 9vw, 6.5rem); }
-.page-head { display: grid; gap: var(--sp-4); justify-items: start; }
+.page-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); justify-items: start; }
 .page-head h1 { margin: 0; font-family: var(--pixel); font-weight: 400; font-size: clamp(2rem, 1.2rem + 3.4vw, 3.4rem); line-height: 1.05; text-wrap: balance; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55); }
 .page-head .lead { margin: 0; max-width: 52ch; }
 .page-head .cta-row { margin-block: var(--sp-3) 0; }
@@ -1761,7 +1765,7 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 .try-btn[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
 .try-text { display: grid; gap: var(--sp-5); justify-items: start; }
 
-/* Bitty stellt sich vor (js/bitty.js, js/landing-demo.js) */
+/* Bitty stellt sich vor (js/bitty.js, js/landing-paint.js) */
 .bitty-hi { display: flex; align-items: center; gap: var(--sp-4); }
 .bitty-hi-fig {
   flex: none;
@@ -1907,7 +1911,7 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 .code-wrap > .demo-code { max-width: 46rem; }
 
 @media (max-width: 940px) {
-  .try { grid-template-columns: minmax(0, 1fr); }
+  .try, .sketch { grid-template-columns: minmax(0, 1fr); }
   .teasers { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {

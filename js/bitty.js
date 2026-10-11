@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════
 // BITTY — das Maskottchen: ein kleiner Schleim aus 16 × 16 Pixeln
 // ════════════════════════════════════════════════════════════════════
-// Klassisches Skript ohne Module, damit Startseite (landing-demo.js) und
+// Klassisches Skript ohne Module, damit Startseite (landing-paint.js) und
 // Editor (helper.js) dieselbe Figur benutzen. Legt window.Bitty an.
 //
 // Bitty steht nicht still: er atmet (Stand ↔ zusammengesackt), blinzelt
