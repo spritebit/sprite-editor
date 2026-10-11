@@ -1418,6 +1418,10 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
   line-height: 0;
 }
 #editor-canvas { display: block; position: relative; z-index: 1; touch-action: none; image-rendering: pixelated; }
+/* Kachelmodus: Kopien hinter dem Bild, über den Rand von #editor-canvas-wrap
+   hinaus (Lage und Größe setzt js/render.js). */
+#editor-tiled { position: absolute; z-index: 0; touch-action: none; image-rendering: pixelated; }
+#editor-tiled[hidden] { display: none; }
 /* Gitterlinien über dem Canvas: eine Linie links und oben je Zelle, die
    letzte rechts und unten als Rand. --cell setzt js/render.js. */
 #editor-gridlines {

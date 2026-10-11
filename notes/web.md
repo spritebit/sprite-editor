@@ -1,3 +1,13 @@
+# 3.7.0
+
+## Deutsch
+
+- Kachelmodus für nahtlose Muster: Im Menü „Ansicht“ unter „Kachelmodus“ steht dein Bild noch einmal daneben, ringsum, nur nebeneinander oder nur übereinander. Wer über den Rand malt, malt auf der anderen Seite weiter. Du kannst auch direkt auf den Kopien malen, so siehst du sofort, ob die Kanten zusammenpassen.
+
+## English
+
+- Tiled mode for seamless patterns: in the “View” menu under “Tiled mode”, your picture is shown again next to itself, all around, side by side only or stacked only. Painting over the edge continues on the other side. You can also paint directly on the copies, so you see right away whether the edges match.
+
 # 3.6.0
 
 ## Deutsch

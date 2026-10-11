@@ -128,6 +128,13 @@
           <div class="mb-sep" role="separator"></div>
           <button type="button" class="mb-item" role="menuitemcheckbox" aria-checked="true" id="grid-btn" data-i18n-attr="title:mb.gridTitle" title="Die feinen Linien zwischen den Pixeln zeigen — ohne Häkchen siehst du das Bild sauber"><span data-i18n="mb.grid">Pixelraster anzeigen</span></button>
           <div class="mb-sep" role="separator"></div>
+          <!-- Kachelmodus (js/tiled.js): Bild ringsum wiederholt, Malen läuft über den Rand -->
+          <div class="mb-label" data-i18n="mb.tiled" data-i18n-attr="title:mb.tiledTitle" title="Das Bild wiederholt daneben zeigen — wer über den Rand malt, malt auf der anderen Seite weiter. Für nahtlose Muster.">Kachelmodus</div>
+          <button type="button" class="mb-item" role="menuitemradio" aria-checked="true" id="tiled-off-btn"><span data-i18n="mb.tiledOff">Aus</span></button>
+          <button type="button" class="mb-item" role="menuitemradio" aria-checked="false" id="tiled-both-btn"><span data-i18n="mb.tiledBoth">Ringsum</span></button>
+          <button type="button" class="mb-item" role="menuitemradio" aria-checked="false" id="tiled-x-btn"><span data-i18n="mb.tiledX">Nur nebeneinander</span></button>
+          <button type="button" class="mb-item" role="menuitemradio" aria-checked="false" id="tiled-y-btn"><span data-i18n="mb.tiledY">Nur übereinander</span></button>
+          <div class="mb-sep" role="separator"></div>
           <div class="mb-label" data-i18n="mb.lang">Sprache</div>
           <div class="lang-switch mb-group" role="group" aria-label="Sprache / Language">
             <button type="button" class="mb-item lang-btn" role="menuitemradio" data-lang="de" lang="de"><span>Deutsch</span></button>
@@ -451,6 +458,8 @@
         <div class="bar-zone bar-zone--side" data-zone="left"></div>
         <div id="editor-canvas-area">
           <div id="editor-canvas-wrap">
+            <!-- Kachelmodus: Kopien des Bilds ringsum (js/render.js drawTiled) -->
+            <canvas id="editor-tiled" hidden></canvas>
             <canvas id="editor-canvas"></canvas>
             <!-- Gitterlinien als CSS-Ebene (js/render.js) — bleiben bei jeder Auflösung 1 px -->
             <div id="editor-gridlines" aria-hidden="true" hidden></div>

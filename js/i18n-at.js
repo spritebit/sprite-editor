@@ -67,6 +67,8 @@ export const STATIC_AT = {
   'mb.bg':        'Hintagrund',
   'mb.bgDark':    'Dunkl',
   'mb.grid':     'Pixlrasta zeign',
+  'mb.tiled':     'Kachlmodus',
+  'mb.tiledBoth': 'Rundumadum',
   'mb.bgLight':   'Hö',
   'mb.help':      'Hüfe',
   'mb.helpOpen':  'Hüfe und Tastnkürzl',
@@ -402,6 +404,7 @@ export const MSG_AT = {
   'info.drawn':        '{n} Pixel gmoit',
   'info.drawnNone':    'Nix gmoit',
   'info.mirrorOff':    'Symmetrie aus',
+  'info.tiled.off':    'Kachlmodus aus',
   'info.tplOutside':   'Schablone: danebn druckt',
   'info.tplTransp':    'Schablone: durchsichtiga Bereich',
 

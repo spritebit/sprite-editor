@@ -27,7 +27,7 @@ import { showConfirmToast, showInfoToast } from './toast.js';
 import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
-  cellFromEvent, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
+  cellFromEvent, cellFromEventRaw, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
   ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeDwell, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
@@ -73,6 +73,7 @@ import { normalizeTags } from './tags.js';
 import { initPreview, renderPreview } from './preview.js';
 import { initTilemap, tileModeOn, tilePointerDown, turnTile } from './tilemap.js';
 import { initGuides, guidePointerDown, guideAt, toggleShow as toggleGuides } from './guides.js';
+import { TILED_MODES } from './tiled.js';
 import { parseTsSprite } from './tsimport.js';
 import { CODE_FORMATS, getFormat, codeFilename } from './codegen.js';
 import {
@@ -471,7 +472,7 @@ function updateSelectionUI() {
 // Canvas-Events
 // ────────────────────────────────────────────────────────────────────
 function eraseAt(e) {
-  const c = cellFromEvent(e);
+  const c = cellFromEventRaw(e);
   if (!c) return;
   if (ppActive()) { paintPixelPerfect(c.x, c.y, 0); return; }
   const prev = state.curColor;
@@ -486,7 +487,7 @@ function updateBrushCursor(e) {
   if (!el) return;
   const tool = state.tool;
   if (!SIZED_TOOLS.includes(tool)) { el.hidden = true; return; }
-  const c = cellFromEvent(e);
+  const c = cellFromEventRaw(e);
   if (!c) { el.hidden = true; return; }
 
   const cs = state.cellSize;
@@ -606,6 +607,23 @@ function paintHints(e) {
 function initCanvasEvents() {
   const canvas = $('editor-canvas');
 
+  // Kachelmodus: Die Kopien liegen auf einem eigenen Canvas (#editor-tiled).
+  // Was dort ankommt, geht als dasselbe Ereignis an den eigentlichen Canvas
+  // — die Zelle rechnet cellFromEvent aus der Lage zum Bild, auf einer Kopie
+  // also außerhalb. Das Original hält an, sonst käme es doppelt an
+  // (Verschieben in view.js).
+  const tiled = $('editor-tiled');
+  for (const type of ['pointerdown', 'pointermove']) {
+    tiled.addEventListener(type, e => {
+      e.stopPropagation();
+      const fwd = new PointerEvent(type, e);
+      canvas.dispatchEvent(fwd);
+      if (fwd.defaultPrevented) e.preventDefault();
+    });
+  }
+  tiled.addEventListener('pointerleave', () => { $('brush-cursor').hidden = true; });
+  tiled.addEventListener('contextmenu', e => e.preventDefault());
+
   canvas.addEventListener('pointerdown', e => {
     // Hand-Werkzeug auf einer Hilfslinie: die Linie ziehen statt die Ansicht
     // verschieben (stopPropagation hält das Verschieben in view.js ab).
@@ -645,7 +663,7 @@ function initCanvasEvents() {
         if (layerBlocked() || !startShade(shadeUp())) return;
         state.isDrawing = true;
         beginStroke();
-        const c = cellFromEvent(e);
+        const c = cellFromEventRaw(e);
         if (c) applyTool(c.x, c.y);
         lock = c ? { start: c, dir: null, last: c } : null;
       } else {
@@ -727,7 +745,7 @@ function initCanvasEvents() {
 
     // ── Formen: Startpunkt merken, gezeichnet wird beim Loslassen ──
     if (isShapeTool(state.tool)) {
-      const c = cellFromEventClamped(e);
+      const c = cellFromEventClamped(e, true);
       shapeStart = c;
       state.shape.color = state.curColor;
       state.shape.cells = shapeCells(state.tool, c, c);
@@ -757,7 +775,7 @@ function initCanvasEvents() {
     state.isDrawing = true;
     beginStroke();
     ppBegin();
-    const c = cellFromEvent(e);
+    const c = cellFromEventRaw(e);
     if (c) applyTool(c.x, c.y);
     lock = c ? { start: c, dir: null, last: c } : null;
   });
@@ -784,7 +802,7 @@ function initCanvasEvents() {
     if (selection.mode === 'scale')   { updateScale(e);   info(selectionInfo(t('info.scale'))); return; }
 
     if (shapeStart) {
-      const c = shapeEnd(shapeStart, cellFromEventClamped(e), e.shiftKey);
+      const c = shapeEnd(shapeStart, cellFromEventClamped(e, true), e.shiftKey);
       state.shape.cells = shapeCells(state.tool, shapeStart, c);
       renderEditor();
       const w = Math.abs(c.x - shapeStart.x) + 1, h = Math.abs(c.y - shapeStart.y) + 1;
@@ -796,12 +814,15 @@ function initCanvasEvents() {
 
     const c = cellFromEvent(e);
     if (!c) return;
+    // Im Kachelmodus kann der Zeiger auf einer Kopie stehen: c ist dann ins
+    // Bild zurückgeholt, raw nicht — Striche laufen mit raw über den Rand.
+    const raw = cellFromEventRaw(e) || c;
 
     // Zeiger über der Auswahl → Verschiebe-Cursor, über einem Anfasser → Skalier-Cursor.
     if (isSelectTool(state.tool)) {
       const h = handleAt(e);
       $('editor-canvas-wrap').dataset.handle = h || '';
-      $('editor-canvas-wrap').classList.toggle('is-move', selOpFor(e) === 'new' && !h && isInSelection(c.x, c.y));
+      $('editor-canvas-wrap').classList.toggle('is-move', selOpFor(e) === 'new' && !h && isInSelection(raw.x, raw.y));
     }
     const cur = getGrid()[c.y][c.x];
     const val = typeof cur === 'string' ? cur : t('info.index', { i: cur });
@@ -810,7 +831,7 @@ function initCanvasEvents() {
       : t('info.at', { x: c.x, y: c.y, val })
         + (state.isDrawing ? t('info.suffixPaint') : '')
         + (state.isErasing ? t('info.suffixErase') : ''));
-    if (state.isDrawing && !e.altKey) strokeTo(c, e.shiftKey);
+    if (state.isDrawing && !e.altKey) strokeTo(raw, e.shiftKey);
     if (state.isErasing) eraseAt(e);
   });
 
@@ -948,6 +969,28 @@ const KEYMAP = [
 // Häkchen „Pixelraster anzeigen“ im Menü „Ansicht“.
 function syncGridItem() {
   $('grid-btn').setAttribute('aria-checked', String(state.showGrid));
+}
+
+// Kachelmodus: Punkt im Menü „Ansicht“ setzen.
+function syncTiledItems() {
+  for (const mode of TILED_MODES) $(`tiled-${mode}-btn`).setAttribute('aria-checked', String(state.tiled === mode));
+}
+
+function setTiled(mode) {
+  state.tiled = mode;
+  syncTiledItems();
+  renderEditor();
+  centerCanvas();
+  saveState();
+  info(t(`info.tiled.${mode}`));
+}
+
+// Das Bild in die Mitte der Fläche scrollen — im Kachelmodus stehen links
+// und oben Kopien, ohne das sähe man zuerst eine davon.
+function centerCanvas() {
+  const area = $('editor-canvas-area');
+  area.scrollLeft = (area.scrollWidth - area.clientWidth) / 2;
+  area.scrollTop = (area.scrollHeight - area.clientHeight) / 2;
 }
 
 function handleKey(e) {
@@ -1211,6 +1254,8 @@ function initToolbar() {
     renderEditor();
     saveState();
   });
+  // Kachelmodus (Menü „Ansicht“, js/tiled.js): das Bild ringsum wiederholt.
+  for (const mode of TILED_MODES) $(`tiled-${mode}-btn`).addEventListener('click', () => setTiled(mode));
 
   $('undo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); undo(); });
   $('redo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); redo(); });
@@ -2022,6 +2067,8 @@ function syncUiFromState() {
   $('bg-dark-btn').classList.toggle('is-active', state.editorBg === 'dark');
   $('bg-bw-btn').classList.toggle('is-active', state.editorBg === 'bw');
   syncGridItem();
+  syncTiledItems();
+  if (state.tiled !== 'off') requestAnimationFrame(centerCanvas);
   setBrushSize(state.brushSize);
   const fmtSel = $('output-format');
   if (fmtSel) { fmtSel.value = state.outputFormat; syncFormatUI(); }

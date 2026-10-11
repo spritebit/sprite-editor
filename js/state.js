@@ -73,6 +73,7 @@ export const state = {
   isErasing:     false,
   editorBg:      'dark',   // 'dark' | 'bw'
   showGrid:     true,     // Pixelraster zeigen (aus = sauberes Bild; Menü „Ansicht“)
+  tiled:        'off',    // Kachelmodus (js/tiled.js): 'off' | 'x' | 'y' | 'both'; Menü „Ansicht“
   outputFormat:  'ts',     // Schlüssel aus CODE_FORMATS (codegen.js)
   mirror:        'off',    // 'off' | 'x' (senkrechte Achse) | 'y' | 'both'
   shapeFill:     false,    // Rechteck/Ellipse gefüllt statt nur Kontur

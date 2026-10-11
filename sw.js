@@ -118,6 +118,7 @@ const PRECACHE = [
   'js/tabs.js',
   'js/tags.js',
   'js/template.js',
+  'js/tiled.js',
   'js/tilelib.js',
   'js/tilemap.js',
   'js/tiles.js',

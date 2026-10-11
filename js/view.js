@@ -164,7 +164,7 @@ export function initPinch({ cancelFirstFinger = () => {} } = {}) {
       depth0 = undoDepth();
       t0 = e.timeStamp;
       // Neben dem Bild: mit einem Finger verschieben.
-      if (e.target === area || !(/** @type {HTMLElement} */ (e.target)).closest('#editor-canvas')) {
+      if (e.target === area || !(/** @type {HTMLElement} */ (e.target)).closest('#editor-canvas, #editor-tiled')) {
         slide = { x: e.clientX, y: e.clientY, l: area.scrollLeft, t: area.scrollTop };
       }
       return;

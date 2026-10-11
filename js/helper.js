@@ -304,8 +304,14 @@ function collect() {
     const titleEl = el.closest('.mb-menu')?.querySelector('.mb-title');
     // Im Untermenü: „Datei › Neu“ — sonst hieße der Eintrag nur „Projekt …“.
     const subEl = el.closest('.mb-sub')?.querySelector('.mb-subtitle span');
-    const where = clean(titleEl?.textContent) + (subEl ? ' › ' + clean(subEl.textContent) : '');
-    if (label) out.push({ kind: 'menu', label, names: allLangs(span), sub: where, text: allLangs(titleEl) + (subEl ? ' ' + allLangs(subEl) : ''), el, danger: DANGER.test(el.id) });
+    // In einer Gruppe mit Überschrift (Hintergrund, Kachelmodus) gehört die
+    // dazu — sonst fände „Kachelmodus“ nur ein „Aus“.
+    let groupEl = el.previousElementSibling;
+    while (groupEl && !groupEl.classList.contains('mb-label') && !groupEl.classList.contains('mb-sep')) groupEl = groupEl.previousElementSibling;
+    if (!groupEl?.classList.contains('mb-label')) groupEl = null;
+    const where = clean(titleEl?.textContent) + (subEl ? ' › ' + clean(subEl.textContent) : '') + (groupEl ? ' › ' + clean(groupEl.textContent) : '');
+    const text = allLangs(titleEl) + (subEl ? ' ' + allLangs(subEl) : '') + (groupEl ? ' ' + allLangs(groupEl) : '');
+    if (label) out.push({ kind: 'menu', label, names: allLangs(span), sub: where, text, el, danger: DANGER.test(el.id) });
   });
   // Knöpfe in Panels, Timeline, Werkzeugleiste und über der Fläche — als
   // Befehle: Enter drückt sie (außer den gefährlichen).
