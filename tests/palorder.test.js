@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  permFromOrder, invertPerm, isIdentity, moveColor, permutePalette, permuteMaterials,
+  groupAround, permFromOrder, invertPerm, isIdentity, moveColor, permutePalette, permuteMaterials,
   remapGrid, shadeOrder,
 } from '../js/palorder.js';
 
@@ -77,4 +77,15 @@ test('Rot knapp unter 360° gehört zu Rot, nicht ans Ende', () => {
 
 test('Plätze ohne gültige Farbe bleiben hinten', () => {
   assert.deepEqual(shadeOrder({ 1: '#ffffff', 3: '#000000' }, 3), [3, 1, 2]);
+});
+
+test('Gruppe rückt an die Stelle der Grundfarbe, der Rest bleibt in Ordnung', () => {
+  // 6 Farben, Grundfarbe 3; neue Töne 5 (dunkler) und 6 (heller) gehören dazu.
+  assert.deepEqual(groupAround(6, 3, [5, 3, 6]), [1, 2, 5, 3, 6, 4]);
+  // Ein schon vorhandener Ton (1) wird mitgenommen.
+  assert.deepEqual(groupAround(6, 3, [1, 3, 6]), [2, 1, 3, 6, 4, 5]);
+  // Ohne Grundfarbe in der Gruppe: ans Ende.
+  assert.deepEqual(groupAround(5, null, [5, 4]), [1, 2, 3, 5, 4]);
+  // Schon zusammen: nichts ändert sich.
+  assert.deepEqual(groupAround(4, 2, [2, 3]), [1, 2, 3, 4]);
 });

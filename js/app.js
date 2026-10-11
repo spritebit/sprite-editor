@@ -45,8 +45,9 @@ import {
   openPaletteModal, initPaletteModal, deleteCustomPalette,
   previewPalette, assignPalette, forkPreviewPalette, addFreeColorsToPalette,
   createPaletteFromImport, appendPaletteColor, setPaletteColor, removePaletteColor,
-  addCurrentColorToPalette, addColorsToPalette, sortPaletteByShades,
+  addCurrentColorToPalette, addColorsToPalette, sortPaletteByShades, reorderPalette,
 } from './palettes.js';
+import { groupAround } from './palorder.js';
 import {
   initTemplate, tplLoaded, tplHasOffscreen,
   startTplDrag, tplDragging, updateTplDrag, endTplDrag, getTplOffset,
@@ -1089,6 +1090,11 @@ function initToolbar() {
     if (!base) { showInfoToast(t('shade.genNeedColor')); return; }
     const hexes = makeShades(base, Number($('shade-gen-count').value) || 2);
     const added = addColorsToPalette(hexes);
+    // Die Töne rücken in der Palette gleich neben ihre Grundfarbe — dunkel
+    // davor, hell dahinter; der Rest der Palette bleibt, wie er ist.
+    const pal = getPal(), size = paletteSize(pal);
+    const idx = hex => { for (let i = 1; i <= size; i++) if (pal[i]?.toLowerCase() === hex) return i; return null; };
+    reorderPalette(groupAround(size, idx(base.toLowerCase()), hexes.map(idx).filter(i => i != null)));
     state.shadeRamp = hexes;
     renderShadeRamp();
     syncShadeMarks();
