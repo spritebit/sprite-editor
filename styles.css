@@ -1454,6 +1454,7 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 #mirror-group .btn,
 #shape-group .btn,
 #shade-group .btn { padding: 5px 8px; }
+#shade-gen-count { width: 3.4rem; }
 
 /* Schattieren (js/shade.js): die Farbreihe als kleine Felder. */
 .shade-ramp { display: flex; align-items: center; gap: 3px; min-height: 22px; }

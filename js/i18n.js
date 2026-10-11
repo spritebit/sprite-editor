@@ -492,6 +492,11 @@ const STATIC = {
     'tool.shadeClearTitle': 'Clear the colour ramp',
     'tool.shadeRev':    '⇄ Reverse',
     'tool.shadeRevTitle': 'Reverse the ramp: dark → light instead of light → dark (with a mouse: right click)',
+    'tool.shadeGen':    'Shades',
+    'tool.shadeGenTitle': 'Create matching darker and lighter tones from the current colour — shadows a little cooler, light a little warmer. They go into the palette and become the ramp.',
+    'tool.shadeGenCount': 'How many tones in total',
+    'tool.shadeSort':   'Arrange',
+    'tool.shadeSortTitle': 'Sort the palette by shades — the tones of each colour then sit side by side, dark to light. The image stays the same.',
     'tool.shadeSoft':   'Gradient',
     'tool.shadeSoftTitle': 'Gradient: round brush, several steps at once in the middle, fewer towards the edge — needs a size of 2 or more',
     'tool.fill':        'Fill',
@@ -760,7 +765,7 @@ const STATIC = {
       + '<div><b>Pencil</b> — single pixels.</div>'
       + '<div><b>Brush</b> — an area; <i>strength</i> = density, <i>size</i> = edge length.</div>'
       + '<div><b>Spray</b> — random pixels; <i>strength</i> = amount per event.</div>'
-      + '<div><b>Shade</b> — a pen that gets one step darker with every stroke. First set the <i>ramp</i>: tap two or more colours in the colour bar or the palette panel, e.g. three reds. An empty pixel gets the lightest of them on the first stroke, every further stroke over it makes it one step darker — or keep pressing without moving and it moves on step by step by itself, faster and faster; pixels in other colours (e.g. the outline) stay untouched. The ramp is shown in that order in the options row. Right click paints it the other way round, from dark to light — on phones the <b>⇄ Reverse</b> button does that. Without a ramp it paints with the current colour and then takes the next shade of the same colour from the palette. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
+      + '<div><b>Shade</b> — a pen that gets one step darker with every stroke. First set the <i>ramp</i>: tap two or more colours in the colour bar or the palette panel, e.g. three reds. An empty pixel gets the lightest of them on the first stroke, every further stroke over it makes it one step darker — or keep pressing without moving and it moves on step by step by itself, faster and faster; pixels in other colours (e.g. the outline) stay untouched. The ramp is shown in that order in the options row. Right click paints it the other way round, from dark to light — on phones the <b>⇄ Reverse</b> button does that. Without a ramp it paints with the current colour and then takes the next shade of the same colour from the palette. <b>Shades</b> creates matching darker and lighter tones from the current colour (shadows a little cooler, light a little warmer), puts them into the palette and chooses them as the ramp. <b>Arrange</b> sorts the palette by shades so the tones sit side by side. <b>Gradient</b> makes the brush round and soft: several steps at once in the middle, fewer towards the edge.</div>'
       + '<div><b>Size</b> 1–300 with the slider or number field; <span class="kbd">Alt</span> + right-drag changes it right on the drawing area. An outline shows what brush, eraser and spray are about to hit.</div>'
       + '<div><b>Clean Stroke</b> — with the pencil (and the eraser at size 1) the L-shaped corners of a freehand line disappear: clean 1-pixel lines as if placed by hand.</div>'
       + '<div><b>Fill</b> — the connected area of the same value. With <b>Edges: all layers</b> the area ends wherever something changes in the visible image — the paint still goes into the active layer. That way you colour in a template (e.g. outlines on a layer of their own) area by area without touching it.</div>'
@@ -1226,6 +1231,8 @@ const MSG = {
     'info.wandDeleted': 'Zauberstab: {n} Pixel gelöscht',
     'info.wandNone':    'Zauberstab: nichts gelöscht — Toleranz erhöhen?',
     'shade.empty':      'Aktuelle Farbe — oder Farben in der Farbzeile antippen',
+    'shade.genNeedColor': 'Wähle zuerst eine Farbe — aus ihr werden die Abstufungen erzeugt.',
+    'shade.genDone':    '{n} Töne erzeugt und als Farbreihe gewählt — {added} davon neu in der Palette.',
     'shade.swTitle':    '{hex} — antippen nimmt die Farbe aus der Reihe',
     'shade.needRamp':   'Schattieren: eine Farbe allein ist noch keine Reihe — tippe mindestens eine zweite an, z. B. ein helleres Rot. Oder „Leeren“: dann geht es automatisch.',
     'shade.nothingRamp': 'Schattieren hat nichts geändert: Pixel in Farben, die nicht in der Farbreihe stehen, bleiben, wie sie sind — und an der dunkelsten (bzw. hellsten) Farbe geht es nicht weiter.',
@@ -1878,6 +1885,8 @@ const MSG = {
     'info.wandDeleted': 'Magic wand: {n} pixels erased',
     'info.wandNone':    'Magic wand: nothing erased — raise the tolerance?',
     'shade.empty':      'Current colour — or tap colours in the colour bar',
+    'shade.genNeedColor': 'Pick a colour first — the shades are created from it.',
+    'shade.genDone':    '{n} tones created and chosen as the ramp — {added} of them new in the palette.',
     'shade.swTitle':    '{hex} — tap to take the colour out of the ramp',
     'shade.needRamp':   'Shade: one colour alone is not a ramp yet — tap at least one more, e.g. a lighter red. Or “Clear”: then it works automatically.',
     'shade.nothingRamp': 'Shading changed nothing: pixels in colours that are not in the ramp stay as they are — and at the darkest (or lightest) colour it stops.',

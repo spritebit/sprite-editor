@@ -2,13 +2,13 @@
 
 ## Deutsch
 
-- Neues Werkzeug Schattieren (D): ein Stift, der mit jedem Strich dunkler wird. Tippe in der Farbzeile eine Farbreihe an, z. B. drei Rottöne — ein leerer Pixel bekommt zuerst die hellste, jeder weitere Strich darüber macht ihn eine Stufe dunkler. Still gedrückt halten geht von selbst weiter, immer schneller. Rechtsklick (am Handy „Umdrehen") lässt die Reihe von dunkel nach hell laufen, „Verlauf" macht den Pinsel weich: in der Mitte dunkel, nach außen heller. Umrisse und andere Farben bleiben unberührt.
+- Neues Werkzeug Schattieren (D): ein Stift, der mit jedem Strich dunkler wird. Tippe in der Farbzeile eine Farbreihe an, z. B. drei Rottöne — ein leerer Pixel bekommt zuerst die hellste, jeder weitere Strich darüber macht ihn eine Stufe dunkler. Still gedrückt halten geht von selbst weiter, immer schneller. Rechtsklick (am Handy „Umdrehen") lässt die Reihe von dunkel nach hell laufen, „Abstufungen" erzeugt aus einer Farbe passende dunklere und hellere Töne und legt sie in die Palette, „Anordnen" sortiert die Palette nach Farbstufen. „Verlauf" macht den Pinsel weich: in der Mitte dunkel, nach außen heller. Umrisse und andere Farben bleiben unberührt.
 - Mehrere Bereiche auswählen: Mit Umschalt kommt eine neue Auswahl zur bestehenden dazu, mit Strg wird sie abgezogen — bei Rechteck, Lasso und Farbwahl. Am Handy gibt es dafür die Knöpfe „Neu", „+" und „−".
 - Kleinere Verbesserungen und Fehlerbehebungen.
 
 ## English
 
-- New Shade tool (D): a pen that gets darker with every stroke. Tap a colour ramp in the colour bar, e.g. three reds — an empty pixel first gets the lightest, every further stroke over it makes it one step darker. Keep pressing without moving and it moves on by itself, faster and faster. Right click (“Reverse” on phones) makes the ramp run from dark to light, “Gradient” makes the brush soft: dark in the middle, lighter towards the edge. Outlines and other colours stay untouched.
+- New Shade tool (D): a pen that gets darker with every stroke. Tap a colour ramp in the colour bar, e.g. three reds — an empty pixel first gets the lightest, every further stroke over it makes it one step darker. Keep pressing without moving and it moves on by itself, faster and faster. Right click (“Reverse” on phones) makes the ramp run from dark to light, “Shades” creates matching darker and lighter tones from one colour and puts them into the palette, “Arrange” sorts the palette by shades. “Gradient” makes the brush soft: dark in the middle, lighter towards the edge. Outlines and other colours stay untouched.
 - Select several areas: with Shift a new selection is added to the current one, with Ctrl it is subtracted — for marquee, lasso and color select. On phones use the “New”, “+” and “−” buttons.
 - Small improvements and fixes.
 

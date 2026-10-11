@@ -176,3 +176,31 @@ export const HOLD_MIN_MS = 60;
 export function holdDelay(n) {
   return Math.max(HOLD_MIN_MS, HOLD_FIRST_MS * HOLD_FACTOR ** n);
 }
+
+// ── Abstufungen erzeugen ─────────────────────────────────────────────
+// Aus einer Farbe eine passende Reihe machen: `n` dunklere und `n` hellere
+// Töne dazu — so, wie man es in Pixel-Art von Hand macht: Schatten etwas
+// kühler, Licht etwas wärmer (light.js shiftHex). Jeder Schritt baut auf
+// dem vorigen auf, der Farbton wandert also mit. Graue bleiben grau.
+
+/** So weit liegt ein Ton vom nächsten (Helligkeit 0..1). */
+export const SHADE_GEN_STEP = 0.12;
+
+/**
+ * @param {string} hex  Grundfarbe "#rrggbb"
+ * @param {number} [n]  wie viele Töne je Seite
+ * @returns {string[]}  dunkel → hell, mit der Grundfarbe in der Mitte;
+ *   ohne Doppelte (ganz nah an Schwarz oder Weiß fallen Stufen zusammen)
+ */
+export function makeShades(hex, n = 2) {
+  if (!isHex(hex)) return [];
+  const out = [hex.toLowerCase()];
+  let dark = hex, light = hex;
+  for (let k = 0; k < n; k++) {
+    dark = shiftHex(dark, -1, SHADE_GEN_STEP);
+    light = shiftHex(light, 1, SHADE_GEN_STEP);
+    out.unshift(dark);
+    out.push(light);
+  }
+  return normalizeRamp(out);
+}

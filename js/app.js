@@ -45,7 +45,7 @@ import {
   openPaletteModal, initPaletteModal, deleteCustomPalette,
   previewPalette, assignPalette, forkPreviewPalette, addFreeColorsToPalette,
   createPaletteFromImport, appendPaletteColor, setPaletteColor, removePaletteColor,
-  addCurrentColorToPalette,
+  addCurrentColorToPalette, addColorsToPalette, sortPaletteByShades,
 } from './palettes.js';
 import {
   initTemplate, tplLoaded, tplHasOffscreen,
@@ -58,7 +58,7 @@ import {
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
-import { holdDelay, HOLD_MIN_MS } from './shade.js';
+import { holdDelay, HOLD_MIN_MS, makeShades } from './shade.js';
 import { initExport } from './export.js';
 import { openReduceModal, initReduceModal } from './reduce.js';
 import { zoomAt, fitZoomToArea, isPanMode, setPanTool, initPan, initPinch } from './view.js';
@@ -1081,6 +1081,21 @@ function initToolbar() {
   $('sel-op-new').addEventListener('click', () => setSelOp('new'));
   $('sel-op-add').addEventListener('click', () => setSelOp('add'));
   $('sel-op-sub').addEventListener('click', () => setSelOp('sub'));
+
+  // Abstufungen aus der aktuellen Farbe: in die Palette und als Farbreihe.
+  $('shade-gen-btn').addEventListener('click', () => {
+    const c = state.curColor;
+    const base = typeof c === 'string' ? c : c ? getPal()[c] : null;
+    if (!base) { showInfoToast(t('shade.genNeedColor')); return; }
+    const hexes = makeShades(base, Number($('shade-gen-count').value) || 2);
+    const added = addColorsToPalette(hexes);
+    state.shadeRamp = hexes;
+    renderShadeRamp();
+    syncShadeMarks();
+    saveState();
+    showInfoToast(t('shade.genDone', { n: hexes.length, added }));
+  });
+  $('shade-sort-btn').addEventListener('click', () => sortPaletteByShades());
 
   $('shade-clear-btn').addEventListener('click', () => {
     state.shadeRamp = [];

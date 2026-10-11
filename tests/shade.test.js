@@ -3,7 +3,7 @@
 //   npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS, holdDelay, HOLD_FIRST_MS, HOLD_MIN_MS } from '../js/shade.js';
+import { normalizeRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS, holdDelay, HOLD_FIRST_MS, HOLD_MIN_MS, makeShades } from '../js/shade.js';
 
 // Drei Rottöne, absichtlich nicht nach Helligkeit sortiert, dazu Grün.
 const PAL = { 1: '#FF8080', 2: '#800000', 3: '#FF0000', 4: '#00FF00' };
@@ -108,4 +108,18 @@ test('Gedrückt halten: jede Pause kürzer als die vorige, bis zur Untergrenze',
   assert.ok(holdDelay(1) < holdDelay(0) && holdDelay(2) < holdDelay(1));
   assert.equal(Math.round(holdDelay(1)), 245);
   assert.equal(holdDelay(50), HOLD_MIN_MS);
+});
+
+test('Abstufungen erzeugen: n dunklere und n hellere Töne, dunkel → hell', () => {
+  const r = makeShades('#c04040', 2);
+  assert.equal(r.length, 5);
+  assert.equal(r[2], '#c04040');
+  assert.deepEqual(r, normalizeRamp(r), 'schon sortiert');
+  // Schatten kühler, Licht wärmer: der dunkelste Ton hat mehr Blau als Rot-Anteil zuvor.
+  const [dr, , db] = [1, 3, 5].map(i => parseInt(r[0].slice(i, i + 2), 16));
+  assert.ok(db / (dr + 1) > 0x40 / 0xc0);
+  // Grau bleibt grau, ganz am Rand fallen Stufen zusammen.
+  assert.ok(makeShades('#808080', 2).every(h => h.slice(1, 3) === h.slice(3, 5) && h.slice(3, 5) === h.slice(5, 7)));
+  assert.ok(makeShades('#ffffff', 2).length < 5);
+  assert.deepEqual(makeShades('kein hex'), []);
 });

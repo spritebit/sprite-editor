@@ -370,6 +370,17 @@
           <span class="field-label" data-i18n="tool.shadeRamp">Farbreihe</span>
           <div class="shade-ramp" id="shade-ramp"></div>
           <button class="btn" id="shade-clear-btn" data-i18n="tool.shadeClear" data-i18n-attr="title:tool.shadeClearTitle" title="Farbreihe leeren">Leeren</button>
+          <!-- Aus der aktuellen Farbe passende Töne erzeugen (js/shade.js makeShades) -->
+          <div class="btn-group" role="group" data-i18n-attr="aria-label:tool.shadeGen" aria-label="Abstufungen erzeugen">
+            <button class="btn" id="shade-gen-btn" data-i18n="tool.shadeGen" data-i18n-attr="title:tool.shadeGenTitle" title="Aus der aktuellen Farbe passende dunklere und hellere Töne erzeugen — Schatten etwas kühler, Licht etwas wärmer. Sie kommen in die Palette und werden die Farbreihe.">Abstufungen</button>
+            <select id="shade-gen-count" class="input input--sm" data-i18n-attr="title:tool.shadeGenCount;aria-label:tool.shadeGenCount" title="Wie viele Töne insgesamt" aria-label="Wie viele Töne insgesamt">
+              <option value="1">3</option>
+              <option value="2" selected>5</option>
+              <option value="3">7</option>
+              <option value="4">9</option>
+            </select>
+          </div>
+          <button class="btn" id="shade-sort-btn" data-i18n="tool.shadeSort" data-i18n-attr="title:tool.shadeSortTitle" title="Palette nach Farbstufen ordnen — die Töne jeder Farbe stehen dann nebeneinander, von dunkel nach hell. Das Bild bleibt gleich.">Anordnen</button>
           <button class="btn" id="shade-rev-btn" aria-pressed="false" data-i18n="tool.shadeRev" data-i18n-attr="title:tool.shadeRevTitle" title="Farbreihe umdrehen: statt hell → dunkel geht es dunkel → hell (am Rechner per Rechtsklick)">⇄ Umdrehen</button>
           <button class="btn" id="shade-soft-btn" aria-pressed="false" data-i18n="tool.shadeSoft" data-i18n-attr="title:tool.shadeSoftTitle" title="Verlauf: runder Pinsel, in der Mitte mehrere Stufen auf einmal, zum Rand hin weniger — braucht eine Größe ab 2">Verlauf</button>
         </div>
@@ -1200,7 +1211,7 @@
       <div><b>Stift</b> — einzelne Pixel.</div>
       <div><b>Pinsel</b> — Fläche; <i>Stärke</i> = Dichte, <i>Größe</i> = Kantenlänge.</div>
       <div><b>Spray</b> — zufällige Pixel; <i>Stärke</i> = Menge pro Ereignis.</div>
-      <div><b>Schattieren</b> — ein Stift, der mit jedem Strich eine Stufe dunkler wird. Lege zuerst die <i>Farbreihe</i> fest: tippe in der Farbzeile oder im Paletten-Panel zwei oder mehr Farben an, z. B. drei Rottöne. Ein leerer Pixel bekommt beim ersten Strich die hellste davon, jeder weitere Strich darüber macht ihn eine Stufe dunkler — oder du hältst still gedrückt, dann geht es von selbst Stufe um Stufe weiter, immer schneller; Pixel in anderen Farben (z. B. die Umrisslinie) bleiben unberührt. Die Reihe steht in der Options-Zeile in dieser Reihenfolge. Rechtsklick malt sie andersherum, von dunkel nach hell — am Handy macht das der Knopf <b>⇄ Umdrehen</b>. Ohne Farbreihe malt es mit der aktuellen Farbe und nimmt danach den nächsten Ton derselben Farbe aus der Palette. <b>Verlauf</b> macht den Pinsel rund und weich: in der Mitte geht es mehrere Stufen auf einmal, zum Rand hin weniger — mit Rechtsklick also innen hell, außen dunkel.</div>
+      <div><b>Schattieren</b> — ein Stift, der mit jedem Strich eine Stufe dunkler wird. Lege zuerst die <i>Farbreihe</i> fest: tippe in der Farbzeile oder im Paletten-Panel zwei oder mehr Farben an, z. B. drei Rottöne. Ein leerer Pixel bekommt beim ersten Strich die hellste davon, jeder weitere Strich darüber macht ihn eine Stufe dunkler — oder du hältst still gedrückt, dann geht es von selbst Stufe um Stufe weiter, immer schneller; Pixel in anderen Farben (z. B. die Umrisslinie) bleiben unberührt. Die Reihe steht in der Options-Zeile in dieser Reihenfolge. Rechtsklick malt sie andersherum, von dunkel nach hell — am Handy macht das der Knopf <b>⇄ Umdrehen</b>. Ohne Farbreihe malt es mit der aktuellen Farbe und nimmt danach den nächsten Ton derselben Farbe aus der Palette. <b>Abstufungen</b> erzeugt aus der aktuellen Farbe passende dunklere und hellere Töne (Schatten etwas kühler, Licht etwas wärmer), legt sie in die Palette und wählt sie als Farbreihe. <b>Anordnen</b> sortiert die Palette nach Farbstufen, damit die Töne nebeneinander stehen. <b>Verlauf</b> macht den Pinsel rund und weich: in der Mitte geht es mehrere Stufen auf einmal, zum Rand hin weniger — mit Rechtsklick also innen hell, außen dunkel.</div>
       <div><b>Größe</b> 1–300 per Regler oder Zahlenfeld; <span class="kbd">Alt</span> + rechte Maustaste ziehen verstellt sie direkt auf der Zeichenfläche. Ein Umriss zeigt, was Pinsel, Radierer und Spray gleich treffen.</div>
       <div><b>Clean Stroke</b> — beim Stift (und beim Radierer mit Größe 1) verschwinden die L-Ecken einer freihändigen Linie: saubere 1-Pixel-Linien wie von Hand gesetzt.</div>
       <div><b>Füllen</b> — zusammenhängende gleiche Fläche. Mit <b>Grenzen: alle Ebenen</b> endet die Fläche dort, wo sich im sichtbaren Bild etwas ändert — gemalt wird trotzdem in die aktive Ebene. So malst du eine Vorlage (z. B. Umrisse auf einer eigenen Ebene) Fläche für Fläche aus, ohne sie anzufassen.</div>
