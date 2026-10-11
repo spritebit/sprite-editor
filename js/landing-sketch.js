@@ -27,6 +27,7 @@ function initSketch(srcCv, outCv) {
   let pal = 'eis';
   /** @type {{ img: CanvasImageSource, w: number, h: number } | null} */
   let source = null;
+  /** @type {Uint8Array} */
   let result = new Uint8Array(0);
 
   const setSource = (img, w, h) => {
