@@ -61,7 +61,7 @@ export const state = {
   /** @type {number|string} Zahl = Palette-Index | String "#RRGGBB" = freie Farbe */
   curColor:      1,
   cellSize:      16,
-  tool:          'pencil', // 'pencil' | 'brush' | 'spray' | 'fill' | 'eraser' | 'wand' | 'select'
+  tool:          'pencil', // 'pencil' | 'brush' | 'spray' | 'shade' | 'fill' | 'eraser' | 'wand' | 'select'
   brushSize:     1,        // Kantenlänge / Radius in Zellen
   brushStrength: 100,      // 1–100 — Brush/Eraser: Dichte, Spray: Pixel/Event
   wandTolerance: 25,       // 0–100 % — Zauberstab: Farb-Ähnlichkeitsschwelle
@@ -73,6 +73,11 @@ export const state = {
   shapeFill:     false,    // Rechteck/Ellipse gefüllt statt nur Kontur
   fillVisible:   false,    // Füllen: Grenzen von allen sichtbaren Ebenen (js/fill.js)
   pixelPerfect:  false,    // Stift/Radierer 1 px: L-Ecken entfernen (js/pixelperfect.js)
+  // Schattieren (js/shade.js): die Farbreihe als Hex-Werte, dunkel → hell;
+  // shadeDark = Linksklick macht dunkler statt heller (für Finger).
+  /** @type {string[]} */
+  shadeRamp:     [],
+  shadeDark:     false,
   maskEdit:      false,    // Werkzeuge malen in die Maske der aktiven Ebene (js/mask.js)
   // Tilemap-Ebenen (js/tiles.js, js/tilemap.js): 'pixel' = Kacheln bemalen,
   // 'tiles' = Kacheln setzen; Auto legt beim Malen in leere Zellen neue an.

@@ -28,7 +28,7 @@ import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
   cellFromEvent, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
-  ppActive, ppBegin, ppEnd, paintPixelPerfect,
+  ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
 import {
@@ -255,6 +255,7 @@ function applyTool(x, y) {
   if (ppActive()) { paintPixelPerfect(x, y, state.tool === 'eraser' ? 0 : state.curColor); return; }
   if (state.tool === 'brush')  { paintBrush(x, y);  return; }
   if (state.tool === 'spray')  { paintSpray(x, y);  return; }
+  if (state.tool === 'shade')  { paintShade(x, y);  return; }
   if (state.tool === 'fill')   { floodFill(x, y);   return; }
   if (state.tool === 'eraser') {
     const prev = state.curColor;
@@ -300,18 +301,68 @@ function updateToolUI() {
   // Die Hand malt nicht, sie schiebt nur — das weiss die Ansicht.
   setPanTool(state.tool === 'pan');
 
-  const hasSize = ['brush', 'spray', 'eraser'].includes(state.tool);
+  const hasSize = SIZED_TOOLS.includes(state.tool);
   const needsTolerance = state.tool === 'wand' || state.tool === 'magic';
   $('brush-size-group').hidden = !hasSize;
-  $('strength-group').hidden   = !hasSize;
+  $('strength-group').hidden   = !hasSize || state.tool === 'shade';
+  $('shade-group').hidden      = state.tool !== 'shade';
   $('tolerance-group').hidden  = !needsTolerance;
   $('select-group').hidden     = !isSelectTool(state.tool);
   $('shape-group').hidden      = !isShapeTool(state.tool);
   $('fill-group').hidden       = state.tool !== 'fill';
   $('pixel-perfect-group').hidden = !['pencil', 'eraser'].includes(state.tool);
   if (!isSelectTool(state.tool)) $('editor-canvas-wrap').classList.remove('is-move');
+  syncShadeMarks();
+  renderShadeRamp();
   updateSelectionUI();
   refreshToolOpts();
+}
+
+// ── Schattieren: Options-Zeile (js/shade.js) ──
+// Die Farbreihe als kleine Felder, dunkel → hell; ein Tipp nimmt eine
+// Farbe wieder heraus. Gewählt wird in der Farbzeile oder im Paletten-Panel
+// (render.js pickSwatch). Dazu die Richtung für Linksklick bzw. Finger.
+function renderShadeRamp() {
+  const box = $('shade-ramp');
+  if (!box) return;
+  box.innerHTML = '';
+  const ramp = state.shadeRamp;
+  if (!ramp.length) {
+    const hint = document.createElement('span');
+    hint.className = 'shade-empty';
+    hint.textContent = t('shade.empty');
+    box.append(hint);
+  }
+  for (const hex of ramp) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'shade-sw';
+    b.style.background = hex;
+    b.title = t('shade.swTitle', { hex });
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', () => {
+      state.shadeRamp = ramp.filter(h => h !== hex);
+      renderShadeRamp();
+      syncShadeMarks();
+      saveState();
+    });
+    box.append(b);
+  }
+  $('shade-clear-btn').disabled = !ramp.length;
+  for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-light-btn', !state.shadeDark], ['shade-dark-btn', state.shadeDark]])) {
+    $(id).classList.toggle('is-active', on);
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+}
+renderCallbacks.onShadeRamp = renderShadeRamp;
+
+// Schattieren ansetzen: true, wenn es losgehen kann. Ohne Reihe gibt es
+// nichts zu schieben — dann ein Hinweis statt eines stummen Strichs.
+function startShade(dark) {
+  if (editingMask()) { info(t('shade.noMask')); return false; }
+  if (state.shadeRamp.length < 2) { showInfoToast(t('shade.needRamp')); return false; }
+  shadeBegin(dark ? -1 : 1);
+  return true;
 }
 
 // Symmetrie-Knöpfe und Achsenzustand zusammenhalten.
@@ -377,7 +428,7 @@ function updateBrushCursor(e) {
   const el = $('brush-cursor');
   if (!el) return;
   const tool = state.tool;
-  if (!['brush', 'spray', 'eraser'].includes(tool)) { el.hidden = true; return; }
+  if (!SIZED_TOOLS.includes(tool)) { el.hidden = true; return; }
   const c = cellFromEvent(e);
   if (!c) { el.hidden = true; return; }
 
@@ -520,6 +571,14 @@ function initCanvasEvents() {
         if (r.status === 'outside')          info(t('info.tplOutside'));
         else if (r.status === 'transparent') info(t('info.tplTransp'));
         else                                 info(t('info.tplPipette', { hex: r.hex }));
+      } else if (state.tool === 'shade') {
+        // Rechtsklick schattiert in die Gegenrichtung, statt zu radieren.
+        if (layerBlocked() || !startShade(!state.shadeDark)) return;
+        state.isDrawing = true;
+        beginStroke();
+        const c = cellFromEvent(e);
+        if (c) applyTool(c.x, c.y);
+        lock = c ? { start: c, dir: null, last: c } : null;
       } else {
         if (layerBlocked()) return;
         commitFloat(); // sonst radiert man in ein Loch, unter dem noch etwas hängt
@@ -620,6 +679,7 @@ function initCanvasEvents() {
       return;
     }
 
+    if (state.tool === 'shade' && !startShade(state.shadeDark)) return;
     state.isDrawing = true;
     beginStroke();
     ppBegin();
@@ -696,6 +756,7 @@ function initCanvasEvents() {
     }
     if (state.isDrawing || state.isErasing) commitStroke();
     ppEnd();
+    shadeEnd();
     lock = null;
     state.isDrawing = false;
     state.isErasing = false;
@@ -725,7 +786,7 @@ function initCanvasEvents() {
 // Tastatur
 // ────────────────────────────────────────────────────────────────────
 const TOOL_KEYS = {
-  p: 'pencil', b: 'brush', s: 'spray', f: 'fill', e: 'eraser', w: 'wand',
+  p: 'pencil', b: 'brush', s: 'spray', d: 'shade', f: 'fill', e: 'eraser', w: 'wand',
   a: 'select', l: 'lasso', k: 'magic',
   i: 'line', r: 'rect', o: 'ellipse',
   h: 'pan',
@@ -949,6 +1010,20 @@ function initToolbar() {
     syncFillVisible();
     saveState();
   });
+
+  $('shade-clear-btn').addEventListener('click', () => {
+    state.shadeRamp = [];
+    renderShadeRamp();
+    syncShadeMarks();
+    saveState();
+  });
+  for (const [id, dark] of /** @type {[string, boolean][]} */ ([['shade-light-btn', false], ['shade-dark-btn', true]])) {
+    $(id).addEventListener('click', () => {
+      state.shadeDark = dark;
+      renderShadeRamp();
+      saveState();
+    });
+  }
 
   $('shape-fill-btn').addEventListener('click', () => {
     state.shapeFill = !state.shapeFill;

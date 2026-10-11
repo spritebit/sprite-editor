@@ -1443,7 +1443,31 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 /* Auswahl-Buttons in der Werkzeugleiste — kompakter als normale Buttons */
 #select-group .btn,
 #mirror-group .btn,
-#shape-group .btn { padding: 5px 8px; }
+#shape-group .btn,
+#shade-group .btn { padding: 5px 8px; }
+
+/* Schattieren (js/shade.js): die Farbreihe als kleine Felder. */
+.shade-ramp { display: flex; align-items: center; gap: 3px; min-height: 22px; }
+.shade-sw {
+  width: 22px; height: 22px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.shade-sw:hover { border-color: var(--text); }
+.shade-empty { font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; }
+#shade-light-btn.is-active, #shade-dark-btn.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-line); }
+/* Farben der Reihe in Farbzeile, Palette und Bildfarben: ein Strich
+   darunter. Die Markierung der Malfarbe tritt beim Schattieren zurück —
+   sie spielt dann keine Rolle. */
+:is(.qp-swatch, .qp-mini, .pal-sw, .fc-swatch).in-shade {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  position: relative;
+  z-index: 2;
+}
+.is-shading :is(.qp-swatch, .qp-mini, .pal-sw, .fc-swatch).is-active:not(.in-shade) { box-shadow: none; }
 
 /* Die Werkzeugleiste ist lang geworden — bei schmalen Fenstern umbrechen
    statt abschneiden. */
@@ -1474,7 +1498,7 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
   /* Ohne Einstellung (Hand, Fuellen) stuende der Strich allein am Ende. */
   #toolbar:not(:has(> #brush-size-group:not([hidden]), > #strength-group:not([hidden]),
                > #tolerance-group:not([hidden]), > #pixel-perfect-group:not([hidden]),
-               > #shape-group:not([hidden]), > #select-group:not([hidden]))) > .tool-sep--opts {
+               > #shape-group:not([hidden]), > #shade-group:not([hidden]), > #select-group:not([hidden]))) > .tool-sep--opts {
     display: none;
   }
 }
@@ -2838,9 +2862,9 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
     cursor: pointer;
   }
   .tl-mtab[aria-selected="true"] { background: var(--accent-bg); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
-  #timeline[data-mtab="frames"] :is(.tl-lyops, .tl-lymask, #tl-op-field, .tl-celops),
+  #timeline[data-mtab="frames"] :is(.tl-lyops, #tl-op-field, .tl-celops),
   #timeline[data-mtab="layers"] :is(#tl-first, #tl-prev, #tl-next, #tl-last, .tl-edit, #tl-onion, #tl-tag, #tl-go-field, #tl-fps-field, .tl-celops),
-  #timeline[data-mtab="cels"] :is(#tl-first, #tl-prev, #tl-next, #tl-last, .tl-edit, #tl-onion, #tl-tag, #tl-go-field, #tl-fps-field, .tl-lyops, .tl-lymask, #tl-op-field) { display: none; }
+  #timeline[data-mtab="cels"] :is(#tl-first, #tl-prev, #tl-next, #tl-last, .tl-edit, #tl-onion, #tl-tag, #tl-go-field, #tl-fps-field, .tl-lyops, #tl-op-field) { display: none; }
   /* Ecke des Rasters: Wegweiser statt Knöpfe — die Ebenen-Knöpfe stehen
      im Reiter „Ebenen". */
   #timeline .tl-corner { justify-content: space-between; padding: 2px 4px 4px 6px; }

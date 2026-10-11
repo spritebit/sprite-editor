@@ -104,6 +104,7 @@ const PRECACHE = [
   'js/scale.js',
   'js/search.js',
   'js/selection.js',
+  'js/shade.js',
   'js/site-links.js',
   'js/sizedrag.js',
   'js/sketch.js',

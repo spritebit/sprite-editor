@@ -16,6 +16,8 @@ export const ICONS = {
   pencil:  '<path d="M17 3l4 4L8 20H4v-4z"/><path d="M14 6l4 4"/>',
   brush:   '<path d="M21 3l-8.5 8.5"/><path d="M9.5 12.5a3 3 0 0 1 3 3c0 2.8-2.7 5.5-8.5 5.5 1.2-1.5 1.5-3 1.5-4.5a4 4 0 0 1 4-4z"/>',
   spray:   '<rect x="5" y="10" width="8" height="11" rx="2"/><path d="M7 10V7h4v3"/><path d="M16 6h.01M19 4h.01M19 8h.01M22 6h.01"/>',
+  // Schattieren: ein Tropfen, halb gefüllt — hell und dunkel.
+  shade:   '<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/><path d="M12 3C12 3 6 9.6 6 14a6 6 0 0 0 6 6z" fill="currentColor" stroke="none"/>',
   fill:    '<path d="M4.5 11.5l7-7 8 8-7 7a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z"/><path d="M4 12.5h15.5"/><path d="M21.5 15.5s1.5 2 1.5 3a1.5 1.5 0 0 1-3 0c0-1 1.5-3 1.5-3z"/>',
   eraser:  '<path d="M7 21l-3.5-3.5a2 2 0 0 1 0-2.8L13.7 4.5a2 2 0 0 1 2.8 0l3 3a2 2 0 0 1 0 2.8L9 21z"/><path d="M7 21h14"/><path d="M8.5 9.5l6 6"/>',
   wand:    '<path d="M3 21l10-10"/><path d="M16 3v2M16 11v2M20 8h2M10 8h2M19 5l1.5-1.5M19 11l1.5 1.5M13 5l-1.5-1.5"/>',

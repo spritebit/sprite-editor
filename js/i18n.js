@@ -485,6 +485,16 @@ const STATIC = {
     'tool.brushTitle':  'Brush — an area; strength = density (B)',
     'tool.spray':       'Spray',
     'tool.sprayTitle':  'Spray — random pixels (S)',
+    'tool.shade':       'Shade',
+    'tool.shadeTitle':  'Shade — pixels one step lighter (left) or darker (right) within the chosen colour ramp (D)',
+    'tool.shadeRamp':   'Ramp',
+    'tool.shadeClear':  'Clear',
+    'tool.shadeClearTitle': 'Clear the colour ramp',
+    'tool.shadeDir':    'Direction',
+    'tool.shadeLight':  'Lighter',
+    'tool.shadeLightTitle': 'Left click makes lighter, right click darker',
+    'tool.shadeDark':   'Darker',
+    'tool.shadeDarkTitle': 'Left click makes darker, right click lighter',
     'tool.fill':        'Fill',
     'tool.fillTitle':   'Fill — flood fill (F)',
     'tool.eraser':      'Eraser',
@@ -746,6 +756,7 @@ const STATIC = {
       + '<div><b>Pencil</b> — single pixels.</div>'
       + '<div><b>Brush</b> — an area; <i>strength</i> = density, <i>size</i> = edge length.</div>'
       + '<div><b>Spray</b> — random pixels; <i>strength</i> = amount per event.</div>'
+      + '<div><b>Shade</b> — as in Aseprite: tap two or more colours in the colour bar or the palette panel, e.g. three reds. That is the <i>ramp</i>, always sorted from dark to light. Painting moves each pixel one step along it: left click lighter, right click darker (on phones via <i>Lighter/Darker</i>). Pixels in other colours stay untouched, and each pixel changes only once per stroke.</div>'
       + '<div><b>Size</b> 1–300 with the slider or number field; <span class="kbd">Alt</span> + right-drag changes it right on the drawing area. An outline shows what brush, eraser and spray are about to hit.</div>'
       + '<div><b>Clean Stroke</b> — with the pencil (and the eraser at size 1) the L-shaped corners of a freehand line disappear: clean 1-pixel lines as if placed by hand.</div>'
       + '<div><b>Fill</b> — the connected area of the same value. With <b>Edges: all layers</b> the area ends wherever something changes in the visible image — the paint still goes into the active layer. That way you colour in a template (e.g. outlines on a layer of their own) area by area without touching it.</div>'
@@ -866,7 +877,7 @@ const STATIC = {
       + '<div class="sc-row"><b>Shift + Alt + drag</b><span>Move the stencil</span></div>'
       + '<div class="sc-row"><b>Shift + Alt + right-click</b><span>Stencil eyedropper</span></div>'
       + '<div class="sc-row"><b>0 – 9</b><span>Pick a color index</span></div>'
-      + '<div class="sc-row"><b>P B S F E W</b><span>Pencil · Brush · Spray · Fill · Eraser · Magic wand</span></div>'
+      + '<div class="sc-row"><b>P B S D F E W</b><span>Pencil · Brush · Spray · Shade · Fill · Eraser · Magic wand</span></div>'
       + '<div class="sc-row"><b>I R O</b><span>Line · Rectangle · Ellipse</span></div>'
       + '<div class="sc-row"><b>A L K</b><span>Marquee · Lasso · Color select</span></div>'
       + '<div class="sc-row"><b>H</b><span>Hand — move the view without drawing</span></div>'
@@ -1209,6 +1220,10 @@ const MSG = {
     'info.shapeDrag':   '{shape} {w}×{h} — {n} Pixel',
     'info.wandDeleted': 'Zauberstab: {n} Pixel gelöscht',
     'info.wandNone':    'Zauberstab: nichts gelöscht — Toleranz erhöhen?',
+    'shade.empty':      'Tippe Farben in der Farbzeile an',
+    'shade.swTitle':    '{hex} — antippen nimmt die Farbe aus der Reihe',
+    'shade.needRamp':   'Schattieren: wähle erst mindestens zwei Farben — tippe sie in der Farbzeile oder im Paletten-Panel an, z. B. drei Rottöne von dunkel bis hell.',
+    'shade.noMask':     'Schattieren geht nicht in einer Maske.',
     'info.index':       'Index {i}',
     'info.pipetteAt':   'Pipette — ({x}, {y}) · {val}',
     'info.at':          '({x}, {y}) · {val}',
@@ -1855,6 +1870,10 @@ const MSG = {
     'info.shapeDrag':   '{shape} {w}×{h} — {n} pixels',
     'info.wandDeleted': 'Magic wand: {n} pixels erased',
     'info.wandNone':    'Magic wand: nothing erased — raise the tolerance?',
+    'shade.empty':      'Tap colours in the colour bar',
+    'shade.swTitle':    '{hex} — tap to take the colour out of the ramp',
+    'shade.needRamp':   'Shade: first pick at least two colours — tap them in the colour bar or the palette panel, e.g. three reds from dark to light.',
+    'shade.noMask':     'Shading does not work in a mask.',
     'info.index':       'index {i}',
     'info.pipetteAt':   'Eyedropper — ({x}, {y}) · {val}',
     'info.at':          '({x}, {y}) · {val}',

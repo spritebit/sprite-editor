@@ -291,6 +291,7 @@
           <button class="tool-btn is-active" data-tool="pencil" aria-pressed="true" data-i18n-attr="title:tool.pencilTitle" title="Stift — einzelne Pixel (P)"><span class="tool-ico" data-icon="pencil"></span><span class="tool-name" data-i18n="tool.pencil">Stift</span></button>
           <button class="tool-btn" data-tool="brush"  aria-pressed="false" data-i18n-attr="title:tool.brushTitle" title="Pinsel — Fläche, Stärke = Dichte (B)"><span class="tool-ico" data-icon="brush"></span><span class="tool-name" data-i18n="tool.brush">Pinsel</span></button>
           <button class="tool-btn" data-tool="spray"  aria-pressed="false" data-i18n-attr="title:tool.sprayTitle" title="Spray — zufällige Pixel (S)"><span class="tool-ico" data-icon="spray"></span><span class="tool-name" data-i18n="tool.spray">Spray</span></button>
+          <button class="tool-btn" data-tool="shade"  aria-pressed="false" data-i18n-attr="title:tool.shadeTitle" title="Schattieren — Pixel eine Stufe heller (links) oder dunkler (rechts) in der gewählten Farbreihe (D)"><span class="tool-ico" data-icon="shade"></span><span class="tool-name" data-i18n="tool.shade">Schattieren</span></button>
           <button class="tool-btn" data-tool="fill"   aria-pressed="false" data-i18n-attr="title:tool.fillTitle" title="Füllen — Flood-Fill (F)"><span class="tool-ico" data-icon="fill"></span><span class="tool-name" data-i18n="tool.fill">Füllen</span></button>
           <button class="tool-btn" data-tool="eraser" aria-pressed="false" data-i18n-attr="title:tool.eraserTitle" title="Radierer (E)"><span class="tool-ico" data-icon="eraser"></span><span class="tool-name" data-i18n="tool.eraser">Radierer</span></button>
           <button class="tool-btn" data-tool="wand"   aria-pressed="false" data-i18n-attr="title:tool.wandTitle" title="Zauberstab — ähnliche Fläche löschen (W)"><span class="tool-ico" data-icon="wand"></span><span class="tool-name" data-i18n="tool.wand">Zauberstab</span></button>
@@ -361,6 +362,18 @@
         <div class="tool-group" id="fill-group" hidden>
           <button class="btn" id="fill-visible-btn" aria-pressed="false" data-i18n="tool.fillVisible" data-i18n-attr="title:tool.fillVisibleTitle"
                   title="Die Grenzen der Füllung kommen von allen sichtbaren Ebenen — gemalt wird in die aktive. So malst du eine Vorlage, die auf einer eigenen Ebene liegt, Fläche für Fläche aus.">Grenzen: alle Ebenen</button>
+        </div>
+
+        <!-- Schattieren (js/shade.js): Farbreihe — gewählt durch Antippen in
+             der Farbzeile oder im Paletten-Panel — und Richtung. -->
+        <div class="tool-group" id="shade-group" hidden>
+          <span class="field-label" data-i18n="tool.shadeRamp">Farbreihe</span>
+          <div class="shade-ramp" id="shade-ramp"></div>
+          <button class="btn" id="shade-clear-btn" data-i18n="tool.shadeClear" data-i18n-attr="title:tool.shadeClearTitle" title="Farbreihe leeren">Leeren</button>
+          <div class="btn-group" role="group" data-i18n-attr="aria-label:tool.shadeDir" aria-label="Richtung">
+            <button class="btn" id="shade-light-btn" aria-pressed="true" data-i18n="tool.shadeLight" data-i18n-attr="title:tool.shadeLightTitle" title="Linksklick macht heller, Rechtsklick dunkler">Heller</button>
+            <button class="btn" id="shade-dark-btn" aria-pressed="false" data-i18n="tool.shadeDark" data-i18n-attr="title:tool.shadeDarkTitle" title="Linksklick macht dunkler, Rechtsklick heller">Dunkler</button>
+          </div>
         </div>
 
         <div class="tool-group" id="select-group" hidden>
@@ -460,13 +473,6 @@
           <button class="btn" id="tl-ly-merge" data-i18n-attr="title:ly.merge" title="Nach unten zusammenführen — in jedem Frame"><span class="ico" data-icon="mergeDown"></span></button>
           <button class="btn" id="tl-ly-merge-all" data-i18n-attr="title:ly.mergeAll" title="Alle sichtbaren Ebenen zusammenführen — in jedem Frame, auch Licht und Schatten; ausgeblendete bleiben"><span class="ico" data-icon="mergeAll"></span></button>
           <button class="btn" id="tl-ly-del" data-i18n-attr="title:ly.del" title="Ebene löschen"><span class="ico" data-icon="trash"></span></button>
-        </div>
-        <div class="btn-group tl-lymask" role="group" data-i18n-attr="aria-label:mask.label" aria-label="Maske">
-          <button class="btn" id="tl-mask-add" data-i18n-attr="title:mask.addTitle" title="Maske hinzufügen — damit blendest du Teile der Ebene aus, ohne sie zu löschen"><span class="ico" data-icon="mask"></span></button>
-          <button class="btn" id="tl-mask-edit" aria-pressed="false" hidden data-i18n-attr="title:mask.editTitle" title="Maske bearbeiten: Malen blendet aus, Radieren blendet wieder ein"><span class="ico" data-icon="brush"></span></button>
-          <button class="btn" id="tl-mask-on" hidden data-i18n-attr="title:mask.off" title="Maske ausschalten (alles sichtbar)"><span class="ico" data-icon="eye"></span></button>
-          <button class="btn" id="tl-mask-apply" hidden data-i18n-attr="title:mask.applyTitle" title="Maske anwenden: ausgeblendete Pixel werden gelöscht, die Maske verschwindet"><span class="ico" data-icon="check"></span></button>
-          <button class="btn" id="tl-mask-del" hidden data-i18n-attr="title:mask.delTitle" title="Maske löschen — alles wieder sichtbar"><span class="ico" data-icon="trash"></span></button>
         </div>
         <label class="field field--inline tl-num" id="tl-op-field" data-i18n-attr="title:ly.opacityTitle" title="Deckkraft der aktiven Ebene">
           <span class="field-label" data-i18n="ly.opacity">Deckkraft</span>
@@ -1190,6 +1196,7 @@
       <div><b>Stift</b> — einzelne Pixel.</div>
       <div><b>Pinsel</b> — Fläche; <i>Stärke</i> = Dichte, <i>Größe</i> = Kantenlänge.</div>
       <div><b>Spray</b> — zufällige Pixel; <i>Stärke</i> = Menge pro Ereignis.</div>
+      <div><b>Schattieren</b> — wie in Aseprite: tippe in der Farbzeile oder im Paletten-Panel zwei oder mehr Farben an, z. B. drei Rottöne. Das ist die <i>Farbreihe</i>, immer von dunkel nach hell sortiert. Malen schiebt jeden Pixel eine Stufe weiter: Linksklick heller, Rechtsklick dunkler (am Handy per <i>Heller/Dunkler</i>). Pixel in anderen Farben bleiben unberührt, pro Strich ändert sich jeder Pixel nur einmal.</div>
       <div><b>Größe</b> 1–300 per Regler oder Zahlenfeld; <span class="kbd">Alt</span> + rechte Maustaste ziehen verstellt sie direkt auf der Zeichenfläche. Ein Umriss zeigt, was Pinsel, Radierer und Spray gleich treffen.</div>
       <div><b>Clean Stroke</b> — beim Stift (und beim Radierer mit Größe 1) verschwinden die L-Ecken einer freihändigen Linie: saubere 1-Pixel-Linien wie von Hand gesetzt.</div>
       <div><b>Füllen</b> — zusammenhängende gleiche Fläche. Mit <b>Grenzen: alle Ebenen</b> endet die Fläche dort, wo sich im sichtbaren Bild etwas ändert — gemalt wird trotzdem in die aktive Ebene. So malst du eine Vorlage (z. B. Umrisse auf einer eigenen Ebene) Fläche für Fläche aus, ohne sie anzufassen.</div>
@@ -1343,7 +1350,7 @@
       <div class="sc-row"><b>Shift + Alt + Ziehen</b><span>Schablone verschieben</span></div>
       <div class="sc-row"><b>Shift + Alt + Rechtsklick</b><span>Schablonen-Pipette</span></div>
       <div class="sc-row"><b>0 – 9</b><span>Farb-Index wählen</span></div>
-      <div class="sc-row"><b>P B S F E W</b><span>Stift · Pinsel · Spray · Füllen · Radierer · Zauberstab</span></div>
+      <div class="sc-row"><b>P B S D F E W</b><span>Stift · Pinsel · Spray · Schattieren · Füllen · Radierer · Zauberstab</span></div>
       <div class="sc-row"><b>I R O</b><span>Linie · Rechteck · Ellipse</span></div>
       <div class="sc-row"><b>A L K</b><span>Auswahl · Lasso · Farbwahl</span></div>
       <div class="sc-row"><b>H</b><span>Hand — Ansicht verschieben, ohne zu zeichnen</span></div>
