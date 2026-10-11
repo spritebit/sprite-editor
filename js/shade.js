@@ -168,9 +168,11 @@ export function rampLevels(ramp) {
 }
 
 // ── Gedrückt halten ──────────────────────────────────────────────────
-// Hält man still, geht es Stufe um Stufe weiter — erst langsam, dann
-// immer schneller: jede Pause ist um HOLD_FACTOR kürzer als die vorige,
-// aber nie kürzer als HOLD_MIN_MS. Eine Bewegung beginnt wieder bei 0.
+// Wie eine Airbrush: jeder Pixel zählt, wie lange der Pinsel schon über
+// ihm war (render.js shadeDwell). Je länger, desto mehr Stufen — erst
+// langsam, dann immer schneller: jede Pause ist um HOLD_FACTOR kürzer als
+// die vorige, aber nie kürzer als HOLD_MIN_MS. Schnell drüberfahren gibt
+// eine Stufe, langsam mehr, stillhalten immer weiter.
 
 export const HOLD_FIRST_MS = 350;
 export const HOLD_FACTOR = 0.7;
@@ -182,6 +184,16 @@ export const HOLD_MIN_MS = 60;
  */
 export function holdDelay(n) {
   return Math.max(HOLD_MIN_MS, HOLD_FIRST_MS * HOLD_FACTOR ** n);
+}
+
+/**
+ * Zusätzliche Stufen nach `ms` Millisekunden unter dem Pinsel.
+ * @param {number} ms
+ */
+export function holdSteps(ms) {
+  let n = 0, t = holdDelay(0);
+  while (ms >= t && n < 255) { n++; t += holdDelay(n); }
+  return n;
 }
 
 // ── Abstufungen erzeugen ─────────────────────────────────────────────

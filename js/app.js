@@ -28,7 +28,7 @@ import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
   cellFromEvent, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
-  ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeRepeat, syncShadeMarks,
+  ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeDwell, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
 import {
@@ -58,7 +58,7 @@ import {
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
-import { holdDelay, HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
+import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
 import { openReduceModal, initReduceModal } from './reduce.js';
 import { zoomAt, fitZoomToArea, isPanMode, setPanTool, initPan, initPinch } from './view.js';
@@ -258,8 +258,6 @@ function applyTool(x, y) {
   if (state.tool === 'spray')  { paintSpray(x, y);  return; }
   if (state.tool === 'shade') {
     paintShade(x, y);
-    // Neue Stelle: das Halten beginnt hier von vorn — wieder langsam.
-    if (!shadeAt || shadeAt.x !== x || shadeAt.y !== y) { shadeStill = performance.now(); shadeSteps = 0; }
     shadeAt = { x, y };
     return;
   }
@@ -395,24 +393,20 @@ function startShade(along) {
   if (editingMask()) { info(t('shade.noMask')); return false; }
   if (state.shadeRamp.length === 1) { showInfoToast(t('shade.needRamp')); return false; }
   shadeBegin(along ? -1 : 1);
-  // Gedrückt halten geht weiter, dort, wo der Pinsel gerade ist — wie
-  // wiederholtes Tippen (render.js shadeRepeat), erst langsam, dann immer
-  // schneller (js/shade.js holdDelay). Nur solange der Zeiger stillsteht:
-  // sonst liefe ein langsamer Strich stellenweise bis ans Ende der Reihe.
+  // Gedrückt halten wie eine Airbrush: die Pixel unter dem Pinsel sammeln
+  // Zeit und gehen damit weiter — auch beim langsamen Malen, gleichmäßig je
+  // Pixel (render.js shadeDwell, js/shade.js holdSteps).
   clearInterval(shadeTimer);
+  let last = performance.now();
   shadeTimer = setInterval(() => {
-    if (!state.isDrawing || state.tool !== 'shade' || !shadeAt) return;
     const now = performance.now();
-    if (now - shadeStill < holdDelay(shadeSteps)) return;
-    shadeStill = now;
-    shadeSteps++;
-    shadeRepeat(shadeAt.x, shadeAt.y);
+    const ms = now - last;
+    last = now;
+    if (state.isDrawing && state.tool === 'shade' && shadeAt) shadeDwell(shadeAt.x, shadeAt.y, ms);
   }, HOLD_MIN_MS / 3);
   return true;
 }
 let shadeTimer = 0;
-let shadeStill = 0;
-let shadeSteps = 0;   // Halte-Schritte seit der letzten Bewegung
 /** @type {{x: number, y: number} | null} */
 let shadeAt = null;
 

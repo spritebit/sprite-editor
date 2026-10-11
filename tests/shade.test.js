@@ -3,7 +3,7 @@
 //   npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRamp, sortRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS, holdDelay, HOLD_FIRST_MS, HOLD_MIN_MS, makeShades } from '../js/shade.js';
+import { normalizeRamp, sortRamp, toggleRamp, valueHex, makeShader, softLevel, rampLevels, AUTO_LEVELS, holdDelay, holdSteps, HOLD_FIRST_MS, HOLD_MIN_MS, makeShades } from '../js/shade.js';
 
 // Drei Rottöne, absichtlich nicht nach Helligkeit sortiert, dazu Grün.
 const PAL = { 1: '#FF8080', 2: '#800000', 3: '#FF0000', 4: '#00FF00' };
@@ -114,4 +114,12 @@ test('Abstufungen erzeugen: n hellere und n dunklere Töne, hell → dunkel', ()
   assert.ok(makeShades('#808080', 2).every(h => h.slice(1, 3) === h.slice(3, 5) && h.slice(3, 5) === h.slice(5, 7)));
   assert.ok(makeShades('#ffffff', 2).length < 5);
   assert.deepEqual(makeShades('kein hex'), []);
+});
+
+test('Zeit unter dem Pinsel → Stufen: erst nach 0,35 s, dann immer schneller', () => {
+  assert.equal(holdSteps(0), 0);
+  assert.equal(holdSteps(349), 0);
+  assert.equal(holdSteps(350), 1);
+  assert.equal(holdSteps(350 + 245), 2);
+  assert.ok(holdSteps(2000) > holdSteps(1000) + 5, 'später geht es schneller');
 });

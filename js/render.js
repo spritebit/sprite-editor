@@ -23,7 +23,7 @@ import { iconSvg } from './icons.js';
 import { showInfoToast } from './toast.js';
 import { createPalettePicker } from './palpicker.js';
 import { createPixelPerfect, ppAdd } from './pixelperfect.js';
-import { makeShader, toggleRamp, softLevel, rampLevels } from './shade.js';
+import { makeShader, toggleRamp, softLevel, rampLevels, holdSteps } from './shade.js';
 import { recordPalettes, startPaletteEdit, endPaletteEdit } from './history.js';
 
 // Weiterreichen, damit bestehende Importe aus render.js gültig bleiben.
@@ -592,16 +592,18 @@ export function paintSpray(x, y) {
 
 // ── Schattieren ──────────────────────────────────────────────────────
 // Wie der Pinsel ein Quadrat in Pinselgröße, aber statt der Malfarbe geht
-// jeder Pixel eine Stufe in der Farbreihe weiter (js/shade.js). Pro Strich
-// höchstens einmal je Pixel — sonst liefe die Farbe beim Hin- und Herfahren
-// bis ans Ende der Reihe durch.
-// Mit „Verlauf" merkt sich `done` je Pixel, wie viele Stufen er in diesem
-// Strich schon gegangen ist (js/shade.js softLevel).
-let shadeStroke = null; // { done: Map<number, number>, shader, changed } während eines Strichs
+// jeder Pixel in der Farbreihe weiter (js/shade.js). Wie weit, steht je
+// Pixel fest: eine Stufe fürs Drüberfahren (mit „Verlauf" in der Mitte
+// mehr), dazu Stufen für die Zeit, die der Pinsel schon über ihm war —
+// wie eine Airbrush (shadeDwell, js/shade.js holdSteps). `done` merkt
+// sich, wie viele er in diesem Strich schon gegangen ist; Hin- und
+// Herfahren allein treibt ihn darum nicht weiter.
+/** @type {{done: Map<number, number>, dwell: Map<number, number>, shader: (v: any) => any, changed: boolean} | null} */
+let shadeStroke = null;
 
 export function shadeBegin(sign) {
   const cur = state.curColor;
-  shadeStroke = { done: new Map(), shader: makeShader(getPal(), state.shadeRamp, sign, cur), changed: false, repeat: false };
+  shadeStroke = { done: new Map(), dwell: new Map(), shader: makeShader(getPal(), state.shadeRamp, sign, cur), changed: false };
 }
 /** Strich beenden. Gibt zurück, ob er etwas geändert hat (null = kein Strich). */
 export function shadeEnd() {
@@ -610,45 +612,52 @@ export function shadeEnd() {
   return changed;
 }
 
-// Gedrückt halten (app.js): wie ein neuer Tipp an derselben Stelle — die
-// Pixel unter dem Pinsel dürfen noch eine Stufe weiter. Mit Verlauf geht
-// dabei jeder Pixel des Kreises eine Stufe; die Mitte erreicht das Ende
-// der Reihe trotzdem zuerst, der Verlauf bleibt also sichtbar.
-export function shadeRepeat(x, y) {
+// Alle Pixel unter dem Pinsel bei (x, y) mit ihrem Gewicht: 1 — mit
+// „Verlauf" die Stufen dort (Mitte am meisten, Rand 1; 0 = außerhalb).
+function shadeCells(x, y, fn) {
+  const grid = getGrid();
+  const H = grid.length, W = grid[0].length;
+  const lo = -Math.floor((state.brushSize - 1) / 2);
+  const hi =  Math.floor(state.brushSize / 2);
+  const soft = state.shadeSoft && state.brushSize > 1;
+  const levels = rampLevels(state.shadeRamp);
+  // Bei gerader Größe liegt die Mitte zwischen zwei Pixeln.
+  const mid = (lo + hi) / 2;
+  for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
+    for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
+      const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
+      if (!level) continue;
+      for (const [px, py] of mirrored(x + dx, y + dy)) fn(px, py, py * W + px, level, levels);
+    }
+  }
+}
+
+// Gedrückt halten (app.js, alle paar Millisekunden): die Pixel unter dem
+// Pinsel sammeln Zeit — mit „Verlauf" die Mitte schneller als der Rand.
+export function shadeDwell(x, y, ms) {
   if (!shadeStroke) return;
-  shadeStroke.done = new Map();
-  shadeStroke.repeat = true;
+  const { dwell } = shadeStroke;
+  const soft = state.shadeSoft && state.brushSize > 1;
+  shadeCells(x, y, (px, py, key, level, levels) => {
+    dwell.set(key, (dwell.get(key) || 0) + (soft ? ms * level / levels : ms));
+  });
   paintShade(x, y);
 }
 
 export function paintShade(x, y) {
   if (!shadeStroke) return;
   const grid = getGrid();
-  const H = grid.length, W = grid[0].length;
-  const lo = -Math.floor((state.brushSize - 1) / 2);
-  const hi =  Math.floor(state.brushSize / 2);
-  const { done, shader } = shadeStroke;
-  const soft = state.shadeSoft && state.brushSize > 1;
-  const levels = rampLevels(state.shadeRamp);
-  // Bei gerader Größe liegt die Mitte zwischen zwei Pixeln.
-  const mid = (lo + hi) / 2;
+  const { done, dwell, shader } = shadeStroke;
   let changed = false;
-  for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
-    for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
-      let want = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
-      if (!want) continue;
-      if (shadeStroke.repeat) want = 1;
-      for (const [px, py] of mirrored(x + dx, y + dy)) {
-        const key = py * W + px;
-        const have = done.get(key) || 0;
-        if (have >= want) continue;
-        done.set(key, want);
-        let v = grid[py][px];
-        for (let k = have; k < want; k++) v = shader(v);
-        changed = setCell(grid, px, py, v) || changed;
-      }
-    }
-  }
+  shadeCells(x, y, (px, py, key, level) => {
+    const want = level + holdSteps(dwell.get(key) || 0);
+    const have = done.get(key) || 0;
+    if (have >= want) return;
+    done.set(key, want);
+    let v = grid[py][px];
+    for (let k = have; k < want; k++) v = shader(v);
+    changed = setCell(grid, px, py, v) || changed;
+  });
   if (changed) { shadeStroke.changed = true; afterPaint(); }
 }
 
