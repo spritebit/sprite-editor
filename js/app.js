@@ -71,7 +71,7 @@ import { initMenubar } from './menubar.js';
 import { initFullscreen, enterFullscreen, exitFullscreen } from './fullscreen.js';
 import { normalizeTags } from './tags.js';
 import { initPreview, renderPreview } from './preview.js';
-import { initTilemap, tileModeOn, tilePointerDown } from './tilemap.js';
+import { initTilemap, tileModeOn, tilePointerDown, turnTile } from './tilemap.js';
 import { initGuides, guidePointerDown, guideAt, toggleShow as toggleGuides } from './guides.js';
 import { parseTsSprite } from './tsimport.js';
 import { CODE_FORMATS, getFormat, codeFilename } from './codegen.js';
@@ -937,6 +937,9 @@ const KEYMAP = [
   { when: e => e.key === 'Home', prevent: true, run: firstFrame },
   { when: e => e.key === 'End', prevent: true, run: lastFrame },
   { when: e => e.key === 'Enter' && !ownEnter(e), prevent: true, run: togglePlay },
+  // ── Kacheln setzen: gedreht/gespiegelt (wie in Tiled) ──
+  { when: e => tileModeOn() && !e.ctrlKey && !e.metaKey && !e.altKey && /^[xyz]$/.test(e.key.toLowerCase()), prevent: true,
+    run: e => { const k = e.key.toLowerCase(); turnTile(k === 'x' ? 'h' : k === 'y' ? 'v' : e.shiftKey ? 'ccw' : 'cw'); } },
   // ── Farbe und Werkzeug ──
   { when: e => e.key >= '0' && e.key <= '9', run: e => { const idx = Number(e.key); if (idx <= getMaxIdx()) { state.curColor = idx; syncColorActive(); } } },
   { when: e => !!TOOL_KEYS[e.key.toLowerCase()], run: e => setTool(TOOL_KEYS[e.key.toLowerCase()]) },

@@ -94,6 +94,7 @@ export const state = {
   /** @type {'auto'|'manual'} */
   tileAuto:      'auto',
   tile:          1,        // gewählte Kachel zum Setzen (1 …)
+  tileXf:        { rot: 0, fx: false, fy: false }, // Lage beim Setzen (tiles.js turnXf)
   showColor:     false,    // aktuelle Farbe im Bild hervorheben (alles andere abgedunkelt)
   // Palette, die das Paletten-Panel gerade ZEIGT. null = die des Sprites.
   // Anschauen ändert nichts am Sprite — zugewiesen wird nur per Knopf.

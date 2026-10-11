@@ -1,3 +1,15 @@
+# 3.5.0
+
+## Deutsch
+
+- Kacheln gedreht und gespiegelt setzen: Im Modus „Kacheln setzen“ drehst du die gewählte Kachel mit ↺ ↻ in 90°-Schritten oder spiegelst sie mit ↔ ↕ — auch mit den Tasten Z, Umschalt+Z, X und Y. Eine Vorschau zeigt, wie sie gesetzt wird. Die Kachel selbst bleibt unverändert; die gedrehte Fassung wird beim Setzen eine eigene Kachel. So baust du Ecken und Ränder aus einer einzigen Kachel.
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
+- Place tiles rotated and flipped: in “Place tiles” mode you rotate the chosen tile in 90° steps with ↺ ↻ or flip it with ↔ ↕ — also with the keys Z, Shift+Z, X and Y. A preview shows how it will be placed. The tile itself stays unchanged; the rotated version becomes a tile of its own when placed. That way you build corners and edges from a single tile.
+- Small improvements and fixes.
+
 # 3.4.0
 
 ## Deutsch

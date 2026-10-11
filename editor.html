@@ -943,6 +943,18 @@
             <p class="field-note" id="tile-hint"></p>
             <p class="field-note tile-info" id="tile-info"></p>
             <div class="tile-list" id="tile-list" role="listbox" data-i18n-attr="aria-label:tile.listLabel" aria-label="Kacheln"></div>
+            <!-- Gewählte Kachel gedreht/gespiegelt setzen (Modus „Kacheln setzen“) -->
+            <div class="tile-xf" id="tile-xf-row" hidden>
+              <canvas id="tile-xf-prev" class="tile-xf-prev" data-i18n-attr="title:tile.xfPrev" title="So wird die Kachel gesetzt"></canvas>
+              <div class="tile-xf-btns">
+              <button class="btn" id="tile-rot-ccw" data-i18n-attr="title:tile.rotCcw;aria-label:tile.rotCcw" title="90° gegen den Uhrzeigersinn (Umschalt+Z)" aria-label="90° gegen den Uhrzeigersinn (Umschalt+Z)">↺</button>
+              <button class="btn" id="tile-rot-cw" data-i18n-attr="title:tile.rotCw;aria-label:tile.rotCw" title="90° im Uhrzeigersinn (Z)" aria-label="90° im Uhrzeigersinn (Z)">↻</button>
+              <button class="btn" id="tile-flip-h" data-i18n-attr="title:tile.flipH;aria-label:tile.flipH" title="Waagerecht spiegeln (X)" aria-label="Waagerecht spiegeln (X)">↔</button>
+              <button class="btn" id="tile-flip-v" data-i18n-attr="title:tile.flipV;aria-label:tile.flipV" title="Senkrecht spiegeln (Y)" aria-label="Senkrecht spiegeln (Y)">↕</button>
+              <button class="btn" id="tile-xf-reset" data-i18n="tile.xfReset" data-i18n-attr="title:tile.xfResetTitle" title="Wieder normal setzen">Normal</button>
+              </div>
+            </div>
+            <p class="field-note" id="tile-xf-state" hidden></p>
             <p class="field-note" id="tile-empty" data-i18n="tile.empty" hidden>Noch keine Kacheln — im Modus „Pixel malen“ (Auto) in eine leere Zelle malen.</p>
             <div class="btn-row">
               <button class="btn" id="tile-prune" data-i18n="tile.prune" data-i18n-attr="title:tile.pruneTitle" title="Kacheln entfernen, die nirgends mehr liegen">Unbenutzte entfernen</button>
@@ -1326,7 +1338,7 @@
       <div>Für Spiel-Levels und Muster: eine <b>Tilemap-Ebene</b> besteht aus Kacheln fester Größe (8–64 px). Jede Kachel steht einmal im Kachelsatz der Ebene — malt man sie an, ändert sie sich <b>überall</b>, wo sie liegt, auch in anderen Frames.</div>
       <div>Panel <b>Kacheln</b>: <b>Neue Tilemap-Ebene</b> oder <b>Aktive Ebene umwandeln</b> (gleiche Stellen werden eine Kachel). Ein blaues Raster zeigt die Kacheln; der Rand, der in keine ganze Kachel passt, ist abgedunkelt.</div>
       <div><b>Pixel malen</b>: mit allen Werkzeugen die Kacheln bemalen. <i>Auto</i> legt beim Malen in eine leere Zelle eine neue Kachel an, <i>Manuell</i> ändert nur vorhandene.</div>
-      <div><b>Kacheln setzen</b>: eine Kachel in der Liste wählen — dann setzt der Stift sie ins Raster, Radierer oder Rechtsklick leert eine Zelle, Füllen füllt eine Fläche, <span class="kbd">Alt</span>+Klick nimmt die Kachel unter dem Zeiger auf.</div>
+      <div><b>Kacheln setzen</b>: eine Kachel in der Liste wählen — dann setzt der Stift sie ins Raster, Radierer oder Rechtsklick leert eine Zelle, Füllen füllt eine Fläche, <span class="kbd">Alt</span>+Klick nimmt die Kachel unter dem Zeiger auf. Mit ↺ ↻ ↔ ↕ (oder <span class="kbd">Z</span>, <span class="kbd">Umschalt</span>+<span class="kbd">Z</span>, <span class="kbd">X</span>, <span class="kbd">Y</span>) setzt du sie gedreht oder gespiegelt — die Kachel selbst bleibt, die neue Fassung wird eine eigene Kachel. Gut für Ecken und Ränder aus einer einzigen Kachel.</div>
       <div><b>Unbenutzte entfernen</b> räumt den Kachelsatz auf, <b>Normale Ebene</b> macht wieder eine gewöhnliche Ebene daraus (die Pixel bleiben).</div>
       <div><b>Bibliothek</b>: „Speichern“ legt den Kachelsatz der aktiven Tilemap-Ebene unter einem Namen ins Projekt. Mit „Neue Ebene“ holst du ihn in jeden Sprite, „Übernehmen“ legt seine Kacheln in die aktive Tilemap-Ebene (die Anordnung bleibt). Gespeichert werden die Farben, nicht die Nummern — der Satz passt auch zu einer anderen Palette. Für andere Projekte: „Als Datei speichern“ und „Datei laden …“; laden geht auch mit einem fremden Kachelbild (PNG), das in Kacheln der eingestellten Größe zerschnitten wird.</div>
       <div><b>Für Godot exportieren</b>: Kachelbild (PNG), Szene <code>.tscn</code> mit einer <code>TileMapLayer</code> je Tilemap-Ebene und ein JSON für andere Engines. Den Ordner ins Godot-Projekt legen und die Szene öffnen (Godot 4.3 oder neuer). Exportiert wird der aktuelle Frame.</div>
@@ -1393,6 +1405,8 @@
       <div class="sc-row"><b>Umschalt + Malen</b><span>Nur waagerecht, senkrecht oder 45° · bei Formen: einrasten, Quadrat, Kreis</span></div>
       <div class="sc-row"><b>Alt + Rechts ziehen</b><span>Größe von Pinsel, Radierer und Spray</span></div>
       <div class="sc-row"><b>Alt + Klick (Kacheln setzen)</b><span>Kachel aufnehmen</span></div>
+      <div class="sc-row"><b>Z · Umschalt + Z (Kacheln setzen)</b><span>Kachel um 90° drehen (im / gegen den Uhrzeigersinn)</span></div>
+      <div class="sc-row"><b>X · Y (Kacheln setzen)</b><span>Kachel waagerecht / senkrecht spiegeln</span></div>
       <div class="sc-row"><b>Strg + C / V (in der Timeline)</b><span>Zellen kopieren / einfügen</span></div>
       <div class="sc-row"><b>Shift + Alt halten</b><span>Schablone in den Vordergrund</span></div>
       <div class="sc-row"><b>Shift + Alt + Ziehen</b><span>Schablone verschieben</span></div>

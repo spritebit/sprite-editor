@@ -263,6 +263,13 @@ const STATIC = {
     'tile.listLabel':      'Tiles',
     'tile.empty':          'No tiles yet — paint into an empty cell in “Paint pixels” mode (Auto).',
     'tile.prune':          'Remove unused',
+    'tile.xfPrev':         'This is how the tile is placed',
+    'tile.rotCcw':         'Rotate 90° counterclockwise (Shift+Z)',
+    'tile.rotCw':          'Rotate 90° clockwise (Z)',
+    'tile.flipH':          'Flip horizontally (X)',
+    'tile.flipV':          'Flip vertically (Y)',
+    'tile.xfReset':        'Normal',
+    'tile.xfResetTitle':   'Place normally again',
     'tile.pruneTitle':     'Remove tiles that are not placed anywhere',
     'tile.unmap':          'Normal layer',
     'tile.unmapTitle':     'Back to a normal layer — the pixels stay, the tiles go',
@@ -768,7 +775,7 @@ const STATIC = {
       + '<div>For game levels and patterns: a <b>tilemap layer</b> is made of tiles of a fixed size (8–64 px). Each tile is stored once in the layer’s tileset — paint it and it changes <b>everywhere</b> it is placed, in other frames too.</div>'
       + '<div>The <b>Tiles</b> panel: <b>New tilemap layer</b> or <b>Convert active layer</b> (identical spots become one tile). A blue grid shows the tiles; the edge that fits no whole tile is darkened.</div>'
       + '<div><b>Paint pixels</b>: paint the tiles with every tool. <i>Auto</i> creates a new tile when you paint into an empty cell, <i>Manual</i> only changes existing ones.</div>'
-      + '<div><b>Place tiles</b>: pick a tile in the list — the pencil then places it in the grid, eraser or right-click clears a cell, fill fills an area, <span class="kbd">Alt</span>+click picks the tile under the pointer.</div>'
+      + '<div><b>Place tiles</b>: pick a tile in the list — the pencil then places it in the grid, eraser or right-click clears a cell, fill fills an area, <span class="kbd">Alt</span>+click picks the tile under the pointer. With ↺ ↻ ↔ ↕ (or <span class="kbd">Z</span>, <span class="kbd">Shift</span>+<span class="kbd">Z</span>, <span class="kbd">X</span>, <span class="kbd">Y</span>) you place it rotated or flipped — the tile itself stays, the new version becomes a tile of its own. Handy for corners and edges from a single tile.</div>'
       + '<div><b>Remove unused</b> tidies the tileset, <b>Normal layer</b> turns it back into an ordinary layer (the pixels stay).</div>'
       + '<div><b>Library</b>: “Save” stores the tile set of the active tilemap layer under a name in the project. “New layer” brings it into any sprite, “Apply” puts its tiles into the active tilemap layer (the arrangement stays). Colors are stored, not numbers — the set fits a different palette too. For other projects: “Save as file” and “Load file …”; loading also works with a foreign tile image (PNG), which is cut into tiles of the set size.</div>'
       + '<div><b>Export for Godot</b>: tile image (PNG), a <code>.tscn</code> scene with one <code>TileMapLayer</code> per tilemap layer and a JSON for other engines. Put the folder into your Godot project and open the scene (Godot 4.3 or newer). The current frame is exported.</div>',
@@ -904,6 +911,8 @@ const STATIC = {
       + '<div class="sc-row"><b>Alt + right-drag</b><span>Size of brush, eraser and spray</span></div>'
       + '<div class="sc-row"><b>Hold Shift + Alt</b><span>Stencil to the front</span></div>'
       + '<div class="sc-row"><b>Alt + click (place tiles)</b><span>Pick a tile</span></div>'
+      + '<div class="sc-row"><b>Z · Shift + Z (place tiles)</b><span>Rotate the tile by 90° (clockwise / counterclockwise)</span></div>'
+      + '<div class="sc-row"><b>X · Y (place tiles)</b><span>Flip the tile horizontally / vertically</span></div>'
       + '<div class="sc-row"><b>Ctrl + C / V (in the timeline)</b><span>Copy / paste cels</span></div>'
       + '<div class="sc-row"><b>Shift + Alt + drag</b><span>Move the stencil</span></div>'
       + '<div class="sc-row"><b>Shift + Alt + right-click</b><span>Stencil eyedropper</span></div>'
@@ -972,11 +981,13 @@ const MSG = {
     'tile.exported':    '{name} gespeichert — den Ordner „{folder}“ ins Godot-Projekt entpacken und die .tscn öffnen.',
     'tile.exportedDl':  '(im Download-Ordner)',
     'tile.info':        '{tw} × {th} px · {n} Kacheln · Raster {cols} × {rows}',
-    'tile.hintTiles':   'Stift setzt die gewählte Kachel, Radierer oder Rechtsklick leert, Füllen füllt, Alt + Klick nimmt eine Kachel auf.',
+    'tile.hintTiles':   'Stift setzt die gewählte Kachel, Radierer oder Rechtsklick leert, Füllen füllt, Alt + Klick nimmt eine Kachel auf. Z / X / Y drehen und spiegeln sie.',
     'tile.hintAuto':    'Malen ändert die Kachel überall, wo sie liegt. Wer in eine leere Zelle malt, legt eine neue Kachel an.',
     'tile.hintManual':  'Malen ändert die Kachel überall, wo sie liegt. Leere Zellen bleiben leer — es entstehen keine neuen Kacheln.',
     'tile.item':        'Kachel {k} — zum Setzen wählen',
     'tile.blocked':     'Manuell: in leere Zellen wird nicht gemalt (dafür „Auto“ wählen).',
+    'tile.xfState':     'Gesetzt wird die gedrehte/gespiegelte Fassung (Vorschau). Die Kachel selbst bleibt — ist die Fassung neu, wird sie eine eigene Kachel.',
+    'tile.xfSquare':    'Um 90° drehen geht nur bei quadratischen Kacheln.',
 
     // Palette-Beschriftungen
     'color.label.0': 'Transparent',
@@ -1652,11 +1663,13 @@ const MSG = {
     'tile.exported':    '{name} saved — unpack the folder “{folder}” into your Godot project and open the .tscn.',
     'tile.exportedDl':  '(in your downloads folder)',
     'tile.info':        '{tw} × {th} px · {n} tiles · grid {cols} × {rows}',
-    'tile.hintTiles':   'Pencil places the chosen tile, eraser or right-click clears, fill fills, Alt + click picks a tile.',
+    'tile.hintTiles':   'Pencil places the chosen tile, eraser or right-click clears, fill fills, Alt + click picks a tile. Z / X / Y rotate and flip it.',
     'tile.hintAuto':    'Painting changes the tile everywhere it is placed. Painting into an empty cell creates a new tile.',
     'tile.hintManual':  'Painting changes the tile everywhere it is placed. Empty cells stay empty — no new tiles are created.',
     'tile.item':        'Tile {k} — pick to place',
     'tile.blocked':     'Manual: empty cells are not painted (choose “Auto” for that).',
+    'tile.xfState':     'Placing the rotated/flipped version (preview). The tile itself stays — if this version is new, it becomes a tile of its own.',
+    'tile.xfSquare':    'Rotating by 90° only works with square tiles.',
 
     'color.label.0': 'Transparent',
     'color.short.0': 'Transparent',
