@@ -371,9 +371,11 @@ function renderShadeRamp() {
 }
 renderCallbacks.onShadeRamp = renderShadeRamp;
 
-// „Umdrehen" gibt es nur am Handy — am Rechner malt Rechtsklick die Reihe
-// andersherum. Dort gilt die gemerkte Einstellung darum nicht.
-const shadeUp = () => state.shadeUp && isMobileLayout();
+// „Umdrehen" gibt es nur für Finger — mit Maus malt Rechtsklick die Reihe
+// andersherum, auch im schmalen Fenster. Dort gilt die gemerkte
+// Einstellung darum nicht. Dieselbe Abfrage wie in styles.css.
+const TOUCH = window.matchMedia('(pointer: coarse)');
+const shadeUp = () => state.shadeUp && TOUCH.matches;
 
 // Schattieren ansetzen: true, wenn es losgehen kann. `dark` = Richtung
 // dunkler (leer → hellste Farbe, dann dunkler; js/shade.js). Ohne Reihe

@@ -1237,8 +1237,10 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 /* Mehrfachauswahl gibt es am Rechner ueber Strg und Shift — der Knopf ist
    nur fuer Finger da (styles.css, Abschnitt Responsive). */
 #tl-multi { display: none; }
-/* Schattieren umdrehen: am Rechner macht das der Rechtsklick (js/app.js shadeUp). */
+/* Schattieren umdrehen: nur für Finger — mit Maus macht das der Rechtsklick,
+   auch im schmalen Fenster (js/app.js shadeUp). */
 #shade-rev-btn { display: none; }
+@media (pointer: coarse) { #shade-rev-btn { display: inline-flex; } }
 .tl-num input { width: 4.5rem; }
 /* Deckkraft: drei Stellen, das „%" direkt dahinter statt hinter der
    breiten Wertspalte. */
@@ -2957,7 +2959,6 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
      fallen die Schritt-Knoepfe weg — den Nachbar-Frame tippt man direkt an,
      und die Leiste bleibt zweizeilig. */
   #tl-multi { display: inline-grid; }
-  #shade-rev-btn { display: inline-flex; }
   /* Die Frames sind die Ausnahme von den 44 px: sie stehen in einer eigenen
      Zeile und man muss mehrere auf einmal sehen, sonst scrollt man blind.
      34 px bleiben treffsicher genug (js/frames.js CELL_MIN_TOUCH). */
