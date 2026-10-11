@@ -6,7 +6,8 @@
 // Werkzeug ein Stift, der sich durch die Reihe arbeitet (Linksklick):
 //   leerer Pixel          → die erste Farbe der Reihe
 //   Farbe aus der Reihe   → die nächste, an der letzten Schluss
-//   andere Farbe          → bleibt (z. B. die Umrisslinie)
+//   andere Farbe          → wie leer: die erste Farbe der Reihe — so lässt
+//                           sich auch über schon Gemaltes schattieren
 // Rechtsklick geht die Reihe andersherum. Pro Strich ändert sich jeder
 // Pixel höchstens einmal (render.js paintShade merkt sich die berührten
 // Zellen); wer weiter will, setzt neu an und malt drüber.
@@ -121,14 +122,14 @@ export function makeShader(pal, ramp, sign, cur = 0) {
     const h = i > 0 && isHex(pal[i]) ? pal[i].toLowerCase() : null;
     if (h && !idx.has(h)) idx.set(h, i);
   }
-  // Leerer Pixel: dort beginnt die Reihe.
+  // Leerer Pixel oder eine Farbe, die nicht in der Reihe steht: dort
+  // beginnt die Reihe.
   const first = idx.get(order[0]) ?? order[0];
   return v => {
-    if (v === 0) return first;
     const h = valueHex(v, pal);
-    if (!h) return v;
-    const i = pos.get(h);
-    if (i == null || i + 1 >= order.length) return v;
+    const i = h ? pos.get(h) : undefined;
+    if (i == null) return first;
+    if (i + 1 >= order.length) return v;
     const target = order[i + 1];
     return idx.get(target) ?? target;
   };

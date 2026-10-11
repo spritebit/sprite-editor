@@ -50,10 +50,11 @@ test('Rechtsklick: die Reihe andersherum, leer → letzte Farbe', () => {
   assert.equal(back(3), 3, 'am Anfang der Reihe ist Schluss');
 });
 
-test('Farben außerhalb der Reihe bleiben unberührt', () => {
+test('Farben außerhalb der Reihe werden wie leere behandelt: erste Farbe', () => {
   const along = makeShader(PAL, RAMP, -1);
-  assert.equal(along(4), 4);
-  assert.equal(along('#123456'), '#123456');
+  assert.equal(along(4), 3);             // Grün → rot (erste der Reihe)
+  assert.equal(along('#123456'), 3);     // freie Farbe genauso
+  assert.equal(makeShader(PAL, RAMP, 1)(4), 2, 'rückwärts: letzte Farbe');
 });
 
 test('Freie Farben: in der Reihe, aber nicht in der Palette → bleibt Hex', () => {
