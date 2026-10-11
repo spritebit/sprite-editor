@@ -1,3 +1,13 @@
+# 3.2.31
+
+## Deutsch
+
+- Kleinere Verbesserungen und Fehlerbehebungen.
+
+## English
+
+- Small improvements and fixes.
+
 # 3.2.30
 
 ## Deutsch

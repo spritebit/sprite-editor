@@ -415,19 +415,38 @@ function canSetRows() {
     && !tl.classList.contains('is-floating') && !tl.closest('.bar-zone--side, .rail-pins');
 }
 
+// Die Zeichenfläche behält immer mindestens ein Viertel des Fensters —
+// darüber stehen noch Menü, Tabs und Leisten, 70 % für die Timeline allein
+// ließen ihr fast nichts (das Bild ragte dann über die Timeline).
+const MIN_CANVAS_SHARE = 0.25;
+
+/** Höchste Höhe des Rasters, bei der die Zeichenfläche ihr Viertel behält. */
+function maxBoxPx(box) {
+  const area = $('editor-canvas-area');
+  if (!area) return Infinity;
+  return box.offsetHeight + area.offsetHeight - innerHeight * MIN_CANVAS_SHARE;
+}
+
 function fitRows() {
   const box = $('tl-frames');
   if (!box) return;
   const on = canSetRows();
   if (heightGrip) heightGrip.hidden = !on;
   const rows = on ? state.tlOpts.rows : 0;
-  box.style.height = rows ? headPx(box) + rows * rowPx(box) + 'px' : '';
-  box.style.maxHeight = rows ? 'none' : '';
+  if (!rows) {
+    box.style.height = box.style.maxHeight = '';
+    return;
+  }
+  // Gemerkte Zeilen, aber nie mehr, als das Fenster gerade hergibt (kleineres
+  // Fenster, mehr Leisten) — mindestens eine Zeile bleibt.
+  const want = headPx(box) + rows * rowPx(box);
+  const h = Math.max(headPx(box) + rowPx(box), Math.min(want, maxBoxPx(box)));
+  box.style.height = Math.floor(h) + 'px';
+  box.style.maxHeight = 'none';
 }
 
 /** Zeilen, die gerade zu sehen sind — Ausgangspunkt beim Ziehen. */
 function shownRows(box) {
-  if (state.tlOpts.rows) return state.tlOpts.rows;
   return Math.max(1, Math.round((box.clientHeight - headPx(box)) / rowPx(box)));
 }
 
@@ -1331,8 +1350,8 @@ function makeHeightGrip() {
     // Griff oben: nach oben ziehen = höher. Griff unten: nach unten = höher.
     const sign = e.clientY < r.top + r.height / 2 ? -1 : 1;
     const sy = e.clientY, r0 = shownRows(box), step = rowPx(box);
-    // Die Zeichenfläche soll nie ganz verschwinden: höchstens 70 % des Fensters.
-    const max = Math.max(1, Math.min(TL_ROWS_MAX, Math.floor((innerHeight * 0.7 - headPx(box)) / step)));
+    // Die Zeichenfläche soll nie verschwinden (MIN_CANVAS_SHARE).
+    const max = Math.max(1, Math.min(TL_ROWS_MAX, Math.floor((maxBoxPx(box) - headPx(box)) / step)));
     document.body.classList.add('is-dragging-ui', 'is-resizing-ui');
     grip.classList.add('is-active');
     const move = ev => {
@@ -1362,6 +1381,7 @@ function makeHeightGrip() {
 export function initFrames() {
   heightGrip = makeHeightGrip();
   $('timeline').append(heightGrip);
+  window.addEventListener('resize', fitRows);
   $('tl-first').addEventListener('click', firstFrame);
   $('tl-prev').addEventListener('click', prevFrame);
   $('tl-next').addEventListener('click', nextFrame);
