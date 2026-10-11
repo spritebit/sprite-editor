@@ -14,7 +14,7 @@ import { state, sprites, tilesetLib, getSprite, getPal, getPaletteByName, blankL
 import {
   TILE_SIZES, DEFAULT_TILE, blankTileset, buildTileset, mapSize, mapOf, tileAt, placeTile, fillTiles,
   NO_XF, isPlainXf, orientTile, turnXf, tileIndex,
-  pruneUnused, syncSprite, atlasGrid, godotScene, tilemapJson,
+  pruneUnused, copyTileset, syncSprite, atlasGrid, godotScene, tilemapJson,
 } from './tiles.js';
 import { recordOp, beginStroke, commitStroke, historyCallbacks } from './history.js';
 import { renderAll, renderEditor, renderCallbacks, cellFromEvent } from './render.js';
@@ -218,6 +218,17 @@ function unmapLayer() {
 }
 
 function prune() {
+  // Erst zählen (an einer Kopie), dann nachfragen — die Nummern der
+  // übrigen Kacheln rücken dabei auf.
+  const sp = getSprite();
+  const cur = activeTileset();
+  if (!sp || !cur) return;
+  const unused = pruneUnused(copyTileset(cur), [...new Set(sp.frames.map(f => f.cels[sp.layer]))]);
+  if (!unused) { showInfoToast(t('tile.prunedNone')); return; }
+  showConfirmToast(unused === 1 ? t('tile.pruneAsk1') : t('tile.pruneAsk', { n: unused }), pruneNow, t('tile.pruneOk'));
+}
+
+function pruneNow() {
   let n = 0;
   structural(sp => {
     const ts = sp.layers[sp.layer].tileset;

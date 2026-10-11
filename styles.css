@@ -2504,11 +2504,12 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 /* Kacheln (js/tilemap.js) */
 #tile-on:not([hidden]), #tile-off:not([hidden]) { display: flex; flex-direction: column; gap: var(--sp-2); }
 #tile-on .field-note, #tile-off .field-note { margin: 0; }
-/* Vorschau groß; erst wenn das Panel schmal wird, schrumpft sie (bis 48 px). */
-.tile-xf { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.tile-xf-prev { flex: 0 1 96px; min-width: 48px; height: auto; aspect-ratio: 1; image-rendering: pixelated; border: 1px solid var(--border); border-radius: 4px; }
-.tile-xf-btns { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto; min-width: 0; }
-.tile-xf-btns .btn { min-width: 32px; padding-inline: 6px; }
+/* Vorschau groß und mittig, die Knöpfe darunter gleich breit. Erst wenn
+   das Panel schmal wird, schrumpft die Vorschau. */
+.tile-xf { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 8px; }
+.tile-xf-prev { width: min(128px, 100%); height: auto; aspect-ratio: 1; image-rendering: pixelated; border: 1px solid var(--border); border-radius: 4px; }
+.tile-xf-btns { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+.tile-xf-btns .btn { min-width: 0; padding-inline: 2px; justify-content: center; text-align: center; }
 .tile-list { display: flex; flex-wrap: wrap; gap: 4px; max-height: 260px; overflow-y: auto; padding: 2px; }
 .tile-item {
   position: relative;
