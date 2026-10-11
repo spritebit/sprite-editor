@@ -348,7 +348,7 @@ function renderShadeRamp() {
     box.append(hint);
   }
   // In Mal-Reihenfolge: links die Farbe, die ein leerer Pixel bekommt.
-  for (const hex of state.shadeUp ? ramp : [...ramp].reverse()) {
+  for (const hex of shadeUp() ? ramp : [...ramp].reverse()) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'shade-sw';
@@ -364,12 +364,16 @@ function renderShadeRamp() {
     box.append(b);
   }
   $('shade-clear-btn').disabled = !ramp.length;
-  for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-rev-btn', state.shadeUp], ['shade-soft-btn', state.shadeSoft]])) {
+  for (const [id, on] of /** @type {[string, boolean][]} */ ([['shade-rev-btn', shadeUp()], ['shade-soft-btn', state.shadeSoft]])) {
     $(id).classList.toggle('is-active', on);
     $(id).setAttribute('aria-pressed', String(on));
   }
 }
 renderCallbacks.onShadeRamp = renderShadeRamp;
+
+// „Umdrehen" gibt es nur am Handy — am Rechner malt Rechtsklick die Reihe
+// andersherum. Dort gilt die gemerkte Einstellung darum nicht.
+const shadeUp = () => state.shadeUp && isMobileLayout();
 
 // Schattieren ansetzen: true, wenn es losgehen kann. `dark` = Richtung
 // dunkler (leer → hellste Farbe, dann dunkler; js/shade.js). Ohne Reihe
@@ -612,7 +616,7 @@ function initCanvasEvents() {
         else                                 info(t('info.tplPipette', { hex: r.hex }));
       } else if (state.tool === 'shade') {
         // Rechtsklick schattiert in die Gegenrichtung, statt zu radieren.
-        if (layerBlocked() || !startShade(state.shadeUp)) return;
+        if (layerBlocked() || !startShade(shadeUp())) return;
         state.isDrawing = true;
         beginStroke();
         const c = cellFromEvent(e);
@@ -723,7 +727,7 @@ function initCanvasEvents() {
       return;
     }
 
-    if (state.tool === 'shade' && !startShade(!state.shadeUp)) return;
+    if (state.tool === 'shade' && !startShade(!shadeUp())) return;
     state.isDrawing = true;
     beginStroke();
     ppBegin();
