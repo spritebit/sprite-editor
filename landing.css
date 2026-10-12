@@ -1767,6 +1767,9 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 .try-btn:hover { background: var(--surface-3); }
 .try-btn[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
 .try-text { display: grid; gap: var(--sp-5); justify-items: start; }
+/* Bitty und Text oben am Raster statt in seiner Mitte — sonst hängt die
+   Begrüßung zu tief. Untereinander (schmal) ändert das nichts. */
+.try > .try-text { align-self: start; padding-top: var(--sp-5); }
 
 /* Bitty stellt sich vor (js/bitty.js, js/landing-paint.js) */
 .bitty-hi { display: flex; align-items: center; gap: var(--sp-4); }
@@ -1915,6 +1918,7 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 
 @media (max-width: 940px) {
   .try, .sketch { grid-template-columns: minmax(0, 1fr); }
+  .try > .try-text { padding-top: 0; }
   .teasers { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
