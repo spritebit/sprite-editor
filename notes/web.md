@@ -3,10 +3,12 @@
 ## Deutsch
 
 - Startseite aufgeräumt: Bei „Probier’s einfach aus.“ (vorher „Mal einfach los.“) steht Bitty jetzt oben neben dem Raster, am Handy über dem Raster. Der Text zur Skizze sagt klarer, wie du dein Foto öffnest.
+- Angepinnte Panels erkennst du an einem blauen Punkt am Icon in der Seitenleiste, wie in der Desktop-App. Ein Klick darauf springt zum Panel.
 
 ## English
 
 - Home page tidied up: at “Give it a try.” (formerly “Just start painting.”) Bitty now sits at the top next to the grid, and above it on phones. The sketch text says more clearly how to open your photo.
+- Pinned panels now show a blue dot on their icon in the side bar, just like the desktop app. Clicking it jumps to the panel.
 
 # 3.7.1
 

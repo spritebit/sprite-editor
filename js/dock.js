@@ -72,12 +72,19 @@ function show(panel) {
   });
 }
 
+// Angepinnt, in einer Zone oder schwebend: das Icon trägt einen blauen
+// Punkt, ein Klick springt hin statt aufzuklappen — wie in der Desktop-App.
+const isPinned = panel => !!panel.dataset.mode && panel.dataset.mode !== 'dock';
+
 function relabel() {
   docks.forEach(({ btn, panel }) => {
     const name = panel.dataset.dockLabel ? t(panel.dataset.dockLabel)
       : panel.querySelector('.panel-title')?.textContent.trim() || panel.dataset.dock;
-    btn.title = name;
-    btn.setAttribute('aria-label', name);
+    const pinned = isPinned(panel);
+    btn.classList.toggle('is-pinned', pinned);
+    const label = pinned ? t('dock.pinnedTip', { name }) : name;
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
   });
   document.querySelectorAll('.dock-close').forEach(b => {
     b.title = t('help.close');
@@ -102,6 +109,8 @@ function makeDockButton(el, id, icon, dock) {
   });
   dock.append(btn);
   docks.push({ btn, panel: el });
+  // layout.js schreibt data-mode, wenn das Panel umzieht — Punkt und Name nachziehen.
+  new MutationObserver(relabel).observe(el, { attributes: true, attributeFilter: ['data-mode'] });
   return btn;
 }
 

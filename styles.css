@@ -2178,6 +2178,12 @@ body.editor-fullscreen .fs-exit.is-visible { opacity: 1; pointer-events: auto; }
 .dock-btn:hover { background: var(--surface-3); color: var(--text); }
 .dock-btn.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-line); }
 .dock-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Angepinnt (oder in einer Zone, schwebend): blauer Punkt unten rechts — wie in der Desktop-App. */
+.dock-btn { position: relative; }
+.dock-btn.is-pinned::after {
+  content: ''; position: absolute; right: 3px; bottom: 3px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
 
 :root {
   --dock-w: 48px;
