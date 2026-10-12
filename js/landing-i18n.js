@@ -74,7 +74,7 @@
     's2.h2':        'Your sketch turns into pixel art.',
     's2.artAlt':    'The same staircase cycling through three palettes: cool blue-green, warm browns, forest green.',
     's2.swatchAria': 'Palette indices 0 to 5; index 0 is transparent.',
-    's2.lead': 'Draw on paper, take a photo and load it here — the strokes become the outline, closed shapes fill in, and you pick the palette.',
+    's2.lead': 'Draw on paper, take a photo and open it with “Load your own sketch …” — the strokes become the outline, closed shapes fill in, and you pick the palette.',
     's2.facts': '<li>Your picture stays <span class="fact-key">in your browser</span> — nothing is uploaded.</li><li>In the editor the <span class="fact-key">template</span> does the same, plus finishing and lighting.</li><li>The picture only remembers numbers: <span class="fact-key">swap the palette</span> and everything recolors.</li>',
     's2.cta': 'Keep painting in the editor',
 
@@ -336,7 +336,7 @@
 
     's2.eyebrow':   '<span class="st-num">02</span> Skizzn',
     's2.h2':        'Aus deina Skizzn wird Pixel-Art.',
-    's2.lead': 'Zeichn auf Papier, mach a Foto und lods do — de Strich wern zur Kontur, gschlossane Flächn fülln si, und d’Palettn suachst da söwa aus.',
+    's2.lead': 'Zeichn auf Papier, mach a Foto und mochs mit „Eigene Skizzn lodn …“ auf — de Strich wern zur Kontur, gschlossane Flächn fülln si, und d’Palettn suachst da söwa aus.',
     'demo.upload': 'Eigene Skizzn lodn …',
 
     's3.eyebrow':   '<span class="st-num">03</span> Wergzeig',
