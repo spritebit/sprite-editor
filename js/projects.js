@@ -19,7 +19,7 @@ export const MAIN = 'main';
 export const REGISTRY_KEY = 'spritebit_projects';
 const LEGACY_KEY = 'wb_sprite_tester_v1';
 
-/** @typedef {{ id: string, name: string, updated: number, count: number }} ProjectEntry */
+/** @typedef {{ id: string, name: string, updated: number, opened?: number, count: number }} ProjectEntry */
 /** @typedef {{ current: string, list: ProjectEntry[] }} Registry */
 
 /** Liste aus gespeichertem Text — Unbrauchbares fällt weg, „main" gibt es immer.
@@ -36,10 +36,11 @@ export function parseRegistry(text) {
       id: e.id,
       name: typeof e.name === 'string' ? e.name.slice(0, 60) : '',
       updated: Number.isFinite(e.updated) ? e.updated : 0,
+      opened: Number.isFinite(e.opened) ? e.opened : 0,
       count: Number.isInteger(e.count) && e.count >= 0 ? e.count : 0,
     });
   }
-  if (!seen.has(MAIN)) list.unshift({ id: MAIN, name: '', updated: 0, count: 0 });
+  if (!seen.has(MAIN)) list.unshift({ id: MAIN, name: '', updated: 0, opened: 0, count: 0 });
   const current = typeof raw?.current === 'string' && seen.has(raw.current) ? raw.current : (list[0]?.id || MAIN);
   return { current, list };
 }
@@ -82,4 +83,18 @@ export const emergencyKeyOf = id => (id === MAIN ? 'spritebit_emergency' : 'spri
  *  @param {Registry} r @returns {ProjectEntry[]} */
 export function sortedList(r) {
   return [...r.list].sort((a, b) => (a.id === r.current ? -1 : b.id === r.current ? 1 : b.updated - a.updated));
+}
+
+/** So viele zeigt Datei → „Zuletzt geöffnet“. */
+export const RECENT_MAX = 8;
+
+/**
+ * Die anderen Projekte für Datei → „Zuletzt geöffnet“: zuletzt geöffnete
+ * zuerst (oder zuletzt geändert, falls ein Projekt noch nie geöffnet wurde,
+ * seit es diese Liste gibt). Das offene Projekt steht nicht darin.
+ * @param {Registry} r
+ */
+export function recentList(r) {
+  const last = e => Math.max(e.opened || 0, e.updated || 0);
+  return r.list.filter(e => e.id !== r.current).sort((a, b) => last(b) - last(a)).slice(0, RECENT_MAX);
 }

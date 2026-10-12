@@ -34,7 +34,7 @@ import {
 import {
   saveState, loadState, clearStorage, forceSaveBeforeUnload, saveToFile, loadFromFile,
   saveSpriteToFile, addSpritesFromFile, saveAseToFile,
-  backupInfo, downloadBackup, restoreBackup,
+  backupInfo, downloadBackup, restoreBackup, takeNotice,
 } from './storage.js';
 import { supportsFsAccess, pickSaveDirectory, getStoredDirName, saveBlob } from './filesystem.js';
 import {
@@ -2601,6 +2601,9 @@ async function init() {
   // ein Sprite anlegen, damit der Editor nie ins Leere zeigt.
   if (!Object.keys(sprites).length) createDefaultSprite();
   if (!state.curSprite) state.curSprite = Object.keys(sprites)[0];
+  // Hinweis vom Öffnen einer .sb-Datei (zu große Sprites weggelassen).
+  const notice = takeNotice();
+  if (notice) setTimeout(() => showInfoToast(notice), 600);
 
   applyIcons();
   initPanels();

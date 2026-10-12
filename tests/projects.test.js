@@ -3,7 +3,7 @@
 //   npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseRegistry, newProjectId, freeName, sortedList, dbNameOf, storageKeyOf, MAIN } from '../js/projects.js';
+import { parseRegistry, newProjectId, freeName, sortedList, recentList, RECENT_MAX, dbNameOf, storageKeyOf, MAIN } from '../js/projects.js';
 
 test('ohne Liste gibt es das erste Projekt — der alte Speicherstand', () => {
   const r = parseRegistry(null);
@@ -45,4 +45,19 @@ test('freie Namen und Reihenfolge', () => {
   assert.equal(freeName(r, '  Neu  '), 'Neu');
   assert.equal(freeName(r, ''), 'Projekt 3');
   assert.deepEqual(sortedList(r).map(e => e.id), ['p2', 'p1', MAIN], 'geöffnetes oben, dann neueste');
+});
+
+test('Zuletzt geöffnet: ohne das offene, zuletzt geöffnete zuerst, begrenzt', () => {
+  const r = parseRegistry(JSON.stringify({
+    current: 'main',
+    list: [
+      { id: 'main', name: 'Offen', updated: 900 },
+      { id: 'a', name: 'Alt geändert, eben geöffnet', updated: 10, opened: 800 },
+      { id: 'b', name: 'Nie geöffnet, neu geändert', updated: 500 },
+      { id: 'c', name: 'Uralt', updated: 1 },
+    ],
+  }));
+  assert.deepEqual(recentList(r).map(e => e.id), ['a', 'b', 'c']);
+  const many = parseRegistry(JSON.stringify({ list: Array.from({ length: 20 }, (_, i) => ({ id: 'p' + i, updated: i })) }));
+  assert.equal(recentList(many).length, RECENT_MAX);
 });

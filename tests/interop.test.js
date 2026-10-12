@@ -15,6 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { addSpritesFromPayload, spritePayload } from '../js/storage.js';
+import { readSb, writeSb } from '../js/sbfile.js';
 import { sprites, customPalettes, paletteColorNames, paletteMaterials, makeSprite } from '../js/state.js';
 
 const dir = new URL('./interop/', import.meta.url);
@@ -101,6 +102,29 @@ test('Web liest die eigene Beispieldatei wieder', () => {
 
 test('Web liest die Sprite-Datei der Desktop-App', () => {
   const [id] = addSpritesFromPayload(read('desktop-sprite.bitty'));
+  assert.ok(id, 'Sprite übernommen');
+  expectSample(sprites[id], sprites[id].palette);
+});
+
+// ── Projektdateien (.sb) ─────────────────────────────────────────────
+// web-project.sb schreibt diese Web-Version, desktop-project.sb die
+// Desktop-App. Gepackt wird mit zlib — die Bytes können sich je nach
+// Packer unterscheiden, darum wird nur gelesen und der Inhalt geprüft.
+
+test('Web liest die eigene .sb-Beispieldatei wieder', async () => {
+  if (process.env.UPDATE_INTEROP) {
+    buildSample();
+    writeFileSync(new URL('web-project.sb', dir), await writeSb(JSON.parse(JSON.stringify(spritePayload('held')))));
+  }
+  const { doc, skipped } = await readSb(new Uint8Array(readFileSync(new URL('web-project.sb', dir))), 1024);
+  assert.deepEqual(skipped, []);
+  const [id] = addSpritesFromPayload(doc);
+  expectSample(sprites[id], sprites[id].palette);
+});
+
+test('Web liest die .sb-Projektdatei der Desktop-App', async () => {
+  const { doc } = await readSb(new Uint8Array(readFileSync(new URL('desktop-project.sb', dir))), 1024);
+  const [id] = addSpritesFromPayload(doc);
   assert.ok(id, 'Sprite übernommen');
   expectSample(sprites[id], sprites[id].palette);
 });
