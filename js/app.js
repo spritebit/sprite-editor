@@ -59,6 +59,7 @@ import {
 } from './spritefx.js';
 import { replaceColor, recolorTargets, RECOLOR_SCOPES } from './recolor.js';
 import { makeStamp, stampOrigin } from './stamp.js';
+import { toSaved, fromSaved, addBrush, normalizeBrushes } from './brushlib.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
 import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
@@ -583,6 +584,9 @@ function stampPreviewUrl() {
 function syncStamp() {
   const on = stampActive();
   $('stamp-group').hidden = !on;
+  // Gespeicherte Pinsel: bei Stift, Pinsel und Radierer, sobald es welche gibt.
+  $('brushlib-group').hidden = !STAMP_TOOLS.includes(state.tool) || !savedBrushes.length;
+  if ($('brushlib-group').hidden) closeBrushLib();
   if (on) {
     const s = /** @type {NonNullable<typeof state.stamp>} */ (state.stamp);
     const img = /** @type {HTMLImageElement} */ ($('stamp-preview'));
@@ -603,6 +607,90 @@ function syncStamp() {
   }
   const b = $('sel-brush-btn');
   if (b) b.disabled = !selection.rect;
+}
+
+// ── Gespeicherte Pinsel (js/brushlib.js) ──
+// Liegen für alle Projekte im Browser (wie die Hilfslinien-Layouts).
+const BRUSHES_KEY = 'spritebit_brushes';
+/** @type {import('./brushlib.js').SavedBrush[]} */
+let savedBrushes = [];
+try { savedBrushes = normalizeBrushes(JSON.parse(localStorage.getItem(BRUSHES_KEY) || '[]')); } catch { savedBrushes = []; }
+
+function storeBrushes() {
+  try { localStorage.setItem(BRUSHES_KEY, JSON.stringify(savedBrushes)); } catch { /* privates Fenster o. Ä. */ }
+}
+
+/** Kleines Bild eines gespeicherten Pinsels (1 Pixel je Zelle). */
+function savedBrushUrl(b) {
+  const cv = document.createElement('canvas');
+  cv.width = b.w; cv.height = b.h;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  b.px.forEach((c, i) => {
+    if (!c) return;
+    ctx.fillStyle = c;
+    ctx.fillRect(i % b.w, Math.floor(i / b.w), 1, 1);
+  });
+  return cv.toDataURL();
+}
+
+function saveStamp() {
+  if (!state.stamp) return;
+  const saved = toSaved(state.stamp, state.stamp.pal);
+  const had = savedBrushes.length;
+  savedBrushes = addBrush(savedBrushes, saved);
+  storeBrushes();
+  syncStamp();
+  info(t(savedBrushes.length > had ? 'stamp.saved' : 'stamp.savedAgain'));
+}
+
+function closeBrushLib() {
+  $('brushlib-pop').hidden = true;
+  $('brushlib-btn').setAttribute('aria-expanded', 'false');
+}
+
+function openBrushLib() {
+  const pop = $('brushlib-pop');
+  if (!pop.hidden) { closeBrushLib(); return; }
+  pop.replaceChildren(...savedBrushes.map((b, i) => {
+    const item = document.createElement('div');
+    item.className = 'brushlib-item';
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = 'brushlib-pick';
+    pick.setAttribute('role', 'option');
+    pick.title = b.w + '×' + b.h;
+    const img = document.createElement('img');
+    img.src = savedBrushUrl(b);
+    img.alt = b.w + '×' + b.h;
+    // Seitenverhältnis behalten, in 40×40 einpassen.
+    const k = 40 / Math.max(b.w, b.h);
+    img.style.width = Math.max(1, Math.round(b.w * k)) + 'px';
+    img.style.height = Math.max(1, Math.round(b.h * k)) + 'px';
+    pick.append(img);
+    pick.addEventListener('click', () => {
+      state.stamp = fromSaved(b);
+      closeBrushLib();
+      if (!STAMP_TOOLS.includes(state.tool)) setTool('pencil'); else updateToolUI();
+      info(t('stamp.made', { w: b.w, h: b.h }));
+    });
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'brushlib-del';
+    del.title = t('stamp.delete');
+    del.setAttribute('aria-label', t('stamp.delete'));
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      savedBrushes = savedBrushes.filter((_, k) => k !== i);
+      storeBrushes();
+      closeBrushLib();
+      syncStamp();
+      if (savedBrushes.length) openBrushLib();
+    });
+    item.append(pick, del);
+    return item;
+  }));
+  pop.hidden = false;
+  $('brushlib-btn').setAttribute('aria-expanded', 'true');
 }
 
 function makeStampFromSelection() {
@@ -1336,6 +1424,12 @@ function initToolbar() {
   colorHooks.onChange = () => { if (state.stampMono) syncStamp(); };
   $('sel-brush-btn').addEventListener('click', () => { makeStampFromSelection(); });
   $('stamp-drop-btn').addEventListener('click', () => { dropStamp(); });
+  $('stamp-save-btn').addEventListener('click', saveStamp);
+  $('brushlib-btn').addEventListener('click', openBrushLib);
+  document.addEventListener('pointerdown', e => {
+    const el = /** @type {Element} */ (e.target);
+    if (!$('brushlib-pop').hidden && !el.closest('#brushlib-group')) closeBrushLib();
+  });
   $('stamp-mono-btn').addEventListener('click', () => {
     state.stampMono = !state.stampMono;
     syncStamp();

@@ -3130,3 +3130,27 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 /* Eigener Pinsel (js/stamp.js): Vorschau in der Options-Zeile und am Zeiger. */
 .stamp-preview { image-rendering: pixelated; background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-3) 0 50%) 0 0 / 6px 6px; border-radius: 3px; }
 #brush-cursor.is-stamp { background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; opacity: .75; }
+
+/* Gespeicherte Pinsel (js/brushlib.js): Liste unter dem Knopf. */
+.brushlib-group { position: relative; }
+.brushlib-pop {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 30;
+  display: grid; grid-template-columns: repeat(4, auto); gap: 6px; padding: 8px;
+  background: var(--surface-1, #222); border: 1px solid var(--border, rgba(127,127,127,.5));
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.brushlib-pop[hidden] { display: none; }
+.brushlib-item { position: relative; }
+.brushlib-pick {
+  display: grid; place-items: center; width: 52px; height: 52px; padding: 0; cursor: pointer;
+  border: 1px solid var(--border, rgba(127,127,127,.5)); border-radius: 4px;
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-3) 0 50%) 0 0 / 8px 8px;
+}
+.brushlib-pick:hover { outline: 2px solid var(--accent, #6af); }
+.brushlib-pick img { image-rendering: pixelated; }
+.brushlib-del {
+  position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0;
+  border-radius: 50%; border: none; cursor: pointer; font-size: 12px; line-height: 18px;
+  background: var(--surface-3, #444); color: inherit;
+}
+.brushlib-del:hover { background: var(--danger, #e66); color: #fff; }

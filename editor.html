@@ -359,7 +359,15 @@
           <span id="stamp-size" class="field-value"></span>
           <button class="btn" id="stamp-mono-btn" aria-pressed="false" data-i18n="tool.stampMono" data-i18n-attr="title:tool.stampMonoTitle"
                   title="Die Form in der aktuellen Farbe malen statt in ihren eigenen Farben">Aktuelle Farbe</button>
+          <button class="btn" id="stamp-save-btn" data-i18n="tool.stampSave" data-i18n-attr="title:tool.stampSaveTitle"
+                  title="Diesen Pinsel speichern — er steht dann unter „Gespeicherte Pinsel“ bereit, in jedem Projekt">Speichern</button>
           <button class="btn" id="stamp-drop-btn" data-i18n-attr="title:tool.stampDropTitle;aria-label:tool.stampDropTitle" title="Zurück zum normalen Pinsel (Strg+B ohne Auswahl)" aria-label="Zurück zum normalen Pinsel (Strg+B ohne Auswahl)"><span class="ico" data-icon="close"></span></button>
+        </div>
+
+        <!-- Gespeicherte Pinsel (js/brushlib.js): Klick nimmt einen, × löscht ihn -->
+        <div class="tool-group brushlib-group" id="brushlib-group" hidden>
+          <button class="btn" id="brushlib-btn" aria-haspopup="listbox" aria-expanded="false" data-i18n-attr="title:tool.brushLibTitle" title="Gespeicherte eigene Pinsel — Klick nimmt einen, × löscht ihn"><span class="ico" data-icon="brush"></span><span class="btn-label" data-i18n="tool.brushLib">Gespeicherte Pinsel</span></button>
+          <div class="brushlib-pop" id="brushlib-pop" role="listbox" hidden></div>
         </div>
 
         <label class="field field--inline" id="strength-group" hidden>

@@ -261,6 +261,7 @@ export const STATIC_AT = {
   'cln.recolorApply': 'Austauschn',
   'tool.stamp':       'Eigena Pinsl',
   'tool.selBrush':    'Ois Pinsl',
+  'tool.stampSave':   'Speichan',
 
   // ── Reiter ──
   'tabs.label':       'Offene Sprites',
