@@ -77,7 +77,6 @@ import { normalizeTags } from './tags.js';
 import { initPreview, renderPreview } from './preview.js';
 import { initTilemap, tileModeOn, tilePointerDown, turnTile } from './tilemap.js';
 import { initGuides, guidePointerDown, guideAt, toggleShow as toggleGuides } from './guides.js';
-import { TILED_MODES } from './tiled.js';
 import { parseTsSprite } from './tsimport.js';
 import { CODE_FORMATS, getFormat, codeFilename } from './codegen.js';
 import {
@@ -794,7 +793,10 @@ function initSettings() {
   $('settings-btn').addEventListener('click', openSettings);
   $('settings-nav').addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-tab]');
-    if (b) showSettingsTab(/** @type {HTMLElement} */ (b).dataset.setTab);
+    if (!b) return;
+    showSettingsTab(/** @type {HTMLElement} */ (b).dataset.setTab);
+    // Die Bitty-Suche „klickt“ das Thema auch bei geschlossenem Fenster.
+    if (!$('settings-modal-overlay').classList.contains('open')) openSettings();
   });
   // Pfeiltasten in der Themenliste (wie bei Reitern üblich).
   $('settings-nav').addEventListener('keydown', e => {
@@ -807,7 +809,12 @@ function initSettings() {
     next.focus();
   });
   $('settings-close').addEventListener('click', () => $('settings-modal-overlay').classList.remove('open'));
-  $('set-grid').addEventListener('change', () => $('grid-btn').click());
+  // Pixelraster: ohne Häkchen ein sauberes Bild ohne die feinen Linien.
+  $('set-grid').addEventListener('change', () => {
+    state.showGrid = /** @type {HTMLInputElement} */ ($('set-grid')).checked;
+    renderEditor();
+    saveState();
+  });
   $('set-tiled').addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-tiled]');
     if (b) setTiled(/** @type {HTMLElement} */ (b).dataset.setTiled);
@@ -1405,13 +1412,11 @@ const KEYMAP = [
 
 // Häkchen „Pixelraster anzeigen“ im Menü „Ansicht“.
 function syncGridItem() {
-  $('grid-btn').setAttribute('aria-checked', String(state.showGrid));
   syncSettings();
 }
 
 // Kachelmodus: Punkt im Menü „Ansicht“ setzen.
 function syncTiledItems() {
-  for (const mode of TILED_MODES) $(`tiled-${mode}-btn`).setAttribute('aria-checked', String(state.tiled === mode));
   syncSettings();
 }
 
@@ -1733,15 +1738,6 @@ function initToolbar() {
   };
   $('bg-dark-btn').addEventListener('click', () => setBg('dark'));
   $('bg-bw-btn').addEventListener('click', () => setBg('bw'));
-  // Pixelraster anzeigen (Menü „Ansicht“): ohne Häkchen ein sauberes Bild ohne die feinen Linien.
-  $('grid-btn').addEventListener('click', () => {
-    state.showGrid = !state.showGrid;
-    syncGridItem();
-    renderEditor();
-    saveState();
-  });
-  // Kachelmodus (Menü „Ansicht“, js/tiled.js): das Bild ringsum wiederholt.
-  for (const mode of TILED_MODES) $(`tiled-${mode}-btn`).addEventListener('click', () => setTiled(mode));
 
   $('undo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); undo(); });
   $('redo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); redo(); });

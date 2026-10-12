@@ -313,6 +313,14 @@ function collect() {
     const text = allLangs(titleEl) + (subEl ? ' ' + allLangs(subEl) : '') + (groupEl ? ' ' + allLangs(groupEl) : '');
     if (label) out.push({ kind: 'menu', label, names: allLangs(span), sub: where, text, el, danger: DANGER.test(el.id) });
   });
+  // Einstellungen: je Thema ein Eintrag, gefunden auch über das, was darin
+  // steht („Kachelmodus“, „Pixelraster“) — Enter öffnet das Fenster dort.
+  const setTitle = document.getElementById('settings-title');
+  document.querySelectorAll('[data-set-tab]').forEach(el => {
+    const pane = document.querySelector(`[data-set-pane="${/** @type {HTMLElement} */ (el).dataset.setTab}"]`);
+    const inside = pane ? [...pane.querySelectorAll('[data-i18n]')].map(n => allLangs(n)).join(' ') : '';
+    out.push({ kind: 'menu', label: clean(el.textContent), names: allLangs(el), sub: clean(setTitle?.textContent), text: allLangs(setTitle) + ' ' + inside, el });
+  });
   // Knöpfe in Panels, Timeline, Werkzeugleiste und über der Fläche — als
   // Befehle: Enter drückt sie (außer den gefährlichen).
   document.querySelectorAll('.panel button[id], #timeline button[id], #stage-head button[id], #toolbar button[id]').forEach(el => {
