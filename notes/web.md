@@ -1,3 +1,13 @@
+# 3.7.2
+
+## Deutsch
+
+- Startseite aufgeräumt: Bei „Probier’s einfach aus.“ (vorher „Mal einfach los.“) steht Bitty jetzt oben neben dem Raster, am Handy über dem Raster. Der Text zur Skizze sagt klarer, wie du dein Foto öffnest.
+
+## English
+
+- Home page tidied up: at “Give it a try.” (formerly “Just start painting.”) Bitty now sits at the top next to the grid, and above it on phones. The sketch text says more clearly how to open your photo.
+
 # 3.7.1
 
 ## Deutsch
