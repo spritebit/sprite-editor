@@ -124,3 +124,16 @@ test('Zeit unter dem Pinsel → Stufen: erst nach 0,35 s, dann immer schneller',
   assert.equal(holdSteps(350 + 245), 2);
   assert.ok(holdSteps(2000) > holdSteps(1000) + 5, 'später geht es schneller');
 });
+
+test('Verlauf nach einer Seite: dort am stärksten, zur Gegenseite 1', () => {
+  // Größe 5 (r = 2), 3 Stufen.
+  assert.equal(softLevel(0, -2, 5, 3, 'up'), 3, 'oben am meisten');
+  assert.equal(softLevel(0, 2, 5, 3, 'up'), 1, 'unten 1');
+  assert.equal(softLevel(0, 0, 5, 3, 'up'), 2, 'Mitte dazwischen');
+  assert.equal(softLevel(0, 2, 5, 3, 'down'), 3);
+  assert.equal(softLevel(-2, 0, 5, 3, 'left'), 3);
+  assert.equal(softLevel(2, 0, 5, 3, 'right'), 3);
+  assert.equal(softLevel(2, 0, 5, 3, 'left'), 1);
+  assert.equal(softLevel(2, 2, 5, 3, 'up'), 0, 'außerhalb des runden Pinsels bleibt 0');
+  assert.equal(softLevel(0, 0, 5, 3), softLevel(0, 0, 5, 3, 'center'), 'ohne Richtung wie bisher');
+});

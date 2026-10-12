@@ -3165,3 +3165,7 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 }
 .pal-export-pop[hidden] { display: none; }
 .pal-export-pop .btn { justify-content: flex-start; white-space: nowrap; }
+
+/* Richtung des Verlaufs beim Schattieren (js/shade.js softLevel). */
+.shade-dir .btn { min-width: 30px; justify-content: center; }
+.shade-dir[hidden] { display: none; }

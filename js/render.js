@@ -738,7 +738,7 @@ function shadeCells(x, y, fn) {
   const ta = tiledAxes(state.tiled); // Kacheln: über den Rand, mirrored() holt zurück
   for (let dy = ta.y ? lo : Math.max(lo, -y); dy <= (ta.y ? hi : Math.min(hi, H - 1 - y)); dy++) {
     for (let dx = ta.x ? lo : Math.max(lo, -x); dx <= (ta.x ? hi : Math.min(hi, W - 1 - x)); dx++) {
-      const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
+      const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels, /** @type {any} */ (state.shadeDir)) : 1;
       if (!level || (!soft && state.brushRound && !inRound(dx, dy, state.brushSize))) continue;
       for (const [px, py] of mirrored(x + dx, y + dy)) fn(px, py, py * W + px, level, levels);
     }

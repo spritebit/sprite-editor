@@ -25,7 +25,7 @@ import { packSprite, unpackSprite, packSum } from './pack.js';
 import { readAse, writeAse } from './aseprite.js';
 import { t } from './i18n.js';
 import { MATERIALS } from './gamejson.js';
-import { normalizeRamp } from './shade.js';
+import { normalizeRamp, SOFT_DIRS } from './shade.js';
 import { normalizeLib } from './tilelib.js';
 import { RECOLOR_SCOPES } from './recolor.js';
 
@@ -182,6 +182,7 @@ function buildPayload(withSprites = true) {
       shadeUp: state.shadeUp,
       brushRound: state.brushRound,
       shadeSoft: state.shadeSoft,
+      shadeDir: state.shadeDir,
       tileMode: state.tileMode,
       tileAuto: state.tileAuto,
       onion:      state.onion,
@@ -674,6 +675,7 @@ function applyPayload(payload) {
     if (typeof ui.shadeUp === 'boolean') state.shadeUp = ui.shadeUp;
     if (typeof ui.brushRound === 'boolean') state.brushRound = ui.brushRound;
     if (typeof ui.shadeSoft === 'boolean') state.shadeSoft = ui.shadeSoft;
+    if (SOFT_DIRS.includes(ui.shadeDir)) state.shadeDir = ui.shadeDir;
     if (ui.tileMode === 'pixel' || ui.tileMode === 'tiles') state.tileMode = ui.tileMode;
     if (ui.tileAuto === 'auto' || ui.tileAuto === 'manual') state.tileAuto = ui.tileAuto;
     if (typeof ui.onion === 'boolean') state.onion = ui.onion;

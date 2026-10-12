@@ -385,6 +385,13 @@ function renderShadeRamp() {
     $(id).classList.toggle('is-active', on);
     $(id).setAttribute('aria-pressed', String(on));
   }
+  // Richtung des Verlaufs — nur, wenn „Verlauf“ an ist.
+  $('shade-dir').hidden = !state.shadeSoft;
+  $('shade-dir').querySelectorAll('[data-shade-dir]').forEach(b => {
+    const on = /** @type {HTMLElement} */ (b).dataset.shadeDir === state.shadeDir;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
 }
 renderCallbacks.onShadeRamp = renderShadeRamp;
 
@@ -1560,6 +1567,13 @@ function initToolbar() {
   });
   $('shade-soft-btn').addEventListener('click', () => {
     state.shadeSoft = !state.shadeSoft;
+    renderShadeRamp();
+    saveState();
+  });
+  $('shade-dir').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-shade-dir]');
+    if (!b) return;
+    state.shadeDir = /** @type {HTMLElement} */ (b).dataset.shadeDir || 'center';
     renderShadeRamp();
     saveState();
   });

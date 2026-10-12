@@ -93,6 +93,7 @@ export const state = {
   brushRound:    false,
   shadeUp:       false,
   shadeSoft:     false,
+  shadeDir:      'center', // Richtung des Verlaufs: 'center' | 'up' | 'down' | 'left' | 'right' (js/shade.js softLevel)
   maskEdit:      false,    // Werkzeuge malen in die Maske der aktiven Ebene (js/mask.js)
   // Tilemap-Ebenen (js/tiles.js, js/tilemap.js): 'pixel' = Kacheln bemalen,
   // 'tiles' = Kacheln setzen; Auto legt beim Malen in leere Zellen neue an.

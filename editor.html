@@ -419,6 +419,14 @@
           <button type="button" class="btn" id="shade-sort-btn" data-i18n-attr="title:tool.shadeSortTitle;aria-label:tool.shadeSortTitle" title="Farbreihe nach Farbstufen ordnen — von hell nach dunkel. Sonst bleibt sie in der Reihenfolge, in der du die Farben angeklickt hast." aria-label="Farbreihe nach Farbstufen ordnen — von hell nach dunkel. Sonst bleibt sie in der Reihenfolge, in der du die Farben angeklickt hast."><span class="ico" data-icon="shades"></span></button>
           <button class="btn" id="shade-rev-btn" aria-pressed="false" data-i18n="tool.shadeRev" data-i18n-attr="title:tool.shadeRevTitle" title="Farbreihe umdrehen: statt hell → dunkel geht es dunkel → hell (am Rechner per Rechtsklick)">⇄ Umdrehen</button>
           <button class="btn" id="shade-soft-btn" aria-pressed="false" data-i18n="tool.shadeSoft" data-i18n-attr="title:tool.shadeSoftTitle" title="Verlauf: runder Pinsel, in der Mitte mehrere Stufen auf einmal, zum Rand hin weniger — braucht eine Größe ab 2">Verlauf</button>
+          <!-- Richtung des Verlaufs (js/shade.js softLevel): Mitte oder eine Seite am stärksten -->
+          <div class="btn-group shade-dir" id="shade-dir" role="group" data-i18n-attr="aria-label:tool.shadeDir" aria-label="Richtung des Verlaufs" hidden>
+            <button class="btn" data-shade-dir="center" aria-pressed="true" data-i18n-attr="title:tool.shadeDirCenter;aria-label:tool.shadeDirCenter" title="Verlauf von der Mitte nach außen" aria-label="Verlauf von der Mitte nach außen">◉</button>
+            <button class="btn" data-shade-dir="up" aria-pressed="false" data-i18n-attr="title:tool.shadeDirUp;aria-label:tool.shadeDirUp" title="Oben am stärksten, nach unten auslaufend" aria-label="Oben am stärksten, nach unten auslaufend">↑</button>
+            <button class="btn" data-shade-dir="down" aria-pressed="false" data-i18n-attr="title:tool.shadeDirDown;aria-label:tool.shadeDirDown" title="Unten am stärksten, nach oben auslaufend" aria-label="Unten am stärksten, nach oben auslaufend">↓</button>
+            <button class="btn" data-shade-dir="left" aria-pressed="false" data-i18n-attr="title:tool.shadeDirLeft;aria-label:tool.shadeDirLeft" title="Links am stärksten, nach rechts auslaufend" aria-label="Links am stärksten, nach rechts auslaufend">←</button>
+            <button class="btn" data-shade-dir="right" aria-pressed="false" data-i18n-attr="title:tool.shadeDirRight;aria-label:tool.shadeDirRight" title="Rechts am stärksten, nach links auslaufend" aria-label="Rechts am stärksten, nach links auslaufend">→</button>
+          </div>
         </div>
 
         <div class="tool-group" id="select-group" hidden>
