@@ -113,6 +113,7 @@ const PRECACHE = [
   'js/sketch.js',
   'js/spritefx.js',
   'js/sprites.js',
+  'js/stamp.js',
   'js/state.js',
   'js/storage.js',
   'js/tablist.js',

@@ -564,6 +564,12 @@ function currentCells() {
   return readSel(getGrid(), selection.rect, selection.mask);
 }
 
+/** Pixel und Form der Auswahl — für „Als Pinsel“ (js/stamp.js). */
+export function selectionPixels() {
+  if (!selection.rect) return null;
+  return { cells: currentCells(), mask: selection.mask };
+}
+
 // Die Form wandert mit in die Zwischenablage — eingefügt wird wieder genau sie.
 export function copySelection() {
   if (!selection.rect) return 0;

@@ -27,7 +27,7 @@ import { showConfirmToast, showInfoToast } from './toast.js';
 import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
-  cellFromEvent, cellFromEventRaw, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
+  cellFromEvent, cellFromEventRaw, cellFromEventClamped, cellToColor, colorHooks, paintCell, paintStamp, stampActive, stampForPalette, STAMP_TOOLS, paintBrush, paintSpray, floodFill,
   ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeDwell, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
@@ -58,6 +58,7 @@ import {
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
 import { replaceColor, recolorTargets, RECOLOR_SCOPES } from './recolor.js';
+import { makeStamp, stampOrigin } from './stamp.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
 import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
@@ -86,6 +87,7 @@ import {
   endSelectionPointer, selectByColor, fillSelection, commitFloat, isFloating,
   selectAll, deselect, nudgeSelection, selectionInfo,
   copySelection, cutSelection, pasteClipboard, deleteSelection, hasClipboard,
+  selectionPixels,
 } from './selection.js';
 import {
   flip, rotate90, trimToContent, centerContent, resizeCanvas, scaleSprite, scopeLabel, scopeLabelFor,
@@ -254,6 +256,8 @@ function shapeEnd(start, c, shift) {
 }
 
 function applyTool(x, y) {
+  // Eigener Pinsel (js/stamp.js): Stift, Pinsel und Radierer setzen seine Form.
+  if (stampActive()) { paintStamp(x, y, state.tool === 'eraser'); return; }
   // Pixel-perfect: Stift und Radierer mit 1 px.
   if (ppActive()) { paintPixelPerfect(x, y, state.tool === 'eraser' ? 0 : state.curColor); return; }
   if (state.tool === 'brush')  { paintBrush(x, y);  return; }
@@ -333,6 +337,7 @@ function updateToolUI() {
   $('shape-group').hidden      = !isShapeTool(state.tool);
   $('fill-group').hidden       = state.tool !== 'fill';
   $('pixel-perfect-group').hidden = !['pencil', 'eraser'].includes(state.tool);
+  syncStamp();
   if (!isSelectTool(state.tool)) $('editor-canvas-wrap').classList.remove('is-move');
   syncShadeMarks();
   renderShadeRamp();
@@ -457,7 +462,7 @@ let hadSelection = false;
 function updateSelectionUI() {
   syncImagePanel();
   const has = !!selection.rect;
-  ['sel-cut-btn', 'sel-copy-btn', 'sel-delete-btn', 'sel-none-btn', 'sel-fill-btn'].forEach(id => {
+  ['sel-cut-btn', 'sel-copy-btn', 'sel-delete-btn', 'sel-none-btn', 'sel-fill-btn', 'sel-brush-btn'].forEach(id => {
     const b = $(id);
     if (b) b.disabled = !has;
   });
@@ -475,6 +480,7 @@ function updateSelectionUI() {
 function eraseAt(e) {
   const c = cellFromEventRaw(e);
   if (!c) return;
+  if (stampActive()) { paintStamp(c.x, c.y, true); return; }
   if (ppActive()) { paintPixelPerfect(c.x, c.y, 0); return; }
   const prev = state.curColor;
   state.curColor = 0;
@@ -487,11 +493,28 @@ function updateBrushCursor(e) {
   const el = $('brush-cursor');
   if (!el) return;
   const tool = state.tool;
-  if (!SIZED_TOOLS.includes(tool)) { el.hidden = true; return; }
+  const stamp = stampActive();
+  if (!SIZED_TOOLS.includes(tool) && !stamp) { el.hidden = true; return; }
   const c = cellFromEventRaw(e);
   if (!c) { el.hidden = true; return; }
 
   const cs = state.cellSize;
+  // Eigener Pinsel: Rahmen um seine Form, darin die Form halb durchsichtig.
+  el.classList.toggle('is-stamp', stamp);
+  if (stamp) {
+    const s = /** @type {NonNullable<typeof state.stamp>} */ (state.stamp);
+    const o = stampOrigin(s, c.x, c.y);
+    el.className = 'tool-' + tool + ' is-stamp';
+    el.style.left = o.x * cs + 'px';
+    el.style.top = o.y * cs + 'px';
+    el.style.width = s.w * cs + 'px';
+    el.style.height = s.h * cs + 'px';
+    el.style.borderRadius = '0';
+    el.style.backgroundImage = 'url(' + stampPreviewUrl() + ')';
+    el.hidden = false;
+    return;
+  }
+  el.style.backgroundImage = '';
   let left, top, size, round;
   if (tool === 'spray') {
     const r = state.brushSize;
@@ -526,6 +549,83 @@ function syncFillVisible() {
   $('fill-visible-btn').setAttribute('aria-pressed', String(state.fillVisible));
   $('fill-contig-btn').classList.toggle('is-active', state.fillContig);
   $('fill-contig-btn').setAttribute('aria-pressed', String(state.fillContig));
+}
+
+// ── Eigener Pinsel (js/stamp.js) ──
+// Strg+B oder „Als Pinsel“ in der Auswahl-Zeile: der Inhalt der Auswahl wird
+// zum Pinsel für Stift, Pinsel und Radierer. Noch einmal Strg+B (ohne
+// Auswahl) oder × in der Options-Zeile: zurück zum normalen Pinsel.
+/** @type {{stamp: any, pal: any, mono: any, url: string}} */
+let stampPreview = { stamp: null, pal: null, mono: null, url: '' };
+
+/** Bild des Pinsels (1 Pixel je Zelle) für Vorschau und Mauszeiger. */
+function stampPreviewUrl() {
+  const s = stampForPalette();
+  if (!s) return '';
+  const pal = getPal();
+  const mono = state.stampMono ? state.curColor : null;
+  const p = stampPreview;
+  if (p.stamp === state.stamp && p.pal === pal && p.mono === mono) return p.url;
+  const cv = document.createElement('canvas');
+  cv.width = s.w; cv.height = s.h;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+    const v = s.cells[y][x];
+    if (v === 0) continue;
+    const hex = cellToColor(state.stampMono ? state.curColor : v, pal) || '#000000';
+    ctx.fillStyle = hex;
+    ctx.fillRect(x, y, 1, 1);
+  }
+  stampPreview = { stamp: state.stamp, pal, mono, url: cv.toDataURL() };
+  return stampPreview.url;
+}
+
+function syncStamp() {
+  const on = stampActive();
+  $('stamp-group').hidden = !on;
+  if (on) {
+    const s = /** @type {NonNullable<typeof state.stamp>} */ (state.stamp);
+    const img = /** @type {HTMLImageElement} */ ($('stamp-preview'));
+    img.src = stampPreviewUrl();
+    // Kleine Pinsel groß zeigen, große auf 32 px Höhe begrenzen.
+    const k = Math.max(1, Math.min(8, Math.floor(32 / Math.max(s.w, s.h)))) || 1;
+    img.style.width = Math.min(96, s.w * k) + 'px';
+    img.style.height = Math.min(32, s.h * k) + 'px';
+    $('stamp-size').textContent = s.w + '×' + s.h;
+    $('stamp-mono-btn').classList.toggle('is-active', state.stampMono);
+    $('stamp-mono-btn').setAttribute('aria-pressed', String(state.stampMono));
+  }
+  // Größe, Form und Stärke gelten für den eigenen Pinsel nicht.
+  if (on) {
+    $('brush-size-group').hidden = true;
+    $('strength-group').hidden = true;
+    $('pixel-perfect-group').hidden = true;
+  }
+  const b = $('sel-brush-btn');
+  if (b) b.disabled = !selection.rect;
+}
+
+function makeStampFromSelection() {
+  const px = selectionPixels();
+  if (!px) return false;
+  const s = makeStamp(px.cells, px.mask);
+  if (!s) { info(t('stamp.empty')); return true; }
+  state.stamp = { ...s, pal: getPal() };
+  deselect();
+  updateSelectionUI();
+  if (!STAMP_TOOLS.includes(state.tool)) setTool('pencil');
+  else updateToolUI();
+  info(t('stamp.made', { w: s.w, h: s.h }));
+  return true;
+}
+
+function dropStamp() {
+  if (!state.stamp) return false;
+  state.stamp = null;
+  $('brush-cursor').hidden = true;
+  updateToolUI();
+  info(t('stamp.dropped'));
+  return true;
 }
 
 // Farbe ersetzen (js/recolor.js): die gewählten Farben als Pixelwerte —
@@ -1102,7 +1202,11 @@ function eyedropHint(e) {
 
 function clipboardKey(e) {
   const k = e.key.toLowerCase();
-  if (k === 'a') {
+  if (k === 'b' && !e.shiftKey && !e.altKey) {
+    // Strg+B: Auswahl wird zum Pinsel — ohne Auswahl zurück zum normalen.
+    e.preventDefault();
+    if (!makeStampFromSelection() && !dropStamp()) info(t('stamp.needSel'));
+  } else if (k === 'a') {
     e.preventDefault();
     setTool('select'); selectAll(); updateSelectionUI();
     info(selectionInfo(t('sel.all')));
@@ -1227,6 +1331,15 @@ function initToolbar() {
     if (RECOLOR_SCOPES.includes(/** @type {any} */ (v))) { state.recolorScope = /** @type {any} */ (v); saveState(); }
   });
   $('recolor-btn').addEventListener('click', applyRecolor);
+
+  // Einfarbiger eigener Pinsel: die Vorschau folgt der Farbe.
+  colorHooks.onChange = () => { if (state.stampMono) syncStamp(); };
+  $('sel-brush-btn').addEventListener('click', () => { makeStampFromSelection(); });
+  $('stamp-drop-btn').addEventListener('click', () => { dropStamp(); });
+  $('stamp-mono-btn').addEventListener('click', () => {
+    state.stampMono = !state.stampMono;
+    syncStamp();
+  });
 
   $('sel-op-new').addEventListener('click', () => setSelOp('new'));
   $('sel-op-add').addEventListener('click', () => setSelOp('add'));

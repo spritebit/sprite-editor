@@ -80,6 +80,8 @@ export const state = {
   fillVisible:   false,    // Füllen: Grenzen von allen sichtbaren Ebenen (js/fill.js)
   fillContig:    true,     // Füllen: nur die zusammenhängende Fläche (aus = jede Stelle der Farbe, fillAll)
   recolorScope:  'cel',    // Farbe ersetzen: 'cel' | 'layer' | 'all' (js/recolor.js)
+  stamp:         /** @type {null | {w: number, h: number, cells: any[][], pal: Record<number,string>}} */ (null), // eigener Pinsel (js/stamp.js)
+  stampMono:     false,    // eigener Pinsel in der aktuellen Farbe statt in seinen eigenen
   pixelPerfect:  false,    // Stift/Radierer 1 px: L-Ecken entfernen (js/pixelperfect.js)
   // Schattieren (js/shade.js): die Farbreihe als Hex-Werte, dunkel → hell;
   // shadeUp = Linksklick macht heller statt dunkler (für Finger);

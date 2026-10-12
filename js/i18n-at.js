@@ -259,6 +259,8 @@ export const STATIC_AT = {
   'cln.scopeCel':     'des Büd',
   'cln.scopeAll':     'ganza Sprite',
   'cln.recolorApply': 'Austauschn',
+  'tool.stamp':       'Eigena Pinsl',
+  'tool.selBrush':    'Ois Pinsl',
 
   // ── Reiter ──
   'tabs.label':       'Offene Sprites',

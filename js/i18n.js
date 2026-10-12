@@ -203,6 +203,14 @@ const STATIC = {
     'tool.fillVisible':      'Edges: all layers',
     'tool.fillVisibleTitle': 'The edges of the fill come from all visible layers — the paint goes into the active one. That way you colour in a template that sits on a layer of its own, area by area.',
     'tool.fillContig':       'Contiguous',
+    'tool.stamp':            'Custom brush',
+    'tool.stampMono':        'Current colour',
+    'tool.stampMonoTitle':   'Paint the shape in the current colour instead of its own colours',
+    'tool.stampDropTitle':   'Back to the normal brush (Ctrl+B without a selection)',
+    'tool.selBrush':         'As brush',
+    'tool.selBrushTitle':    'Use the selection as a brush — pencil, brush and eraser then place this shape (Ctrl+B)',
+    'mb.selBrush':           'Selection as brush',
+    'mb.kSelBrush':          'Ctrl+B',
     'tool.fillContigTitle':  'On: only the connected area. Off: every spot with this colour in the picture, even separate ones — recolour a colour everywhere with one click.',
 
     'donate.menu':  'Support spritebit',
@@ -952,6 +960,7 @@ const STATIC = {
       + '<div class="sc-row"><b>Arrow keys</b><span>With a selection: nudge it pixel by pixel · without: ← → frame, ↑ ↓ layer</span></div>'
       + '<div class="sc-row"><b>Ctrl + A / C / X / V / D</b><span>All · Copy · Cut · Paste · Deselect</span></div>'
       + '<div class="sc-row"><b>Ctrl + Shift + V</b><span>Paste with the numbers instead of the colours (other palette)</span></div>'
+      + '<div class="sc-row"><b>Ctrl + B</b><span>Selection as a custom brush · without a selection: back to the normal one</span></div>'
       + '<div class="sc-row"><b>Del</b><span>Erase the selection</span></div>'
       + '<div class="sc-row"><b>Enter</b><span>Apply the rotation · otherwise play / pause the animation</span></div>'
       + '<div class="sc-row"><b>Home / End</b><span>First / last frame</span></div>'
@@ -1379,6 +1388,10 @@ const MSG = {
     'cln.outlined':    'Outline gezeichnet — {n} Pixel.',
     'cln.outlineNone': 'Keine Outline nötig — Sprite leer?',
     'cln.recolored':   'Farbe ersetzt — {n} Pixel.',
+    'stamp.made':      'Eigener Pinsel: {w}×{h} — Stift, Pinsel und Radierer setzen jetzt diese Form. Strg+B ohne Auswahl: zurück.',
+    'stamp.dropped':   'Wieder der normale Pinsel.',
+    'stamp.empty':     'In der Auswahl ist nichts gemalt — daraus wird kein Pinsel.',
+    'stamp.needSel':   'Erst etwas auswählen — Strg+B macht daraus einen Pinsel.',
     'cln.recolorNone': 'Die alte Farbe kommt hier nicht vor.',
     'cln.recolorUnset': 'Erst „Von“ und „Nach“ wählen.',
     'cln.recolorSame': '„Von“ und „Nach“ sind dieselbe Farbe.',
@@ -2056,6 +2069,10 @@ const MSG = {
     'cln.outlined':    'Outline drawn — {n} pixels.',
     'cln.outlineNone': 'No outline needed — is the sprite empty?',
     'cln.recolored':   'Colour replaced — {n} pixels.',
+    'stamp.made':      'Custom brush: {w}×{h} — pencil, brush and eraser now place this shape. Ctrl+B without a selection: back.',
+    'stamp.dropped':   'Back to the normal brush.',
+    'stamp.empty':     'Nothing is painted in the selection — no brush from that.',
+    'stamp.needSel':   'Select something first — Ctrl+B turns it into a brush.',
     'cln.recolorNone': 'The old colour does not appear here.',
     'cln.recolorUnset': 'Choose “From” and “To” first.',
     'cln.recolorSame': '“From” and “To” are the same colour.',

@@ -25,6 +25,8 @@ import { createPalettePicker } from './palpicker.js';
 import { createPixelPerfect, ppAdd } from './pixelperfect.js';
 import { makeShader, toggleRamp, softLevel, rampLevels, holdSteps } from './shade.js';
 import { inRound } from './brushshape.js';
+import { stampCells } from './stamp.js';
+import { remapCells } from './remap.js';
 import { tiledAxes, wrapPoint, axisRange } from './tiled.js';
 import { recordPalettes, startPaletteEdit, endPaletteEdit } from './history.js';
 
@@ -584,7 +586,45 @@ let ppStroke = null; // { pp, last } während eines Strichs
 
 /** Gilt Pixel-perfect für das aktuelle Werkzeug? */
 export function ppActive() {
+  if (stampActive()) return false;
   return !!state.pixelPerfect && (state.tool === 'pencil' || (state.tool === 'eraser' && state.brushSize === 1));
+}
+
+// ── Eigener Pinsel (js/stamp.js) ─────────────────────────────────────
+// Stift, Pinsel und Radierer setzen die Form aus der Auswahl. Die Pixel
+// stammen aus der Palette, in der der Pinsel entstand — in einem Sprite mit
+// anderer Palette werden sie nach der Farbe übertragen (remap.js).
+export const STAMP_TOOLS = ['pencil', 'brush', 'eraser'];
+
+/** Malt das aktuelle Werkzeug gerade mit dem eigenen Pinsel? */
+export function stampActive() {
+  return !!state.stamp && STAMP_TOOLS.includes(state.tool);
+}
+
+let stampCache = { stamp: null, pal: null, cells: null };
+
+/** Pinsel mit Pixeln passend zur Palette des aktuellen Sprites. */
+export function stampForPalette() {
+  const s = state.stamp;
+  if (!s) return null;
+  const pal = getPal();
+  if (stampCache.stamp !== s || stampCache.pal !== pal) {
+    stampCache = { stamp: s, pal, cells: pal === s.pal ? s.cells : remapCells(s.cells, s.pal, pal).cells };
+  }
+  return { w: s.w, h: s.h, cells: stampCache.cells };
+}
+
+/** Den eigenen Pinsel auf (x, y) setzen — `erase`: genau die Form löschen. */
+export function paintStamp(x, y, erase = false) {
+  const s = stampForPalette();
+  if (!s) return;
+  const g = getGrid();
+  const color = erase ? 0 : state.stampMono ? state.curColor : undefined;
+  let changed = false;
+  for (const [cx, cy, v] of stampCells(s, x, y, color)) {
+    for (const [px, py] of mirrored(cx, cy)) changed = setCell(g, px, py, v) || changed;
+  }
+  if (changed) afterPaint();
 }
 
 export function ppBegin() { ppStroke = { pp: createPixelPerfect(), last: null }; }
@@ -914,7 +954,11 @@ export function renderQuickPalette() {
 // ────────────────────────────────────────────────────────────────────
 // AKTUELLE FARBE (Kopf des Farb-Panels)
 // ────────────────────────────────────────────────────────────────────
+/** Wird bei jedem Farbwechsel gerufen (z. B. Vorschau des eigenen Pinsels, app.js). */
+export const colorHooks = { onChange: () => {} };
+
 export function updateCurrentColorIndicator() {
+  colorHooks.onChange();
   const sw  = document.querySelector('#current-color .cc-swatch');
   const hex = document.querySelector('#current-color .cc-hex');
   const lbl = document.querySelector('#current-color .cc-label');
