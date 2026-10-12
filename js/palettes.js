@@ -590,6 +590,30 @@ export function createPaletteFromImport(entries, baseName) {
 
 export { isCustomPalette };
 
+/**
+ * Eine geladene Palettendatei (js/palfile.js) als eigene Palette anlegen und
+ * im Panel zeigen — der Sprite behält seine, bis man „Für Sprite nutzen“ drückt.
+ * Ein Undo-Schritt. Gibt den Namen der neuen Palette zurück.
+ * @param {import('./palfile.js').PalFile} pf
+ * @param {string} fileBase  Dateiname ohne Endung (falls die Datei keinen Namen hat)
+ */
+export function importPaletteFile(pf, fileBase) {
+  let name = null;
+  recordPalettes(() => {
+    const entries = {};
+    pf.colors.forEach((hex, i) => { entries[i + 1] = hex; });
+    name = createPaletteFromImport(entries, pf.name || fileBase || 'palette');
+    if (!name) return;
+    const names = {};
+    pf.names.forEach((n, i) => { if (n) names[i + 1] = n; });
+    if (Object.keys(names).length) paletteColorNames[name] = names;
+    state.palPreview = name;
+  });
+  renderAll();
+  saveState();
+  return name;
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Umsortieren — aus der Farbzeile (Ziehen, „Nach Farbstufen")
 // ────────────────────────────────────────────────────────────────────

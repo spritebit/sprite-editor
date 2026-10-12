@@ -73,10 +73,15 @@ export const state = {
   isErasing:     false,
   editorBg:      'dark',   // 'dark' | 'bw'
   showGrid:     true,     // Pixelraster zeigen (aus = sauberes Bild; Menü „Ansicht“)
+  tiled:        'off',    // Kachelmodus (js/tiled.js): 'off' | 'x' | 'y' | 'both'; Menü „Ansicht“
   outputFormat:  'ts',     // Schlüssel aus CODE_FORMATS (codegen.js)
   mirror:        'off',    // 'off' | 'x' (senkrechte Achse) | 'y' | 'both'
   shapeFill:     false,    // Rechteck/Ellipse gefüllt statt nur Kontur
   fillVisible:   false,    // Füllen: Grenzen von allen sichtbaren Ebenen (js/fill.js)
+  fillContig:    true,     // Füllen: nur die zusammenhängende Fläche (aus = jede Stelle der Farbe, fillAll)
+  recolorScope:  'cel',    // Farbe ersetzen: 'cel' | 'layer' | 'all' (js/recolor.js)
+  stamp:         /** @type {null | {w: number, h: number, cells: any[][], pal: Record<number,string>}} */ (null), // eigener Pinsel (js/stamp.js)
+  stampMono:     false,    // eigener Pinsel in der aktuellen Farbe statt in seinen eigenen
   pixelPerfect:  false,    // Stift/Radierer 1 px: L-Ecken entfernen (js/pixelperfect.js)
   // Schattieren (js/shade.js): die Farbreihe als Hex-Werte, dunkel → hell;
   // shadeUp = Linksklick macht heller statt dunkler (für Finger);
@@ -88,6 +93,7 @@ export const state = {
   brushRound:    false,
   shadeUp:       false,
   shadeSoft:     false,
+  shadeDir:      'center', // Richtung des Verlaufs: 'center' | 'up' | 'down' | 'left' | 'right' (js/shade.js softLevel)
   maskEdit:      false,    // Werkzeuge malen in die Maske der aktiven Ebene (js/mask.js)
   // Tilemap-Ebenen (js/tiles.js, js/tilemap.js): 'pixel' = Kacheln bemalen,
   // 'tiles' = Kacheln setzen; Auto legt beim Malen in leere Zellen neue an.

@@ -145,18 +145,30 @@ export function makeShader(pal, ramp, sign, cur = 0) {
 export const AUTO_LEVELS = 3;
 
 /**
+ * Richtung des Verlaufs: 'center' = Mitte am stärksten, zum Rand hin
+ * weniger; sonst ist die genannte Seite am stärksten und es läuft zur
+ * Gegenseite aus ('up' = oben am meisten Stufen, unten 1).
+ * @typedef {'center' | 'up' | 'down' | 'left' | 'right'} SoftDir
+ */
+export const SOFT_DIRS = /** @type {SoftDir[]} */ (['center', 'up', 'down', 'left', 'right']);
+
+/**
  * Stufen für einen Pixel im Abstand (dx, dy) zur Pinselmitte.
  * 0 = liegt außerhalb des runden Pinsels.
  * @param {number} dx
  * @param {number} dy
  * @param {number} size  Pinselgröße (Durchmesser in Pixeln)
- * @param {number} levels  Stufen in der Mitte (mindestens 1)
+ * @param {number} levels  Stufen an der stärksten Stelle (mindestens 1)
+ * @param {SoftDir} [dir]  Richtung des Verlaufs
  */
-export function softLevel(dx, dy, size, levels) {
+export function softLevel(dx, dy, size, levels, dir = 'center') {
   const r = (size - 1) / 2;
   const d = Math.hypot(dx, dy);
   if (d > r + 0.5) return 0;
-  return Math.max(1, Math.ceil(levels * (1 - d / (r + 1))));
+  if (dir === 'center') return Math.max(1, Math.ceil(levels * (1 - d / (r + 1))));
+  // Abstand zur Gegenseite, 1 … 2r+1, geteilt durch die ganze Breite.
+  const along = dir === 'up' ? -dy : dir === 'down' ? dy : dir === 'left' ? -dx : dx;
+  return Math.max(1, Math.ceil(levels * (r + along + 1) / (2 * r + 2)));
 }
 
 /**

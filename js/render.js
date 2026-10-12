@@ -5,7 +5,7 @@
 // leben in app.js; nur Handler an dynamisch erzeugten Elementen (Sprite-Karten,
 // Farb-Swatches) werden hier gesetzt und rufen dann renderCallbacks auf.
 import { HANDLES, handlePos } from './scale.js';
-import { fillRegion } from './fill.js';
+import { fillRegion, fillAll } from './fill.js';
 import { maskedCel } from './mask.js';
 import {
   state, sprites, customPalettes, paletteMaterials, selection,
@@ -25,6 +25,9 @@ import { createPalettePicker } from './palpicker.js';
 import { createPixelPerfect, ppAdd } from './pixelperfect.js';
 import { makeShader, toggleRamp, softLevel, rampLevels, holdSteps } from './shade.js';
 import { inRound } from './brushshape.js';
+import { stampCells } from './stamp.js';
+import { remapCells } from './remap.js';
+import { tiledAxes, wrapPoint, axisRange } from './tiled.js';
 import { recordPalettes, startPaletteEdit, endPaletteEdit } from './history.js';
 
 // Weiterreichen, damit bestehende Importe aus render.js gültig bleiben.
@@ -261,6 +264,10 @@ export function renderEditor() {
     paintGrid(ctx, selection.float, pal, selection.rect.x, selection.rect.y, r, { key: 'float' });
   }
 
+  // Kachelmodus: Kopien ringsum — jetzt, solange der Canvas nur das Bild
+  // zeigt (ohne Rahmen, Anfasser und Hilfslinien darüber).
+  drawTiled(canvas, W, H, cs);
+
   if (state.showColor) drawColorSpotlight(ctx, grid, pal, W, H, r);
 
   // Maske bearbeiten: Ausgeblendetes rötlich über allem.
@@ -273,9 +280,13 @@ export function renderEditor() {
   // Bei sehr kleinen Zellen weg, sonst wird alles Raster.
   const lines = document.getElementById('editor-gridlines');
   if (lines) {
+    // Im Kachelmodus laufen die Linien über die Kopien weiter.
+    const ta = tiledAxes(state.tiled);
     lines.hidden = cs < 6 || !state.showGrid;
-    lines.style.width = W * cs + 'px';
-    lines.style.height = H * cs + 'px';
+    lines.style.left = (ta.x ? -W * cs : 0) + 'px';
+    lines.style.top = (ta.y ? -H * cs : 0) + 'px';
+    lines.style.width = (ta.x ? 3 : 1) * W * cs + 'px';
+    lines.style.height = (ta.y ? 3 : 1) * H * cs + 'px';
     lines.style.setProperty('--cell', cs + 'px');
     lines.classList.toggle('is-light', state.editorBg === 'bw');
   }
@@ -291,6 +302,37 @@ export function renderEditor() {
 
   updateStageTitle();
   afterEditorRendered(big);
+}
+
+// Kachelmodus (js/tiled.js): das fertige Bild als Kopien auf einem zweiten
+// Canvas hinter dem eigentlichen — links/rechts, oben/unten oder ringsum.
+// Der Rand um #editor-canvas-wrap macht dort Platz, damit man hinscrollen
+// kann. Auf den Kopien malen leitet app.js an den Canvas weiter.
+function drawTiled(src, W, H, cs) {
+  const el = /** @type {HTMLCanvasElement | null} */ (document.getElementById('editor-tiled'));
+  const wrapEl = document.getElementById('editor-canvas-wrap');
+  if (!el || !wrapEl) return;
+  const a = tiledAxes(state.tiled);
+  const on = a.x || a.y;
+  el.hidden = !on;
+  wrapEl.style.margin = on ? `${a.y ? H * cs : 0}px ${a.x ? W * cs : 0}px` : '';
+  if (!on) return;
+  const nx = a.x ? 3 : 1, ny = a.y ? 3 : 1;
+  // Eigene Auflösung: dreimal so breit lehnte der Browser sonst womöglich ab.
+  const r = renderScale(W * nx, H * ny, cs);
+  if (el.width !== W * nx * r || el.height !== H * ny * r) {
+    el.width = W * nx * r;
+    el.height = H * ny * r;
+  }
+  el.style.left = (a.x ? -W * cs : 0) + 'px';
+  el.style.top = (a.y ? -H * cs : 0) + 'px';
+  el.style.width = W * nx * cs + 'px';
+  el.style.height = H * ny * cs + 'px';
+  const ctx = el.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) ctx.drawImage(src, i * W * r, j * H * r, W * r, H * r);
+  }
 }
 
 // Onion Skin: Nachbar-Frames scheinen durch — davor rot, danach blau
@@ -444,28 +486,46 @@ export function updateStageTitle() {
   }
 }
 
-// Maus-/Touch-Event → Grid-Zelle (oder null wenn außerhalb)
+// Maus-/Touch-Event → Grid-Zelle (oder null wenn außerhalb). Im
+// Kachelmodus zählen die Kopien mit — die Zelle kommt ins Bild zurückgeholt.
 export function cellFromEvent(e) {
+  const c = cellFromEventRaw(e);
+  if (!c) return null;
+  const g = getGrid();
+  const [x, y] = wrapPoint(c.x, c.y, g[0].length, g.length, state.tiled);
+  return { x, y };
+}
+
+// Wie cellFromEvent, aber im Kachelmodus NICHT zurückgeholt: auf der Kopie
+// links ist x negativ. Für Striche über den Rand — sonst verbände ein Strich
+// von x = W−1 nach x = 0 quer durchs ganze Bild. Gemalt wird trotzdem im
+// Bild, mirrored() holt jeden Punkt zurück.
+export function cellFromEventRaw(e) {
   const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('editor-canvas'));
   const r = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - r.left) / state.cellSize);
   const y = Math.floor((e.clientY - r.top) / state.cellSize);
   const g = getGrid();
-  if (x < 0 || y < 0 || x >= g[0].length || y >= g.length) return null;
+  const a = tiledAxes(state.tiled);
+  const [x0, x1] = axisRange(g[0].length, a.x), [y0, y1] = axisRange(g.length, a.y);
+  if (x < x0 || y < y0 || x > x1 || y > y1) return null;
   return { x, y };
 }
 
 // Wie cellFromEvent, aber ohne null: Werte außerhalb werden auf den Rand
 // gezogen. Für Aktionen, die über den Rand hinaus ziehen dürfen (Auswahl).
-export function cellFromEventClamped(e) {
+// `tiled` (Formen): im Kachelmodus bis an den Rand der Kopien und nicht
+// zurückgeholt — eine Linie darf so über die Kante laufen.
+export function cellFromEventClamped(e, tiled = false) {
   const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('editor-canvas'));
   const r = canvas.getBoundingClientRect();
   const g = getGrid();
-  const W = g[0].length, H = g.length;
-  const clamp = (v, max) => Math.max(0, Math.min(max, v));
+  const a = tiled ? tiledAxes(state.tiled) : { x: false, y: false };
+  const [x0, x1] = axisRange(g[0].length, a.x), [y0, y1] = axisRange(g.length, a.y);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   return {
-    x: clamp(Math.floor((e.clientX - r.left) / state.cellSize), W - 1),
-    y: clamp(Math.floor((e.clientY - r.top) / state.cellSize), H - 1),
+    x: clamp(Math.floor((e.clientX - r.left) / state.cellSize), x0, x1),
+    y: clamp(Math.floor((e.clientY - r.top) / state.cellSize), y0, y1),
   };
 }
 
@@ -483,7 +543,8 @@ function afterPaint() {
 // ── Symmetrie ────────────────────────────────────────────────────────
 // Alle Mal-Operationen laufen durch mirrored(): der Punkt selbst plus seine
 // Spiegelbilder an der senkrechten und/oder waagerechten Mittelachse.
-// Ohne Symmetrie ist das genau ein Punkt, es kostet also nichts.
+// Ohne Symmetrie ist das genau ein Punkt, es kostet also nichts. Im
+// Kachelmodus holt mirrored() die Punkte außerdem ins Bild zurück.
 export function mirrored(x, y) {
   const g = getGrid();
   const W = g[0].length, H = g.length;
@@ -492,6 +553,10 @@ export function mirrored(x, y) {
   if (state.mirror === 'x' || state.mirror === 'both') pts.push([mx, y]);
   if (state.mirror === 'y' || state.mirror === 'both') pts.push([x, my]);
   if (state.mirror === 'both') pts.push([mx, my]);
+  // Kachelmodus: was über den Rand ragt, kommt auf der anderen Seite herein.
+  if (state.tiled !== 'off') {
+    for (const p of pts) [p[0], p[1]] = wrapPoint(p[0], p[1], W, H, state.tiled);
+  }
   // Auf der Achse fallen Punkt und Spiegelbild zusammen — Duplikate raus.
   return pts.filter(([px, py], i) =>
     pts.findIndex(([qx, qy]) => qx === px && qy === py) === i);
@@ -521,7 +586,45 @@ let ppStroke = null; // { pp, last } während eines Strichs
 
 /** Gilt Pixel-perfect für das aktuelle Werkzeug? */
 export function ppActive() {
+  if (stampActive()) return false;
   return !!state.pixelPerfect && (state.tool === 'pencil' || (state.tool === 'eraser' && state.brushSize === 1));
+}
+
+// ── Eigener Pinsel (js/stamp.js) ─────────────────────────────────────
+// Stift, Pinsel und Radierer setzen die Form aus der Auswahl. Die Pixel
+// stammen aus der Palette, in der der Pinsel entstand — in einem Sprite mit
+// anderer Palette werden sie nach der Farbe übertragen (remap.js).
+export const STAMP_TOOLS = ['pencil', 'brush', 'eraser'];
+
+/** Malt das aktuelle Werkzeug gerade mit dem eigenen Pinsel? */
+export function stampActive() {
+  return !!state.stamp && STAMP_TOOLS.includes(state.tool);
+}
+
+let stampCache = { stamp: null, pal: null, cells: null };
+
+/** Pinsel mit Pixeln passend zur Palette des aktuellen Sprites. */
+export function stampForPalette() {
+  const s = state.stamp;
+  if (!s) return null;
+  const pal = getPal();
+  if (stampCache.stamp !== s || stampCache.pal !== pal) {
+    stampCache = { stamp: s, pal, cells: pal === s.pal ? s.cells : remapCells(s.cells, s.pal, pal).cells };
+  }
+  return { w: s.w, h: s.h, cells: stampCache.cells };
+}
+
+/** Den eigenen Pinsel auf (x, y) setzen — `erase`: genau die Form löschen. */
+export function paintStamp(x, y, erase = false) {
+  const s = stampForPalette();
+  if (!s) return;
+  const g = getGrid();
+  const color = erase ? 0 : state.stampMono ? state.curColor : undefined;
+  let changed = false;
+  for (const [cx, cy, v] of stampCells(s, x, y, color)) {
+    for (const [px, py] of mirrored(cx, cy)) changed = setCell(g, px, py, v) || changed;
+  }
+  if (changed) afterPaint();
 }
 
 export function ppBegin() { ppStroke = { pp: createPixelPerfect(), last: null }; }
@@ -549,9 +652,10 @@ export function paintBrush(x, y) {
   const round = state.brushRound && state.brushSize > 2;
   const n = state.brushSize;
   let changed = false;
-  // Ohne Symmetrie direkt und nur im Bild — bei großen Pinseln (bis 300 px,
-  // also 90 000 Zellen je Tupfer) spart das den Umweg über mirrored().
-  if (!state.mirror || state.mirror === 'off') {
+  // Ohne Symmetrie und Kacheln direkt und nur im Bild — bei großen Pinseln
+  // (bis 300 px, also 90 000 Zellen je Tupfer) spart das den Umweg über mirrored().
+  const ta = tiledAxes(state.tiled);
+  if ((!state.mirror || state.mirror === 'off') && !ta.x && !ta.y) {
     const value = state.curColor;
     for (let py = Math.max(0, y + lo); py <= Math.min(H - 1, y + hi); py++) {
       const row = grid[py];
@@ -564,9 +668,10 @@ export function paintBrush(x, y) {
     if (changed) afterPaint();
     return;
   }
-  // Mit Symmetrie: nur Zellen im Bild — außerhalb liegt auch kein Spiegelbild.
-  for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
-    for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
+  // Mit Symmetrie: nur Zellen im Bild — außerhalb liegt auch kein
+  // Spiegelbild. Mit Kacheln dagegen alles: es kommt drüben wieder herein.
+  for (let dy = ta.y ? lo : Math.max(lo, -y); dy <= (ta.y ? hi : Math.min(hi, H - 1 - y)); dy++) {
+    for (let dx = ta.x ? lo : Math.max(lo, -x); dx <= (ta.x ? hi : Math.min(hi, W - 1 - x)); dx++) {
       if (round && !inRound(dx, dy, n)) continue;
       if (threshold < 1 && Math.random() > threshold) continue;
       for (const [px, py] of mirrored(x + dx, y + dy)) {
@@ -630,9 +735,10 @@ function shadeCells(x, y, fn) {
   const levels = rampLevels(state.shadeRamp);
   // Bei gerader Größe liegt die Mitte zwischen zwei Pixeln.
   const mid = (lo + hi) / 2;
-  for (let dy = Math.max(lo, -y); dy <= Math.min(hi, H - 1 - y); dy++) {
-    for (let dx = Math.max(lo, -x); dx <= Math.min(hi, W - 1 - x); dx++) {
-      const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels) : 1;
+  const ta = tiledAxes(state.tiled); // Kacheln: über den Rand, mirrored() holt zurück
+  for (let dy = ta.y ? lo : Math.max(lo, -y); dy <= (ta.y ? hi : Math.min(hi, H - 1 - y)); dy++) {
+    for (let dx = ta.x ? lo : Math.max(lo, -x); dx <= (ta.x ? hi : Math.min(hi, W - 1 - x)); dx++) {
+      const level = soft ? softLevel(dx - mid, dy - mid, state.brushSize, levels, /** @type {any} */ (state.shadeDir)) : 1;
       if (!level || (!soft && state.brushRound && !inRound(dx, dy, state.brushSize))) continue;
       for (const [px, py] of mirrored(x + dx, y + dy)) fn(px, py, py * W + px, level, levels);
     }
@@ -676,6 +782,8 @@ export function floodFill(startX, startY) {
   // In einer Maske gilt immer die Maske selbst.
   const sp = getSprite();
   const ref = state.fillVisible && sp && !editingMask() ? flatGrid(sp) : grid;
+  // „Zusammenhängend“ aus: jede Stelle mit dieser Farbe, auch getrennte Flächen.
+  if (!state.fillContig) { fillAll(grid, ref, startX, startY, fill); afterPaint(); return; }
   // Bei Symmetrie startet die Füllung an jedem Spiegelpunkt einmal.
   for (const [sx, sy] of mirrored(startX, startY)) fillRegion(grid, ref, sx, sy, fill);
   afterPaint();
@@ -846,7 +954,11 @@ export function renderQuickPalette() {
 // ────────────────────────────────────────────────────────────────────
 // AKTUELLE FARBE (Kopf des Farb-Panels)
 // ────────────────────────────────────────────────────────────────────
+/** Wird bei jedem Farbwechsel gerufen (z. B. Vorschau des eigenen Pinsels, app.js). */
+export const colorHooks = { onChange: () => {} };
+
 export function updateCurrentColorIndicator() {
+  colorHooks.onChange();
   const sw  = document.querySelector('#current-color .cc-swatch');
   const hex = document.querySelector('#current-color .cc-hex');
   const lbl = document.querySelector('#current-color .cc-label');

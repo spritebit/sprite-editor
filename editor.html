@@ -115,6 +115,9 @@
           <div class="mb-sep" role="separator"></div>
           <button type="button" class="mb-item" role="menuitem" data-click="#sel-all-btn"><span data-i18n="mb.selAll">Alles auswählen</span><kbd data-i18n="mb.kSelAll">Strg+A</kbd></button>
           <button type="button" class="mb-item" role="menuitem" data-click="#sel-none-btn"><span data-i18n="mb.selNone">Auswahl aufheben</span><kbd data-i18n="mb.kSelNone">Strg+D</kbd></button>
+          <button type="button" class="mb-item" role="menuitem" data-click="#sel-brush-btn"><span data-i18n="mb.selBrush">Auswahl als Pinsel</span><kbd data-i18n="mb.kSelBrush">Strg+B</kbd></button>
+          <div class="mb-sep" role="separator"></div>
+          <button type="button" class="mb-item" role="menuitem" id="settings-btn"><span data-i18n="mb.settings">Einstellungen …</span><kbd data-i18n="mb.kSettings">Strg+,</kbd></button>
         </div>
       </div>
       <div class="mb-menu">
@@ -125,15 +128,7 @@
           <div class="mb-label" data-i18n="mb.bg">Hintergrund</div>
           <button type="button" class="mb-item" role="menuitemradio" aria-checked="true" data-click="#bg-dark-btn" data-mirror="#bg-dark-btn"><span data-i18n="mb.bgDark">Dunkel</span></button>
           <button type="button" class="mb-item" role="menuitemradio" aria-checked="false" data-click="#bg-bw-btn" data-mirror="#bg-bw-btn"><span data-i18n="mb.bgLight">Hell</span></button>
-          <div class="mb-sep" role="separator"></div>
-          <button type="button" class="mb-item" role="menuitemcheckbox" aria-checked="true" id="grid-btn" data-i18n-attr="title:mb.gridTitle" title="Die feinen Linien zwischen den Pixeln zeigen — ohne Häkchen siehst du das Bild sauber"><span data-i18n="mb.grid">Pixelraster anzeigen</span></button>
-          <div class="mb-sep" role="separator"></div>
-          <div class="mb-label" data-i18n="mb.lang">Sprache</div>
-          <div class="lang-switch mb-group" role="group" aria-label="Sprache / Language">
-            <button type="button" class="mb-item lang-btn" role="menuitemradio" data-lang="de" lang="de"><span>Deutsch</span></button>
-            <button type="button" class="mb-item lang-btn" role="menuitemradio" data-lang="at" lang="de-AT"><span>Österreichisch</span></button>
-            <button type="button" class="mb-item lang-btn" role="menuitemradio" data-lang="en" lang="en"><span>English</span></button>
-          </div>
+          <!-- Pixelraster, Kachelmodus und Sprache stehen in den Einstellungen (Bearbeiten → Einstellungen). -->
         </div>
       </div>
       <div class="mb-menu">
@@ -344,6 +339,24 @@
           </div>
         </div>
 
+        <!-- Eigener Pinsel (js/stamp.js): aus der Auswahl mit Strg+B -->
+        <div class="tool-group" id="stamp-group" hidden>
+          <span class="field-label" data-i18n="tool.stamp">Eigener Pinsel</span>
+          <img id="stamp-preview" class="stamp-preview" alt="">
+          <span id="stamp-size" class="field-value"></span>
+          <button class="btn" id="stamp-mono-btn" aria-pressed="false" data-i18n="tool.stampMono" data-i18n-attr="title:tool.stampMonoTitle"
+                  title="Die Form in der aktuellen Farbe malen statt in ihren eigenen Farben">Aktuelle Farbe</button>
+          <button class="btn" id="stamp-save-btn" data-i18n="tool.stampSave" data-i18n-attr="title:tool.stampSaveTitle"
+                  title="Diesen Pinsel speichern — er steht dann unter „Gespeicherte Pinsel“ bereit, in jedem Projekt">Speichern</button>
+          <button class="btn" id="stamp-drop-btn" data-i18n-attr="title:tool.stampDropTitle;aria-label:tool.stampDropTitle" title="Zurück zum normalen Pinsel (Strg+B ohne Auswahl)" aria-label="Zurück zum normalen Pinsel (Strg+B ohne Auswahl)"><span class="ico" data-icon="close"></span></button>
+        </div>
+
+        <!-- Gespeicherte Pinsel (js/brushlib.js): Klick nimmt einen, × löscht ihn -->
+        <div class="tool-group brushlib-group" id="brushlib-group" hidden>
+          <button class="btn" id="brushlib-btn" aria-haspopup="listbox" aria-expanded="false" data-i18n-attr="title:tool.brushLibTitle" title="Gespeicherte eigene Pinsel — Klick nimmt einen, × löscht ihn"><span class="ico" data-icon="brush"></span><span class="btn-label" data-i18n="tool.brushLib">Gespeicherte Pinsel</span></button>
+          <div class="brushlib-pop" id="brushlib-pop" role="listbox" hidden></div>
+        </div>
+
         <label class="field field--inline" id="strength-group" hidden>
           <span class="field-label" data-i18n="tool.strength">Stärke</span>
           <input type="range" id="strength-slider" min="1" max="100" value="100">
@@ -369,6 +382,8 @@
         <div class="tool-group" id="fill-group" hidden>
           <button class="btn" id="fill-visible-btn" aria-pressed="false" data-i18n="tool.fillVisible" data-i18n-attr="title:tool.fillVisibleTitle"
                   title="Die Grenzen der Füllung kommen von allen sichtbaren Ebenen — gemalt wird in die aktive. So malst du eine Vorlage, die auf einer eigenen Ebene liegt, Fläche für Fläche aus.">Grenzen: alle Ebenen</button>
+          <button class="btn" id="fill-contig-btn" aria-pressed="true" data-i18n="tool.fillContig" data-i18n-attr="title:tool.fillContigTitle"
+                  title="An: nur die zusammenhängende Fläche. Aus: jede Stelle mit dieser Farbe im Bild, auch getrennte — so färbst du eine Farbe mit einem Klick überall um.">Zusammenhängend</button>
         </div>
 
         <!-- Schattieren (js/shade.js): Farbreihe — gewählt durch Antippen in
@@ -391,6 +406,14 @@
           <button type="button" class="btn" id="shade-sort-btn" data-i18n-attr="title:tool.shadeSortTitle;aria-label:tool.shadeSortTitle" title="Farbreihe nach Farbstufen ordnen — von hell nach dunkel. Sonst bleibt sie in der Reihenfolge, in der du die Farben angeklickt hast." aria-label="Farbreihe nach Farbstufen ordnen — von hell nach dunkel. Sonst bleibt sie in der Reihenfolge, in der du die Farben angeklickt hast."><span class="ico" data-icon="shades"></span></button>
           <button class="btn" id="shade-rev-btn" aria-pressed="false" data-i18n="tool.shadeRev" data-i18n-attr="title:tool.shadeRevTitle" title="Farbreihe umdrehen: statt hell → dunkel geht es dunkel → hell (am Rechner per Rechtsklick)">⇄ Umdrehen</button>
           <button class="btn" id="shade-soft-btn" aria-pressed="false" data-i18n="tool.shadeSoft" data-i18n-attr="title:tool.shadeSoftTitle" title="Verlauf: runder Pinsel, in der Mitte mehrere Stufen auf einmal, zum Rand hin weniger — braucht eine Größe ab 2">Verlauf</button>
+          <!-- Richtung des Verlaufs (js/shade.js softLevel): Mitte oder eine Seite am stärksten -->
+          <div class="btn-group shade-dir" id="shade-dir" role="group" data-i18n-attr="aria-label:tool.shadeDir" aria-label="Richtung des Verlaufs" hidden>
+            <button class="btn" data-shade-dir="center" aria-pressed="true" data-i18n-attr="title:tool.shadeDirCenter;aria-label:tool.shadeDirCenter" title="Verlauf von der Mitte nach außen" aria-label="Verlauf von der Mitte nach außen">◉</button>
+            <button class="btn" data-shade-dir="up" aria-pressed="false" data-i18n-attr="title:tool.shadeDirUp;aria-label:tool.shadeDirUp" title="Oben am stärksten, nach unten auslaufend" aria-label="Oben am stärksten, nach unten auslaufend">↑</button>
+            <button class="btn" data-shade-dir="down" aria-pressed="false" data-i18n-attr="title:tool.shadeDirDown;aria-label:tool.shadeDirDown" title="Unten am stärksten, nach oben auslaufend" aria-label="Unten am stärksten, nach oben auslaufend">↓</button>
+            <button class="btn" data-shade-dir="left" aria-pressed="false" data-i18n-attr="title:tool.shadeDirLeft;aria-label:tool.shadeDirLeft" title="Links am stärksten, nach rechts auslaufend" aria-label="Links am stärksten, nach rechts auslaufend">←</button>
+            <button class="btn" data-shade-dir="right" aria-pressed="false" data-i18n-attr="title:tool.shadeDirRight;aria-label:tool.shadeDirRight" title="Rechts am stärksten, nach links auslaufend" aria-label="Rechts am stärksten, nach links auslaufend">→</button>
+          </div>
         </div>
 
         <div class="tool-group" id="select-group" hidden>
@@ -406,6 +429,7 @@
             <button class="btn" id="sel-cut-btn"    data-i18n-attr="title:tool.selCutTitle"    title="Ausschneiden (Strg+X)"><span class="ico" data-icon="cut"></span><span class="btn-label" data-i18n="tool.selCut">Ausschneiden</span></button>
             <button class="btn" id="sel-copy-btn"   data-i18n-attr="title:tool.selCopyTitle"   title="Kopieren (Strg+C)"><span class="ico" data-icon="copy"></span><span class="btn-label" data-i18n="tool.selCopy">Kopieren</span></button>
             <button class="btn" id="sel-paste-btn"  data-i18n-attr="title:tool.selPasteTitle"  title="Einfügen (Strg+V)"><span class="ico" data-icon="paste"></span><span class="btn-label" data-i18n="tool.selPaste">Einfügen</span></button>
+            <button class="btn" id="sel-brush-btn"  data-i18n-attr="title:tool.selBrushTitle"  title="Auswahl als Pinsel nehmen — Stift, Pinsel und Radierer setzen dann diese Form (Strg+B)"><span class="ico" data-icon="brush"></span><span class="btn-label" data-i18n="tool.selBrush">Als Pinsel</span></button>
             <button class="btn" id="sel-fill-btn"   data-i18n-attr="title:tool.selFillTitle"   title="Auswahl mit der aktuellen Farbe füllen"><span class="ico" data-icon="fill"></span><span class="btn-label" data-i18n="tool.selFill">Füllen</span></button>
             <button class="btn btn--danger-soft" id="sel-delete-btn" data-i18n-attr="title:tool.selDeleteTitle" title="Auswahl leeren (Entf)"><span class="ico" data-icon="trash"></span><span class="btn-label" data-i18n="tool.selDelete">Leeren</span></button>
             <button class="btn" id="sel-none-btn"   data-i18n-attr="title:tool.selNoneTitle"   title="Auswahl aufheben (Strg+D oder Esc)"><span class="ico" data-icon="deselect"></span><span class="btn-label" data-i18n="tool.selNone">Aufheben</span></button>
@@ -451,6 +475,8 @@
         <div class="bar-zone bar-zone--side" data-zone="left"></div>
         <div id="editor-canvas-area">
           <div id="editor-canvas-wrap">
+            <!-- Kachelmodus: Kopien des Bilds ringsum (js/render.js drawTiled) -->
+            <canvas id="editor-tiled" hidden></canvas>
             <canvas id="editor-canvas"></canvas>
             <!-- Gitterlinien als CSS-Ebene (js/render.js) — bleiben bei jeder Auflösung 1 px -->
             <div id="editor-gridlines" aria-hidden="true" hidden></div>
@@ -672,6 +698,20 @@
             <button class="btn" id="palette-add-btn" data-i18n="pal.add" data-i18n-attr="title:pal.addTitle" title="Neue eigene Palette anlegen">+ Palette</button>
             <button class="btn" id="palette-fork-btn" data-i18n="pal.fork" data-i18n-attr="title:pal.forkTitle" title="Diese eingebaute Palette als eigene Kopie anlegen — dann ist sie änderbar">Kopie bearbeiten</button>
           </div>
+          <!-- Palettendateien (js/palfile.js): .gpl, .hex, .pal, .txt, Bilder -->
+          <div class="btn-row pal-file-row">
+            <button class="btn" id="palette-load-btn" data-i18n="pal.load" data-i18n-attr="title:pal.loadTitle"
+                    title="Palette aus einer Datei laden — .gpl (GIMP, Aseprite), .hex (Lospec), .pal, .txt (Paint.NET) oder ein Bild wie das PNG von Lospec">Laden …</button>
+            <button class="btn" id="palette-export-btn" aria-haspopup="menu" aria-expanded="false" data-i18n="pal.export" data-i18n-attr="title:pal.exportTitle"
+                    title="Die angezeigte Palette als Datei speichern">Speichern …</button>
+            <div class="pal-export-pop" id="palette-export-pop" role="menu" hidden>
+              <button type="button" class="btn" role="menuitem" data-pal-format="gpl" data-i18n="pal.fmtGpl">.gpl — GIMP, Aseprite, Krita</button>
+              <button type="button" class="btn" role="menuitem" data-pal-format="hex" data-i18n="pal.fmtHex">.hex — Lospec</button>
+              <button type="button" class="btn" role="menuitem" data-pal-format="pal" data-i18n="pal.fmtPal">.pal — JASC (Paint Shop Pro)</button>
+              <button type="button" class="btn" role="menuitem" data-pal-format="png" data-i18n="pal.fmtPng">.png — Bild, 1 Pixel je Farbe</button>
+            </div>
+            <input type="file" id="palette-file-input" accept=".gpl,.hex,.pal,.txt,.png,.gif,.bmp,image/png,image/gif" hidden>
+          </div>
           <button class="btn btn--accent btn--block" id="palette-from-image-btn" data-i18n="pal.fromImage" data-i18n-attr="title:pal.fromImageTitle"
                   title="Die Farben des aktuellen Bildes als Palette übernehmen — mit Wahl der Farbanzahl">Bild → Palette …</button>
         </div>
@@ -830,6 +870,25 @@
               <option value="both" data-i18n="cln.both">beides</option>
             </select>
             <button class="btn" id="outline-btn" data-i18n="cln.outlineApply">Anwenden</button>
+          </div>
+
+          <!-- Farbe ersetzen (js/recolor.js): Von/Nach öffnen eine kleine Farbwahl (#recolor-pop). -->
+          <div class="field field--inline recolor-row">
+            <span class="field-label" data-i18n="cln.recolor">Farbe ersetzen</span>
+            <button class="btn recolor-pick" id="recolor-from" data-i18n-attr="title:cln.recolorFromTitle"
+                    title="Die alte Farbe — Klick öffnet die Farben der Palette">
+              <span class="recolor-chip" id="recolor-from-chip"></span><span data-i18n="cln.recolorFrom">Von</span></button>
+            <button class="btn recolor-pick" id="recolor-to" data-i18n-attr="title:cln.recolorToTitle"
+                    title="Die neue Farbe — Klick öffnet die Farben der Palette">
+              <span class="recolor-chip" id="recolor-to-chip"></span><span data-i18n="cln.recolorTo">Nach</span></button>
+            <select id="recolor-scope" class="input input--sm" data-i18n-attr="title:cln.recolorScopeTitle" title="Wo ersetzt wird — gesperrte Ebenen bleiben unverändert">
+              <option value="cel" data-i18n="cln.scopeCel">dieses Bild</option>
+              <option value="layer" data-i18n="cln.scopeLayer">Ebene, alle Frames</option>
+              <option value="all" data-i18n="cln.scopeAll">ganzer Sprite</option>
+            </select>
+            <button class="btn" id="recolor-btn" data-i18n="cln.recolorApply" data-i18n-attr="title:cln.recolorApplyTitle"
+                    title="Jede Stelle mit der alten Farbe bekommt die neue — mit Auswahl nur darin. Strg+Z holt alles zurück.">Ersetzen</button>
+            <div class="recolor-pop" id="recolor-pop" role="listbox" hidden></div>
           </div>
         </div>
       </section>
@@ -1067,6 +1126,72 @@
     </div>
     <p class="field-note" data-i18n="proj.newNote">Ein neues Projekt beginnt mit einem leeren Sprite; deine eigenen Paletten und Einstellungen kommen mit. „Öffnen …“ im Menü legt eine Projektdatei ebenfalls als eigenes Projekt an.</p>
     <div id="proj-list" class="proj-list" role="list"></div>
+  </div>
+</div>
+
+<!-- Einstellungen (Menü „Bearbeiten“, Strg+,): sammelt, was sonst verstreut
+     in Menüs und Werkzeugleiste steht — die Plätze dort bleiben. -->
+<div id="settings-modal-overlay" class="modal-overlay">
+  <div class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-head">
+      <h2 class="modal-title" id="settings-title" data-i18n="set.title">Einstellungen</h2>
+      <button class="icon-btn" id="settings-close" data-i18n-attr="title:set.close;aria-label:set.close" title="Schließen" aria-label="Schließen"><span class="ico" data-icon="close"></span></button>
+    </div>
+    <!-- Wie in Photoshop: links die Themen, ein Trennstrich, rechts die
+         Einstellungen des gewählten Themas. -->
+    <div class="settings-body">
+      <div class="settings-nav" role="tablist" aria-orientation="vertical" id="settings-nav">
+        <button type="button" class="settings-tab" role="tab" aria-selected="true" aria-controls="set-pane-lang" data-set-tab="lang" data-i18n="set.lang">Sprache</button>
+        <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="set-pane-view" data-set-tab="view" data-i18n="set.view">Ansicht</button>
+        <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="set-pane-brush" data-set-tab="brush" data-i18n="set.brush">Pinsel</button>
+      </div>
+
+      <div class="settings-panes">
+        <section class="settings-pane" role="tabpanel" id="set-pane-lang" data-set-pane="lang">
+          <h3 class="settings-h" data-i18n="set.lang">Sprache</h3>
+          <div class="btn-group lang-switch" role="group" aria-label="Sprache / Language">
+            <button type="button" class="btn lang-btn" data-lang="de" lang="de">Deutsch</button>
+            <button type="button" class="btn lang-btn" data-lang="at" lang="de-AT">Österreichisch</button>
+            <button type="button" class="btn lang-btn" data-lang="en" lang="en">English</button>
+          </div>
+        </section>
+
+        <section class="settings-pane" role="tabpanel" id="set-pane-view" data-set-pane="view" hidden>
+          <h3 class="settings-h" data-i18n="set.view">Ansicht</h3>
+          <label class="settings-check" data-i18n-attr="title:mb.gridTitle" title="Die feinen Linien zwischen den Pixeln zeigen — ohne Häkchen siehst du das Bild sauber">
+            <input type="checkbox" id="set-grid">
+            <span data-i18n="mb.grid">Pixelraster anzeigen</span>
+          </label>
+          <div class="settings-row">
+            <span class="field-label" data-i18n="mb.tiled" data-i18n-attr="title:mb.tiledTitle" title="Das Bild wiederholt daneben zeigen — wer über den Rand malt, malt auf der anderen Seite weiter. Für nahtlose Muster.">Kachelmodus</span>
+            <div class="btn-group settings-wrap" role="group" id="set-tiled">
+              <button type="button" class="btn" data-set-tiled="off" data-i18n="mb.tiledOff">Aus</button>
+              <button type="button" class="btn" data-set-tiled="both" data-i18n="mb.tiledBoth">Ringsum</button>
+              <button type="button" class="btn" data-set-tiled="x" data-i18n="mb.tiledX">Nur nebeneinander</button>
+              <button type="button" class="btn" data-set-tiled="y" data-i18n="mb.tiledY">Nur übereinander</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-pane" role="tabpanel" id="set-pane-brush" data-set-pane="brush" hidden>
+          <h3 class="settings-h" data-i18n="set.brush">Pinsel</h3>
+          <div class="settings-row">
+            <span class="field-label" data-i18n="tool.shape">Pinselform</span>
+            <div class="btn-group" role="group" id="set-shape">
+              <button type="button" class="btn" data-set-round="0"><span class="ico" data-icon="square"></span><span data-i18n="set.square">Eckig</span></button>
+              <button type="button" class="btn" data-set-round="1"><span class="ico" data-icon="circle"></span><span data-i18n="set.round">Rund</span></button>
+            </div>
+          </div>
+          <div class="settings-row settings-row--top">
+            <span class="field-label" data-i18n="tool.brushLib">Gespeicherte Pinsel</span>
+            <div>
+              <div class="settings-brushes" id="set-brushes"></div>
+              <p class="field-note" id="set-brushes-empty" data-i18n="set.brushesEmpty">Noch keine. Wähle etwas aus, drück Strg+B und dann „Speichern“ in der Pinsel-Zeile.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1428,6 +1553,8 @@
       <div class="sc-row"><b>Pfeiltasten</b><span>Mit Auswahl: sie pixelweise verschieben · ohne: ← → Frame, ↑ ↓ Ebene</span></div>
       <div class="sc-row"><b>Strg + A / C / X / V / D</b><span>Alles · Kopieren · Ausschneiden · Einfügen · Auswahl aufheben</span></div>
       <div class="sc-row"><b>Strg + Umschalt + V</b><span>Einfügen mit den Nummern statt den Farben (andere Palette)</span></div>
+      <div class="sc-row"><b>Strg + B</b><span>Auswahl als eigener Pinsel · ohne Auswahl: zurück zum normalen</span></div>
+      <div class="sc-row"><b>Strg + ,</b><span>Einstellungen</span></div>
       <div class="sc-row"><b>Entf</b><span>Auswahl leeren</span></div>
       <div class="sc-row"><b>Enter</b><span>Drehung übernehmen · sonst Animation abspielen / anhalten</span></div>
       <div class="sc-row"><b>Pos1 / Ende</b><span>Zum ersten / letzten Frame</span></div>

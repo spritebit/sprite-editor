@@ -27,7 +27,7 @@ import { showConfirmToast, showInfoToast } from './toast.js';
 import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
-  cellFromEvent, cellFromEventClamped, cellToColor, paintCell, paintBrush, paintSpray, floodFill,
+  cellFromEvent, cellFromEventRaw, cellFromEventClamped, cellToColor, colorHooks, paintCell, paintStamp, stampActive, stampForPalette, STAMP_TOOLS, paintBrush, paintSpray, floodFill,
   ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeDwell, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
@@ -44,7 +44,7 @@ import {
 import {
   openPaletteModal, initPaletteModal, deleteCustomPalette,
   previewPalette, assignPalette, forkPreviewPalette, addFreeColorsToPalette,
-  createPaletteFromImport, appendPaletteColor, setPaletteColor, removePaletteColor,
+  createPaletteFromImport, importPaletteFile, appendPaletteColor, setPaletteColor, removePaletteColor,
   addCurrentColorToPalette, addColorsToPalette,
 } from './palettes.js';
 import {
@@ -57,6 +57,10 @@ import {
   medianCut, nearestColor, rgbToHex, hexToRgb,
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
+import { replaceColor, recolorTargets, RECOLOR_SCOPES } from './recolor.js';
+import { makeStamp, stampOrigin } from './stamp.js';
+import { parsePaletteFile, colorsFromRgba, isImageFile, writeGpl, writeHex, writeJasc, rgbaStrip } from './palfile.js';
+import { toSaved, fromSaved, addBrush, normalizeBrushes } from './brushlib.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
 import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
@@ -84,6 +88,7 @@ import {
   endSelectionPointer, selectByColor, fillSelection, commitFloat, isFloating,
   selectAll, deselect, nudgeSelection, selectionInfo,
   copySelection, cutSelection, pasteClipboard, deleteSelection, hasClipboard,
+  selectionPixels,
 } from './selection.js';
 import {
   flip, rotate90, trimToContent, centerContent, resizeCanvas, scaleSprite, scopeLabel, scopeLabelFor,
@@ -252,6 +257,8 @@ function shapeEnd(start, c, shift) {
 }
 
 function applyTool(x, y) {
+  // Eigener Pinsel (js/stamp.js): Stift, Pinsel und Radierer setzen seine Form.
+  if (stampActive()) { paintStamp(x, y, state.tool === 'eraser'); return; }
   // Pixel-perfect: Stift und Radierer mit 1 px.
   if (ppActive()) { paintPixelPerfect(x, y, state.tool === 'eraser' ? 0 : state.curColor); return; }
   if (state.tool === 'brush')  { paintBrush(x, y);  return; }
@@ -331,6 +338,7 @@ function updateToolUI() {
   $('shape-group').hidden      = !isShapeTool(state.tool);
   $('fill-group').hidden       = state.tool !== 'fill';
   $('pixel-perfect-group').hidden = !['pencil', 'eraser'].includes(state.tool);
+  syncStamp();
   if (!isSelectTool(state.tool)) $('editor-canvas-wrap').classList.remove('is-move');
   syncShadeMarks();
   renderShadeRamp();
@@ -376,6 +384,13 @@ function renderShadeRamp() {
     $(id).classList.toggle('is-active', on);
     $(id).setAttribute('aria-pressed', String(on));
   }
+  // Richtung des Verlaufs — nur, wenn „Verlauf“ an ist.
+  $('shade-dir').hidden = !state.shadeSoft;
+  $('shade-dir').querySelectorAll('[data-shade-dir]').forEach(b => {
+    const on = /** @type {HTMLElement} */ (b).dataset.shadeDir === state.shadeDir;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
 }
 renderCallbacks.onShadeRamp = renderShadeRamp;
 
@@ -455,7 +470,7 @@ let hadSelection = false;
 function updateSelectionUI() {
   syncImagePanel();
   const has = !!selection.rect;
-  ['sel-cut-btn', 'sel-copy-btn', 'sel-delete-btn', 'sel-none-btn', 'sel-fill-btn'].forEach(id => {
+  ['sel-cut-btn', 'sel-copy-btn', 'sel-delete-btn', 'sel-none-btn', 'sel-fill-btn', 'sel-brush-btn'].forEach(id => {
     const b = $(id);
     if (b) b.disabled = !has;
   });
@@ -471,8 +486,9 @@ function updateSelectionUI() {
 // Canvas-Events
 // ────────────────────────────────────────────────────────────────────
 function eraseAt(e) {
-  const c = cellFromEvent(e);
+  const c = cellFromEventRaw(e);
   if (!c) return;
+  if (stampActive()) { paintStamp(c.x, c.y, true); return; }
   if (ppActive()) { paintPixelPerfect(c.x, c.y, 0); return; }
   const prev = state.curColor;
   state.curColor = 0;
@@ -485,11 +501,28 @@ function updateBrushCursor(e) {
   const el = $('brush-cursor');
   if (!el) return;
   const tool = state.tool;
-  if (!SIZED_TOOLS.includes(tool)) { el.hidden = true; return; }
-  const c = cellFromEvent(e);
+  const stamp = stampActive();
+  if (!SIZED_TOOLS.includes(tool) && !stamp) { el.hidden = true; return; }
+  const c = cellFromEventRaw(e);
   if (!c) { el.hidden = true; return; }
 
   const cs = state.cellSize;
+  // Eigener Pinsel: Rahmen um seine Form, darin die Form halb durchsichtig.
+  el.classList.toggle('is-stamp', stamp);
+  if (stamp) {
+    const s = /** @type {NonNullable<typeof state.stamp>} */ (state.stamp);
+    const o = stampOrigin(s, c.x, c.y);
+    el.className = 'tool-' + tool + ' is-stamp';
+    el.style.left = o.x * cs + 'px';
+    el.style.top = o.y * cs + 'px';
+    el.style.width = s.w * cs + 'px';
+    el.style.height = s.h * cs + 'px';
+    el.style.borderRadius = '0';
+    el.style.backgroundImage = 'url(' + stampPreviewUrl() + ')';
+    el.hidden = false;
+    return;
+  }
+  el.style.backgroundImage = '';
   let left, top, size, round;
   if (tool === 'spray') {
     const r = state.brushSize;
@@ -522,6 +555,417 @@ let sizeDrag = null;
 function syncFillVisible() {
   $('fill-visible-btn').classList.toggle('is-active', state.fillVisible);
   $('fill-visible-btn').setAttribute('aria-pressed', String(state.fillVisible));
+  $('fill-contig-btn').classList.toggle('is-active', state.fillContig);
+  $('fill-contig-btn').setAttribute('aria-pressed', String(state.fillContig));
+}
+
+// ── Palettendateien (js/palfile.js) ──
+// „Laden …“ legt aus der Datei eine eigene Palette an und zeigt sie im
+// Panel; „Speichern …“ schreibt die angezeigte Palette in einem der Formate.
+async function loadPaletteFile(file) {
+  const base = file.name.replace(/\.[^.]+$/, '');
+  /** @type {import('./palfile.js').PalFile} */
+  let pf;
+  try {
+    if (isImageFile(file.name)) {
+      const bmp = await createImageBitmap(file);
+      const cv = document.createElement('canvas');
+      cv.width = bmp.width; cv.height = bmp.height;
+      const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+      ctx.drawImage(bmp, 0, 0);
+      pf = colorsFromRgba(ctx.getImageData(0, 0, bmp.width, bmp.height).data);
+    } else {
+      pf = parsePaletteFile(file.name, new Uint8Array(await file.arrayBuffer()));
+    }
+  } catch {
+    showInfoToast(t('pal.loadFailed', { file: file.name }));
+    return;
+  }
+  const name = importPaletteFile(pf, base);
+  if (name) showInfoToast(t('pal.loaded', { name, n: pf.colors.length }));
+}
+
+async function exportPaletteFile(format) {
+  const name = getPreviewName();
+  const pal = getPaletteByName(name);
+  const colors = [];
+  for (let i = 1; i <= paletteSize(pal); i++) if (pal[i]) colors.push(pal[i].toLowerCase());
+  if (!colors.length) return;
+  const names = colors.map((_, i) => colorName(i + 1, name) || null);
+  /** @type {Blob} */
+  let blob;
+  if (format === 'png') {
+    const cv = document.createElement('canvas');
+    cv.width = colors.length; cv.height = 1;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+    ctx.putImageData(new ImageData(rgbaStrip(colors), colors.length, 1), 0, 0);
+    blob = await new Promise(res => cv.toBlob(b => res(/** @type {Blob} */ (b)), 'image/png'));
+  } else {
+    const text = format === 'gpl' ? writeGpl(name, colors, names) : format === 'hex' ? writeHex(colors) : writeJasc(colors);
+    blob = new Blob([text], { type: 'text/plain' });
+  }
+  await saveBlob(blob, name + '.' + format);
+}
+
+function closePalExport() {
+  $('palette-export-pop').hidden = true;
+  $('palette-export-btn').setAttribute('aria-expanded', 'false');
+}
+
+function initPaletteFiles() {
+  const input = /** @type {HTMLInputElement} */ ($('palette-file-input'));
+  $('palette-load-btn').addEventListener('click', () => input.click());
+  input.addEventListener('change', () => {
+    const f = input.files?.[0];
+    input.value = '';
+    if (f) loadPaletteFile(f);
+  });
+  $('palette-export-btn').addEventListener('click', () => {
+    const pop = $('palette-export-pop');
+    pop.hidden = !pop.hidden;
+    $('palette-export-btn').setAttribute('aria-expanded', String(!pop.hidden));
+  });
+  $('palette-export-pop').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-pal-format]');
+    if (!b) return;
+    closePalExport();
+    exportPaletteFile(/** @type {HTMLElement} */ (b).dataset.palFormat);
+  });
+  document.addEventListener('pointerdown', e => {
+    const el = /** @type {Element} */ (e.target);
+    if (!$('palette-export-pop').hidden && !el.closest('.pal-file-row')) closePalExport();
+  });
+}
+
+// ── Eigener Pinsel (js/stamp.js) ──
+// Strg+B oder „Als Pinsel“ in der Auswahl-Zeile: der Inhalt der Auswahl wird
+// zum Pinsel für Stift, Pinsel und Radierer. Noch einmal Strg+B (ohne
+// Auswahl) oder × in der Options-Zeile: zurück zum normalen Pinsel.
+/** @type {{stamp: any, pal: any, mono: any, url: string}} */
+let stampPreview = { stamp: null, pal: null, mono: null, url: '' };
+
+/** Bild des Pinsels (1 Pixel je Zelle) für Vorschau und Mauszeiger. */
+function stampPreviewUrl() {
+  const s = stampForPalette();
+  if (!s) return '';
+  const pal = getPal();
+  const mono = state.stampMono ? state.curColor : null;
+  const p = stampPreview;
+  if (p.stamp === state.stamp && p.pal === pal && p.mono === mono) return p.url;
+  const cv = document.createElement('canvas');
+  cv.width = s.w; cv.height = s.h;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+    const v = s.cells[y][x];
+    if (v === 0) continue;
+    const hex = cellToColor(state.stampMono ? state.curColor : v, pal) || '#000000';
+    ctx.fillStyle = hex;
+    ctx.fillRect(x, y, 1, 1);
+  }
+  stampPreview = { stamp: state.stamp, pal, mono, url: cv.toDataURL() };
+  return stampPreview.url;
+}
+
+function syncStamp() {
+  const on = stampActive();
+  $('stamp-group').hidden = !on;
+  // Gespeicherte Pinsel: bei Stift, Pinsel und Radierer, sobald es welche gibt.
+  $('brushlib-group').hidden = !STAMP_TOOLS.includes(state.tool) || !savedBrushes.length;
+  if ($('brushlib-group').hidden) closeBrushLib();
+  if (on) {
+    const s = /** @type {NonNullable<typeof state.stamp>} */ (state.stamp);
+    const img = /** @type {HTMLImageElement} */ ($('stamp-preview'));
+    img.src = stampPreviewUrl();
+    // Kleine Pinsel groß zeigen, große auf 32 px Höhe begrenzen.
+    const k = Math.max(1, Math.min(8, Math.floor(32 / Math.max(s.w, s.h)))) || 1;
+    img.style.width = Math.min(96, s.w * k) + 'px';
+    img.style.height = Math.min(32, s.h * k) + 'px';
+    $('stamp-size').textContent = s.w + '×' + s.h;
+    $('stamp-mono-btn').classList.toggle('is-active', state.stampMono);
+    $('stamp-mono-btn').setAttribute('aria-pressed', String(state.stampMono));
+  }
+  // Größe, Form und Stärke gelten für den eigenen Pinsel nicht.
+  if (on) {
+    $('brush-size-group').hidden = true;
+    $('strength-group').hidden = true;
+    $('pixel-perfect-group').hidden = true;
+  }
+  const b = $('sel-brush-btn');
+  if (b) b.disabled = !selection.rect;
+}
+
+// ── Gespeicherte Pinsel (js/brushlib.js) ──
+// Liegen für alle Projekte im Browser (wie die Hilfslinien-Layouts).
+const BRUSHES_KEY = 'spritebit_brushes';
+/** @type {import('./brushlib.js').SavedBrush[]} */
+let savedBrushes = [];
+try { savedBrushes = normalizeBrushes(JSON.parse(localStorage.getItem(BRUSHES_KEY) || '[]')); } catch { savedBrushes = []; }
+
+function storeBrushes() {
+  try { localStorage.setItem(BRUSHES_KEY, JSON.stringify(savedBrushes)); } catch { /* privates Fenster o. Ä. */ }
+  syncSettings();
+}
+
+/** Kleines Bild eines gespeicherten Pinsels (1 Pixel je Zelle). */
+function savedBrushUrl(b) {
+  const cv = document.createElement('canvas');
+  cv.width = b.w; cv.height = b.h;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  b.px.forEach((c, i) => {
+    if (!c) return;
+    ctx.fillStyle = c;
+    ctx.fillRect(i % b.w, Math.floor(i / b.w), 1, 1);
+  });
+  return cv.toDataURL();
+}
+
+function saveStamp() {
+  if (!state.stamp) return;
+  const saved = toSaved(state.stamp, state.stamp.pal);
+  const had = savedBrushes.length;
+  savedBrushes = addBrush(savedBrushes, saved);
+  storeBrushes();
+  syncStamp();
+  info(t(savedBrushes.length > had ? 'stamp.saved' : 'stamp.savedAgain'));
+}
+
+// ── Einstellungen (Menü „Bearbeiten“, Strg+,) ──
+// Derselbe Zustand wie an den gewohnten Plätzen — der Dialog ruft dieselben
+// Funktionen und spiegelt nur ihren Stand (syncSettings).
+function openSettings() {
+  syncSettings();
+  $('settings-modal-overlay').classList.add('open');
+}
+
+function syncSettings() {
+  const grid = /** @type {HTMLInputElement | null} */ ($('set-grid'));
+  if (!grid) return;
+  grid.checked = !!state.showGrid;
+  const mark = (sel, on) => document.querySelectorAll(sel).forEach(b => {
+    const v = on(/** @type {HTMLElement} */ (b));
+    b.classList.toggle('is-active', v);
+    b.setAttribute('aria-pressed', String(v));
+  });
+  mark('[data-set-tiled]', b => b.dataset.setTiled === state.tiled);
+  mark('[data-set-round]', b => (b.dataset.setRound === '1') === !!state.brushRound);
+  const box = $('set-brushes');
+  box.replaceChildren(...savedBrushes.map((b, i) => {
+    const item = document.createElement('div');
+    item.className = 'brushlib-item';
+    const img = document.createElement('img');
+    img.src = savedBrushUrl(b);
+    img.alt = b.w + '×' + b.h;
+    const k = 40 / Math.max(b.w, b.h);
+    img.style.width = Math.max(1, Math.round(b.w * k)) + 'px';
+    img.style.height = Math.max(1, Math.round(b.h * k)) + 'px';
+    const pick = document.createElement('span');
+    pick.className = 'brushlib-pick';
+    pick.title = b.w + '×' + b.h;
+    pick.append(img);
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'brushlib-del';
+    del.title = t('stamp.delete');
+    del.setAttribute('aria-label', t('stamp.delete'));
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      savedBrushes = savedBrushes.filter((_, k) => k !== i);
+      storeBrushes();
+      syncStamp();
+      syncSettings();
+    });
+    item.append(pick, del);
+    return item;
+  }));
+  $('set-brushes-empty').hidden = savedBrushes.length > 0;
+}
+
+/** Thema links wählen: rechts nur dessen Einstellungen. */
+function showSettingsTab(tab) {
+  document.querySelectorAll('[data-set-tab]').forEach(b =>
+    b.setAttribute('aria-selected', String(/** @type {HTMLElement} */ (b).dataset.setTab === tab)));
+  document.querySelectorAll('[data-set-pane]').forEach(p => {
+    /** @type {HTMLElement} */ (p).hidden = /** @type {HTMLElement} */ (p).dataset.setPane !== tab;
+  });
+}
+
+function initSettings() {
+  $('settings-btn').addEventListener('click', openSettings);
+  $('settings-nav').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-tab]');
+    if (!b) return;
+    showSettingsTab(/** @type {HTMLElement} */ (b).dataset.setTab);
+    // Die Bitty-Suche „klickt“ das Thema auch bei geschlossenem Fenster.
+    if (!$('settings-modal-overlay').classList.contains('open')) openSettings();
+  });
+  // Pfeiltasten in der Themenliste (wie bei Reitern üblich).
+  $('settings-nav').addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const tabs = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-set-tab]')]);
+    const i = tabs.findIndex(b => b.getAttribute('aria-selected') === 'true');
+    const next = tabs[(i + (e.key === 'ArrowDown' ? 1 : tabs.length - 1)) % tabs.length];
+    e.preventDefault();
+    showSettingsTab(next.dataset.setTab);
+    next.focus();
+  });
+  $('settings-close').addEventListener('click', () => $('settings-modal-overlay').classList.remove('open'));
+  // Pixelraster: ohne Häkchen ein sauberes Bild ohne die feinen Linien.
+  $('set-grid').addEventListener('change', () => {
+    state.showGrid = /** @type {HTMLInputElement} */ ($('set-grid')).checked;
+    renderEditor();
+    saveState();
+  });
+  $('set-tiled').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-tiled]');
+    if (b) setTiled(/** @type {HTMLElement} */ (b).dataset.setTiled);
+  });
+  $('set-shape').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-round]');
+    if (b) $(/** @type {HTMLElement} */ (b).dataset.setRound === '1' ? 'brush-round-btn' : 'brush-square-btn').click();
+  });
+}
+
+function closeBrushLib() {
+  $('brushlib-pop').hidden = true;
+  $('brushlib-btn').setAttribute('aria-expanded', 'false');
+}
+
+function openBrushLib() {
+  const pop = $('brushlib-pop');
+  if (!pop.hidden) { closeBrushLib(); return; }
+  pop.replaceChildren(...savedBrushes.map((b, i) => {
+    const item = document.createElement('div');
+    item.className = 'brushlib-item';
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = 'brushlib-pick';
+    pick.setAttribute('role', 'option');
+    pick.title = b.w + '×' + b.h;
+    const img = document.createElement('img');
+    img.src = savedBrushUrl(b);
+    img.alt = b.w + '×' + b.h;
+    // Seitenverhältnis behalten, in 40×40 einpassen.
+    const k = 40 / Math.max(b.w, b.h);
+    img.style.width = Math.max(1, Math.round(b.w * k)) + 'px';
+    img.style.height = Math.max(1, Math.round(b.h * k)) + 'px';
+    pick.append(img);
+    pick.addEventListener('click', () => {
+      state.stamp = fromSaved(b);
+      closeBrushLib();
+      if (!STAMP_TOOLS.includes(state.tool)) setTool('pencil'); else updateToolUI();
+      info(t('stamp.made', { w: b.w, h: b.h }));
+    });
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'brushlib-del';
+    del.title = t('stamp.delete');
+    del.setAttribute('aria-label', t('stamp.delete'));
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      savedBrushes = savedBrushes.filter((_, k) => k !== i);
+      storeBrushes();
+      closeBrushLib();
+      syncStamp();
+      if (savedBrushes.length) openBrushLib();
+    });
+    item.append(pick, del);
+    return item;
+  }));
+  pop.hidden = false;
+  $('brushlib-btn').setAttribute('aria-expanded', 'true');
+}
+
+function makeStampFromSelection() {
+  const px = selectionPixels();
+  if (!px) return false;
+  const s = makeStamp(px.cells, px.mask);
+  if (!s) { info(t('stamp.empty')); return true; }
+  state.stamp = { ...s, pal: getPal() };
+  deselect();
+  updateSelectionUI();
+  if (!STAMP_TOOLS.includes(state.tool)) setTool('pencil');
+  else updateToolUI();
+  info(t('stamp.made', { w: s.w, h: s.h }));
+  return true;
+}
+
+function dropStamp() {
+  if (!state.stamp) return false;
+  state.stamp = null;
+  $('brush-cursor').hidden = true;
+  updateToolUI();
+  info(t('stamp.dropped'));
+  return true;
+}
+
+// Farbe ersetzen (js/recolor.js): die gewählten Farben als Pixelwerte —
+// null = noch nicht gewählt, 0 = leer. Nur für diesen Besuch.
+// Gewählt wird in einer kleinen Farbwahl am Knopf: ein Klick in die Palette
+// schlösse das ausgeklappte Panel.
+const recolor = { from: /** @type {any} */ (null), to: /** @type {any} */ (null), open: /** @type {'from'|'to'|null} */ (null) };
+
+function openRecolorPop(which) {
+  const pop = $('recolor-pop');
+  if (recolor.open === which) { closeRecolorPop(); return; }
+  recolor.open = which;
+  const pal = getPal();
+  // Leer, alle Palettenfarben und — falls frei (Pipette) — die aktuelle Farbe.
+  const values = /** @type {any[]} */ ([0]);
+  for (let i = 1; i <= getMaxIdx(); i++) if (pal[i]) values.push(i);
+  if (typeof state.curColor === 'string') values.push(state.curColor);
+  pop.replaceChildren(...values.map(v => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'recolor-chip recolor-opt';
+    b.setAttribute('role', 'option');
+    const hex = cellToColor(v, pal);
+    if (hex) b.style.background = hex;
+    b.title = v === 0 ? t('cln.recolorEmpty') : (typeof v === 'number' && colorName(v)) || hex || '';
+    b.classList.toggle('is-active', v === recolor[which]);
+    b.addEventListener('click', () => { recolor[which] = v; closeRecolorPop(); syncRecolor(); });
+    return b;
+  }));
+  const btn = $('recolor-' + which);
+  pop.style.left = btn.offsetLeft + 'px';
+  pop.style.top = (btn.offsetTop + btn.offsetHeight + 4) + 'px';
+  pop.hidden = false;
+}
+
+function closeRecolorPop() {
+  recolor.open = null;
+  $('recolor-pop').hidden = true;
+}
+
+function syncRecolor() {
+  const pal = getPal();
+  for (const which of /** @type {const} */ (['from', 'to'])) {
+    const chip = $('recolor-' + which + '-chip'), v = recolor[which];
+    chip.classList.toggle('is-unset', v === null);
+    const hex = v === null ? null : cellToColor(v, pal);
+    chip.style.background = hex || '';
+    chip.title = v === null ? '' : v === 0 ? t('cln.recolorEmpty') : hex || '';
+  }
+  $('recolor-scope').value = state.recolorScope;
+}
+
+function applyRecolor() {
+  const { from, to } = recolor;
+  if (from === null || to === null) { showInfoToast(t('cln.recolorUnset')); return; }
+  const pal = getPal();
+  if (from === to || (from !== 0 && to !== 0 && cellToColor(from, pal)?.toLowerCase() === cellToColor(to, pal)?.toLowerCase())) {
+    showInfoToast(t('cln.recolorSame')); return;
+  }
+  const sp = getSprite();
+  if (!sp) return;
+  // Nur im aktuellen Bild zählt die Sperre der aktiven Ebene; sonst
+  // überspringt recolorTargets gesperrte Ebenen selbst.
+  if (state.recolorScope !== 'all' && layerBlocked(true)) return;
+  // Mit Auswahl nur darin (ein schwebender Inhalt zählt nicht als Auswahl).
+  const keep = selection.rect && !selection.float ? isInSelection : undefined;
+  let n = 0;
+  recordOp(() => { for (const g of recolorTargets(sp, /** @type {any} */ (state.recolorScope))) n += replaceColor(g, from, to, pal, keep); });
+  if (n) renderAll();
+  showInfoToast(n ? t('cln.recolored', { n }) : t('cln.recolorNone'));
 }
 
 // Pinselform: eckig oder rund (js/brushshape.js). Spray ist immer rund —
@@ -532,6 +976,7 @@ function syncBrushShape() {
     $(id).setAttribute('aria-pressed', String(on));
   }
   $('brush-shape').hidden = state.tool === 'spray';
+  syncSettings();
 }
 
 function setBrushSize(n) {
@@ -606,6 +1051,23 @@ function paintHints(e) {
 function initCanvasEvents() {
   const canvas = $('editor-canvas');
 
+  // Kachelmodus: Die Kopien liegen auf einem eigenen Canvas (#editor-tiled).
+  // Was dort ankommt, geht als dasselbe Ereignis an den eigentlichen Canvas
+  // — die Zelle rechnet cellFromEvent aus der Lage zum Bild, auf einer Kopie
+  // also außerhalb. Das Original hält an, sonst käme es doppelt an
+  // (Verschieben in view.js).
+  const tiled = $('editor-tiled');
+  for (const type of ['pointerdown', 'pointermove']) {
+    tiled.addEventListener(type, e => {
+      e.stopPropagation();
+      const fwd = new PointerEvent(type, e);
+      canvas.dispatchEvent(fwd);
+      if (fwd.defaultPrevented) e.preventDefault();
+    });
+  }
+  tiled.addEventListener('pointerleave', () => { $('brush-cursor').hidden = true; });
+  tiled.addEventListener('contextmenu', e => e.preventDefault());
+
   canvas.addEventListener('pointerdown', e => {
     // Hand-Werkzeug auf einer Hilfslinie: die Linie ziehen statt die Ansicht
     // verschieben (stopPropagation hält das Verschieben in view.js ab).
@@ -645,7 +1107,7 @@ function initCanvasEvents() {
         if (layerBlocked() || !startShade(shadeUp())) return;
         state.isDrawing = true;
         beginStroke();
-        const c = cellFromEvent(e);
+        const c = cellFromEventRaw(e);
         if (c) applyTool(c.x, c.y);
         lock = c ? { start: c, dir: null, last: c } : null;
       } else {
@@ -727,7 +1189,7 @@ function initCanvasEvents() {
 
     // ── Formen: Startpunkt merken, gezeichnet wird beim Loslassen ──
     if (isShapeTool(state.tool)) {
-      const c = cellFromEventClamped(e);
+      const c = cellFromEventClamped(e, true);
       shapeStart = c;
       state.shape.color = state.curColor;
       state.shape.cells = shapeCells(state.tool, c, c);
@@ -757,7 +1219,7 @@ function initCanvasEvents() {
     state.isDrawing = true;
     beginStroke();
     ppBegin();
-    const c = cellFromEvent(e);
+    const c = cellFromEventRaw(e);
     if (c) applyTool(c.x, c.y);
     lock = c ? { start: c, dir: null, last: c } : null;
   });
@@ -784,7 +1246,7 @@ function initCanvasEvents() {
     if (selection.mode === 'scale')   { updateScale(e);   info(selectionInfo(t('info.scale'))); return; }
 
     if (shapeStart) {
-      const c = shapeEnd(shapeStart, cellFromEventClamped(e), e.shiftKey);
+      const c = shapeEnd(shapeStart, cellFromEventClamped(e, true), e.shiftKey);
       state.shape.cells = shapeCells(state.tool, shapeStart, c);
       renderEditor();
       const w = Math.abs(c.x - shapeStart.x) + 1, h = Math.abs(c.y - shapeStart.y) + 1;
@@ -796,12 +1258,15 @@ function initCanvasEvents() {
 
     const c = cellFromEvent(e);
     if (!c) return;
+    // Im Kachelmodus kann der Zeiger auf einer Kopie stehen: c ist dann ins
+    // Bild zurückgeholt, raw nicht — Striche laufen mit raw über den Rand.
+    const raw = cellFromEventRaw(e) || c;
 
     // Zeiger über der Auswahl → Verschiebe-Cursor, über einem Anfasser → Skalier-Cursor.
     if (isSelectTool(state.tool)) {
       const h = handleAt(e);
       $('editor-canvas-wrap').dataset.handle = h || '';
-      $('editor-canvas-wrap').classList.toggle('is-move', selOpFor(e) === 'new' && !h && isInSelection(c.x, c.y));
+      $('editor-canvas-wrap').classList.toggle('is-move', selOpFor(e) === 'new' && !h && isInSelection(raw.x, raw.y));
     }
     const cur = getGrid()[c.y][c.x];
     const val = typeof cur === 'string' ? cur : t('info.index', { i: cur });
@@ -810,7 +1275,7 @@ function initCanvasEvents() {
       : t('info.at', { x: c.x, y: c.y, val })
         + (state.isDrawing ? t('info.suffixPaint') : '')
         + (state.isErasing ? t('info.suffixErase') : ''));
-    if (state.isDrawing && !e.altKey) strokeTo(c, e.shiftKey);
+    if (state.isDrawing && !e.altKey) strokeTo(raw, e.shiftKey);
     if (state.isErasing) eraseAt(e);
   });
 
@@ -947,7 +1412,29 @@ const KEYMAP = [
 
 // Häkchen „Pixelraster anzeigen“ im Menü „Ansicht“.
 function syncGridItem() {
-  $('grid-btn').setAttribute('aria-checked', String(state.showGrid));
+  syncSettings();
+}
+
+// Kachelmodus: Punkt im Menü „Ansicht“ setzen.
+function syncTiledItems() {
+  syncSettings();
+}
+
+function setTiled(mode) {
+  state.tiled = mode;
+  syncTiledItems();
+  renderEditor();
+  centerCanvas();
+  saveState();
+  info(t(`info.tiled.${mode}`));
+}
+
+// Das Bild in die Mitte der Fläche scrollen — im Kachelmodus stehen links
+// und oben Kopien, ohne das sähe man zuerst eine davon.
+function centerCanvas() {
+  const area = $('editor-canvas-area');
+  area.scrollLeft = (area.scrollWidth - area.clientWidth) / 2;
+  area.scrollTop = (area.scrollHeight - area.clientHeight) / 2;
 }
 
 function handleKey(e) {
@@ -986,7 +1473,15 @@ function eyedropHint(e) {
 
 function clipboardKey(e) {
   const k = e.key.toLowerCase();
-  if (k === 'a') {
+  if (k === ',') {
+    // Strg+,: Einstellungen (wie in vielen Programmen).
+    e.preventDefault();
+    openSettings();
+  } else if (k === 'b' && !e.shiftKey && !e.altKey) {
+    // Strg+B: Auswahl wird zum Pinsel — ohne Auswahl zurück zum normalen.
+    e.preventDefault();
+    if (!makeStampFromSelection() && !dropStamp()) info(t('stamp.needSel'));
+  } else if (k === 'a') {
     e.preventDefault();
     setTool('select'); selectAll(); updateSelectionUI();
     info(selectionInfo(t('sel.all')));
@@ -1094,6 +1589,38 @@ function initToolbar() {
     syncFillVisible();
     saveState();
   });
+  $('fill-contig-btn').addEventListener('click', () => {
+    state.fillContig = !state.fillContig;
+    syncFillVisible();
+    saveState();
+  });
+
+  $('recolor-from').addEventListener('click', () => openRecolorPop('from'));
+  $('recolor-to').addEventListener('click', () => openRecolorPop('to'));
+  document.addEventListener('pointerdown', e => {
+    const el = /** @type {Element} */ (e.target);
+    if (recolor.open && !el.closest('#recolor-pop, .recolor-pick')) closeRecolorPop();
+  });
+  $('recolor-scope').addEventListener('change', e => {
+    const v = /** @type {HTMLSelectElement} */ (e.target).value;
+    if (RECOLOR_SCOPES.includes(/** @type {any} */ (v))) { state.recolorScope = /** @type {any} */ (v); saveState(); }
+  });
+  $('recolor-btn').addEventListener('click', applyRecolor);
+
+  // Einfarbiger eigener Pinsel: die Vorschau folgt der Farbe.
+  colorHooks.onChange = () => { if (state.stampMono) syncStamp(); };
+  $('sel-brush-btn').addEventListener('click', () => { makeStampFromSelection(); });
+  $('stamp-drop-btn').addEventListener('click', () => { dropStamp(); });
+  $('stamp-save-btn').addEventListener('click', saveStamp);
+  $('brushlib-btn').addEventListener('click', openBrushLib);
+  document.addEventListener('pointerdown', e => {
+    const el = /** @type {Element} */ (e.target);
+    if (!$('brushlib-pop').hidden && !el.closest('#brushlib-group')) closeBrushLib();
+  });
+  $('stamp-mono-btn').addEventListener('click', () => {
+    state.stampMono = !state.stampMono;
+    syncStamp();
+  });
 
   $('sel-op-new').addEventListener('click', () => setSelOp('new'));
   $('sel-op-add').addEventListener('click', () => setSelOp('add'));
@@ -1141,6 +1668,13 @@ function initToolbar() {
   });
   $('shade-soft-btn').addEventListener('click', () => {
     state.shadeSoft = !state.shadeSoft;
+    renderShadeRamp();
+    saveState();
+  });
+  $('shade-dir').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-shade-dir]');
+    if (!b) return;
+    state.shadeDir = /** @type {HTMLElement} */ (b).dataset.shadeDir || 'center';
     renderShadeRamp();
     saveState();
   });
@@ -1204,13 +1738,6 @@ function initToolbar() {
   };
   $('bg-dark-btn').addEventListener('click', () => setBg('dark'));
   $('bg-bw-btn').addEventListener('click', () => setBg('bw'));
-  // Pixelraster anzeigen (Menü „Ansicht“): ohne Häkchen ein sauberes Bild ohne die feinen Linien.
-  $('grid-btn').addEventListener('click', () => {
-    state.showGrid = !state.showGrid;
-    syncGridItem();
-    renderEditor();
-    saveState();
-  });
 
   $('undo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); undo(); });
   $('redo-btn').addEventListener('click', () => { stopRotating(false); commitFloat(); redo(); });
@@ -1275,6 +1802,8 @@ function initPalettePanel() {
   $('palette-edit-btn').addEventListener('click', () => openPaletteModal(getPreviewName()));
   $('palette-del-btn').addEventListener('click', () => renderCallbacks.onDeletePalette(getPreviewName()));
   $('palette-from-image-btn').addEventListener('click', openReduceModal);
+  initPaletteFiles();
+  initSettings();
 
   // Freier Farbwähler — Klick auf die aktuelle Farbe öffnet den Picker.
   const picker = $('free-color-picker');
@@ -2022,12 +2551,15 @@ function syncUiFromState() {
   $('bg-dark-btn').classList.toggle('is-active', state.editorBg === 'dark');
   $('bg-bw-btn').classList.toggle('is-active', state.editorBg === 'bw');
   syncGridItem();
+  syncTiledItems();
+  if (state.tiled !== 'off') requestAnimationFrame(centerCanvas);
   setBrushSize(state.brushSize);
   const fmtSel = $('output-format');
   if (fmtSel) { fmtSel.value = state.outputFormat; syncFormatUI(); }
   $('shape-fill-btn').classList.toggle('is-active', state.shapeFill);
   $('shape-fill-btn').setAttribute('aria-pressed', String(state.shapeFill));
   syncFillVisible();
+  syncRecolor();
   $('pixel-perfect-btn').classList.toggle('is-active', !!state.pixelPerfect);
   $('pixel-perfect-btn').setAttribute('aria-pressed', String(!!state.pixelPerfect));
   updateMirrorUI();

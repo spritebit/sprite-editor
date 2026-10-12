@@ -1418,6 +1418,10 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
   line-height: 0;
 }
 #editor-canvas { display: block; position: relative; z-index: 1; touch-action: none; image-rendering: pixelated; }
+/* Kachelmodus: Kopien hinter dem Bild, über den Rand von #editor-canvas-wrap
+   hinaus (Lage und Größe setzt js/render.js). */
+#editor-tiled { position: absolute; z-index: 0; touch-action: none; image-rendering: pixelated; }
+#editor-tiled[hidden] { display: none; }
 /* Gitterlinien über dem Canvas: eine Linie links und oben je Zelle, die
    letzte rechts und unten als Rand. --cell setzt js/render.js. */
 #editor-gridlines {
@@ -3102,3 +3106,104 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 @media (max-width: 500px) {
   #tl-prev, #tl-next, #tl-go-field { display: none; }
 }
+
+/* Farbe ersetzen (Panel „Feinschliff“): Von/Nach mit kleinem Farbfeld. */
+.recolor-row { flex-wrap: wrap; }
+.recolor-pick { display: inline-flex; align-items: center; gap: 6px; }
+.recolor-chip {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1px solid var(--border, rgba(127,127,127,.5));
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-3) 0 50%) 0 0 / 6px 6px;
+}
+.recolor-chip.is-unset { background: none; border-style: dashed; }
+.recolor-row { position: relative; }
+.recolor-pop {
+  position: absolute; z-index: 20;
+  display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px; padding: 6px;
+  background: var(--surface-1, #222); border: 1px solid var(--border, rgba(127,127,127,.5));
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.recolor-pop[hidden] { display: none; }
+.recolor-opt { width: 20px; height: 20px; padding: 0; cursor: pointer; }
+.recolor-opt.is-active { outline: 2px solid var(--accent, #6af); outline-offset: 1px; }
+
+/* Eigener Pinsel (js/stamp.js): Vorschau in der Options-Zeile und am Zeiger. */
+.stamp-preview { image-rendering: pixelated; background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-3) 0 50%) 0 0 / 6px 6px; border-radius: 3px; }
+#brush-cursor.is-stamp { background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; opacity: .75; }
+
+/* Gespeicherte Pinsel (js/brushlib.js): Liste unter dem Knopf. */
+.brushlib-group { position: relative; }
+.brushlib-pop {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 30;
+  display: grid; grid-template-columns: repeat(4, auto); gap: 6px; padding: 8px;
+  background: var(--surface-1, #222); border: 1px solid var(--border, rgba(127,127,127,.5));
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.brushlib-pop[hidden] { display: none; }
+.brushlib-item { position: relative; }
+.brushlib-pick {
+  display: grid; place-items: center; width: 52px; height: 52px; padding: 0; cursor: pointer;
+  border: 1px solid var(--border, rgba(127,127,127,.5)); border-radius: 4px;
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-3) 0 50%) 0 0 / 8px 8px;
+}
+.brushlib-pick:hover { outline: 2px solid var(--accent, #6af); }
+.brushlib-pick img { image-rendering: pixelated; }
+.brushlib-del {
+  position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0;
+  border-radius: 50%; border: none; cursor: pointer; font-size: 12px; line-height: 18px;
+  background: var(--surface-3, #444); color: inherit;
+}
+.brushlib-del:hover { background: var(--danger, #e66); color: #fff; }
+
+/* Palettendateien (js/palfile.js): Formate unter „Speichern …“. */
+.pal-file-row { position: relative; }
+.pal-export-pop {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 30;
+  display: flex; flex-direction: column; gap: 4px; padding: 6px;
+  background: var(--surface-1, #222); border: 1px solid var(--border, rgba(127,127,127,.5));
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.pal-export-pop[hidden] { display: none; }
+.pal-export-pop .btn { justify-content: flex-start; white-space: nowrap; }
+
+/* Richtung des Verlaufs beim Schattieren (js/shade.js softLevel). */
+.shade-dir .btn { min-width: 30px; justify-content: center; }
+.shade-dir[hidden] { display: none; }
+
+/* Einstellungen (Menü „Bearbeiten“, Strg+,): links die Themen, ein
+   Trennstrich, rechts die Einstellungen des gewählten Themas (wie Photoshop). */
+.settings-modal { width: min(680px, calc(100vw - 32px)); max-width: none; }
+.settings-body { display: flex; min-height: 300px; margin-top: 4px; }
+.settings-nav {
+  display: flex; flex-direction: column; gap: 2px; flex: 0 0 160px;
+  padding: 4px 12px 4px 0; border-right: 1px solid var(--border, rgba(127,127,127,.35));
+}
+.settings-tab {
+  text-align: left; padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer;
+  background: none; color: var(--text-muted, inherit); font: inherit;
+}
+.settings-tab:hover { background: var(--surface-2); color: var(--text, inherit); }
+.settings-tab[aria-selected="true"] { background: var(--surface-3); color: var(--text, inherit); font-weight: 700; }
+.settings-panes { flex: 1; min-width: 0; padding: 4px 0 4px 20px; }
+.settings-pane[hidden] { display: none; }
+.settings-h { margin: 0 0 14px; font-size: var(--fs-lg); font-weight: 700; }
+.settings-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.settings-row--top { align-items: flex-start; }
+.settings-row .field-label { min-width: 120px; }
+.settings-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.settings-brushes { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-brushes:empty { display: none; }
+/* Schmal: Themen oben als Zeile, Trennstrich darunter. */
+@media (max-width: 560px) {
+  .settings-body { flex-direction: column; min-height: 0; }
+  .settings-nav { flex-direction: row; flex: none; overflow-x: auto; padding: 0 0 8px; border-right: none; border-bottom: 1px solid var(--border, rgba(127,127,127,.35)); }
+  .settings-tab { white-space: nowrap; }
+  .settings-panes { padding: 14px 0 4px; }
+  /* Beschriftung über den Knöpfen, Knopfgruppen brechen um statt herauszuragen. */
+  .settings-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .settings-row .field-label { min-width: 0; }
+  .settings-pane .btn-group { flex-wrap: wrap; }
+}
+
+/* Knopfgruppen in den Einstellungen dürfen umbrechen (lange Beschriftungen). */
+.settings-pane .btn-group { max-width: 100%; flex-wrap: wrap; }

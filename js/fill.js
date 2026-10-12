@@ -35,3 +35,20 @@ export function fillRegion(grid, ref, sx, sy, value) {
   }
   return n;
 }
+
+/**
+ * Wie fillRegion(), aber nicht zusammenhängend („Zusammenhängend“ aus):
+ * JEDE Stelle, die in `ref` den Wert unter (sx, sy) hat, bekommt `value` —
+ * auch getrennte Flächen. So färbt ein Klick eine Farbe im ganzen Bild um.
+ * @returns {number} wie viele Pixel sich in `grid` geändert haben
+ */
+export function fillAll(grid, ref, sx, sy, value) {
+  const H = grid.length, W = grid[0]?.length || 0;
+  if (sx < 0 || sy < 0 || sx >= W || sy >= H) return 0;
+  const target = ref[sy][sx];
+  let n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (ref[y][x] === target && grid[y][x] !== value) { grid[y][x] = value; n++; }
+  }
+  return n;
+}
