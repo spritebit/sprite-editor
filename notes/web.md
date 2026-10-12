@@ -1,3 +1,13 @@
+# 3.7.3
+
+## Deutsch
+
+- Angepinnte Panels erkennst du an einem blauen Punkt am Icon in der Seitenleiste, wie in der Desktop-App. Ein Klick darauf springt zum Panel.
+
+## English
+
+- Pinned panels now show a blue dot on their icon in the side bar, just like the desktop app. Clicking it jumps to the panel.
+
 # 3.7.2
 
 ## Deutsch
