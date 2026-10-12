@@ -703,6 +703,20 @@
             <button class="btn" id="palette-add-btn" data-i18n="pal.add" data-i18n-attr="title:pal.addTitle" title="Neue eigene Palette anlegen">+ Palette</button>
             <button class="btn" id="palette-fork-btn" data-i18n="pal.fork" data-i18n-attr="title:pal.forkTitle" title="Diese eingebaute Palette als eigene Kopie anlegen — dann ist sie änderbar">Kopie bearbeiten</button>
           </div>
+          <!-- Palettendateien (js/palfile.js): .gpl, .hex, .pal, .txt, Bilder -->
+          <div class="btn-row pal-file-row">
+            <button class="btn" id="palette-load-btn" data-i18n="pal.load" data-i18n-attr="title:pal.loadTitle"
+                    title="Palette aus einer Datei laden — .gpl (GIMP, Aseprite), .hex (Lospec), .pal, .txt (Paint.NET) oder ein Bild wie das PNG von Lospec">Laden …</button>
+            <button class="btn" id="palette-export-btn" aria-haspopup="menu" aria-expanded="false" data-i18n="pal.export" data-i18n-attr="title:pal.exportTitle"
+                    title="Die angezeigte Palette als Datei speichern">Speichern …</button>
+            <div class="pal-export-pop" id="palette-export-pop" role="menu" hidden>
+              <button type="button" class="btn" role="menuitem" data-pal-format="gpl" data-i18n="pal.fmtGpl">.gpl — GIMP, Aseprite, Krita</button>
+              <button type="button" class="btn" role="menuitem" data-pal-format="hex" data-i18n="pal.fmtHex">.hex — Lospec</button>
+              <button type="button" class="btn" role="menuitem" data-pal-format="pal" data-i18n="pal.fmtPal">.pal — JASC (Paint Shop Pro)</button>
+              <button type="button" class="btn" role="menuitem" data-pal-format="png" data-i18n="pal.fmtPng">.png — Bild, 1 Pixel je Farbe</button>
+            </div>
+            <input type="file" id="palette-file-input" accept=".gpl,.hex,.pal,.txt,.png,.gif,.bmp,image/png,image/gif" hidden>
+          </div>
           <button class="btn btn--accent btn--block" id="palette-from-image-btn" data-i18n="pal.fromImage" data-i18n-attr="title:pal.fromImageTitle"
                   title="Die Farben des aktuellen Bildes als Palette übernehmen — mit Wahl der Farbanzahl">Bild → Palette …</button>
         </div>

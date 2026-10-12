@@ -90,6 +90,7 @@ const PRECACHE = [
   'js/onion.js',
   'js/pack.js',
   'js/palettes.js',
+  'js/palfile.js',
   'js/palorder.js',
   'js/palpicker.js',
   'js/pixelperfect.js',

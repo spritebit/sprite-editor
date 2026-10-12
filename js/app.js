@@ -44,7 +44,7 @@ import {
 import {
   openPaletteModal, initPaletteModal, deleteCustomPalette,
   previewPalette, assignPalette, forkPreviewPalette, addFreeColorsToPalette,
-  createPaletteFromImport, appendPaletteColor, setPaletteColor, removePaletteColor,
+  createPaletteFromImport, importPaletteFile, appendPaletteColor, setPaletteColor, removePaletteColor,
   addCurrentColorToPalette, addColorsToPalette,
 } from './palettes.js';
 import {
@@ -59,6 +59,7 @@ import {
 } from './spritefx.js';
 import { replaceColor, recolorTargets, RECOLOR_SCOPES } from './recolor.js';
 import { makeStamp, stampOrigin } from './stamp.js';
+import { parsePaletteFile, colorsFromRgba, isImageFile, writeGpl, writeHex, writeJasc, rgbaStrip } from './palfile.js';
 import { toSaved, fromSaved, addBrush, normalizeBrushes } from './brushlib.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
 import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
@@ -550,6 +551,84 @@ function syncFillVisible() {
   $('fill-visible-btn').setAttribute('aria-pressed', String(state.fillVisible));
   $('fill-contig-btn').classList.toggle('is-active', state.fillContig);
   $('fill-contig-btn').setAttribute('aria-pressed', String(state.fillContig));
+}
+
+// ── Palettendateien (js/palfile.js) ──
+// „Laden …“ legt aus der Datei eine eigene Palette an und zeigt sie im
+// Panel; „Speichern …“ schreibt die angezeigte Palette in einem der Formate.
+async function loadPaletteFile(file) {
+  const base = file.name.replace(/\.[^.]+$/, '');
+  /** @type {import('./palfile.js').PalFile} */
+  let pf;
+  try {
+    if (isImageFile(file.name)) {
+      const bmp = await createImageBitmap(file);
+      const cv = document.createElement('canvas');
+      cv.width = bmp.width; cv.height = bmp.height;
+      const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+      ctx.drawImage(bmp, 0, 0);
+      pf = colorsFromRgba(ctx.getImageData(0, 0, bmp.width, bmp.height).data);
+    } else {
+      pf = parsePaletteFile(file.name, new Uint8Array(await file.arrayBuffer()));
+    }
+  } catch {
+    showInfoToast(t('pal.loadFailed', { file: file.name }));
+    return;
+  }
+  const name = importPaletteFile(pf, base);
+  if (name) showInfoToast(t('pal.loaded', { name, n: pf.colors.length }));
+}
+
+async function exportPaletteFile(format) {
+  const name = getPreviewName();
+  const pal = getPaletteByName(name);
+  const colors = [];
+  for (let i = 1; i <= paletteSize(pal); i++) if (pal[i]) colors.push(pal[i].toLowerCase());
+  if (!colors.length) return;
+  const names = colors.map((_, i) => colorName(i + 1, name) || null);
+  /** @type {Blob} */
+  let blob;
+  if (format === 'png') {
+    const cv = document.createElement('canvas');
+    cv.width = colors.length; cv.height = 1;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+    ctx.putImageData(new ImageData(rgbaStrip(colors), colors.length, 1), 0, 0);
+    blob = await new Promise(res => cv.toBlob(b => res(/** @type {Blob} */ (b)), 'image/png'));
+  } else {
+    const text = format === 'gpl' ? writeGpl(name, colors, names) : format === 'hex' ? writeHex(colors) : writeJasc(colors);
+    blob = new Blob([text], { type: 'text/plain' });
+  }
+  await saveBlob(blob, name + '.' + format);
+}
+
+function closePalExport() {
+  $('palette-export-pop').hidden = true;
+  $('palette-export-btn').setAttribute('aria-expanded', 'false');
+}
+
+function initPaletteFiles() {
+  const input = /** @type {HTMLInputElement} */ ($('palette-file-input'));
+  $('palette-load-btn').addEventListener('click', () => input.click());
+  input.addEventListener('change', () => {
+    const f = input.files?.[0];
+    input.value = '';
+    if (f) loadPaletteFile(f);
+  });
+  $('palette-export-btn').addEventListener('click', () => {
+    const pop = $('palette-export-pop');
+    pop.hidden = !pop.hidden;
+    $('palette-export-btn').setAttribute('aria-expanded', String(!pop.hidden));
+  });
+  $('palette-export-pop').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-pal-format]');
+    if (!b) return;
+    closePalExport();
+    exportPaletteFile(/** @type {HTMLElement} */ (b).dataset.palFormat);
+  });
+  document.addEventListener('pointerdown', e => {
+    const el = /** @type {Element} */ (e.target);
+    if (!$('palette-export-pop').hidden && !el.closest('.pal-file-row')) closePalExport();
+  });
 }
 
 // ── Eigener Pinsel (js/stamp.js) ──
@@ -1617,6 +1696,7 @@ function initPalettePanel() {
   $('palette-edit-btn').addEventListener('click', () => openPaletteModal(getPreviewName()));
   $('palette-del-btn').addEventListener('click', () => renderCallbacks.onDeletePalette(getPreviewName()));
   $('palette-from-image-btn').addEventListener('click', openReduceModal);
+  initPaletteFiles();
 
   // Freier Farbwähler — Klick auf die aktuelle Farbe öffnet den Picker.
   const picker = $('free-color-picker');

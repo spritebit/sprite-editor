@@ -3154,3 +3154,14 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
   background: var(--surface-3, #444); color: inherit;
 }
 .brushlib-del:hover { background: var(--danger, #e66); color: #fff; }
+
+/* Palettendateien (js/palfile.js): Formate unter „Speichern …“. */
+.pal-file-row { position: relative; }
+.pal-export-pop {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 30;
+  display: flex; flex-direction: column; gap: 4px; padding: 6px;
+  background: var(--surface-1, #222); border: 1px solid var(--border, rgba(127,127,127,.5));
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.pal-export-pop[hidden] { display: none; }
+.pal-export-pop .btn { justify-content: flex-start; white-space: nowrap; }

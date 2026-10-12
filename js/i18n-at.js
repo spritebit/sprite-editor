@@ -262,6 +262,8 @@ export const STATIC_AT = {
   'tool.stamp':       'Eigena Pinsl',
   'tool.selBrush':    'Ois Pinsl',
   'tool.stampSave':   'Speichan',
+  'pal.load':         'Lodn …',
+  'pal.export':       'Speichan …',
 
   // ── Reiter ──
   'tabs.label':       'Offene Sprites',
