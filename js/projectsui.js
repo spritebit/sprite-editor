@@ -4,7 +4,7 @@
 // Oben ein neues Projekt mit Namen anlegen, darunter alle Projekte dieses
 // Browsers: öffnen, umbenennen, duplizieren, löschen. Die Arbeit machen
 // storage.js (Speichern, Wechseln) und projects.js (die Liste).
-import { readRegistry, sortedList } from './projects.js';
+import { readRegistry, sortedList, recentList } from './projects.js';
 import { createProject, switchProject, renameProject, duplicateProject, deleteProject, projectName, currentProjectId, syncCount } from './storage.js';
 import { t, tn, getLang, onLangChange } from './i18n.js';
 import { iconSvg } from './icons.js';
@@ -42,6 +42,7 @@ function render() {
   if (!list) return;
   const reg = readRegistry();
   const cur = currentProjectId();
+  renderRecentMenu();
   list.replaceChildren();
   for (const e of sortedList(reg)) {
     const row = document.createElement('div');
@@ -108,6 +109,28 @@ function startRename(row, id, old) {
   inp.addEventListener('blur', () => finish(true));
 }
 
+/** Datei → „Zuletzt geöffnet“: die anderen Projekte, ein Klick öffnet. */
+export function renderRecentMenu() {
+  const sub = $('recent-sub'), drop = $('recent-drop');
+  if (!sub || !drop) return;
+  const list = recentList(readRegistry());
+  sub.hidden = !list.length;
+  drop.replaceChildren(...list.map(e => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mb-item';
+    b.setAttribute('role', 'menuitem');
+    const name = document.createElement('span');
+    name.textContent = e.name || t('proj.unnamed');
+    const meta = document.createElement('kbd');
+    meta.textContent = tn('proj.sprites', e.count, { n: e.count });
+    b.append(name, meta);
+    b.title = when(Math.max(e.opened || 0, e.updated || 0));
+    b.addEventListener('click', () => switchProject(e.id));
+    return b;
+  }));
+}
+
 /** Das Fenster öffnen; `focusNew`: gleich den Namen fürs neue Projekt tippen. */
 export function openProjects(focusNew = false) {
   render();
@@ -127,5 +150,6 @@ export function initProjectsUi() {
   $('proj-new-name').addEventListener('keydown', e => { if (e.key === 'Enter') create(); });
   syncTitle();
   syncCount();
-  onLangChange(() => { syncTitle(); if (overlay.classList.contains('open')) render(); });
+  renderRecentMenu();
+  onLangChange(() => { syncTitle(); renderRecentMenu(); if (overlay.classList.contains('open')) render(); });
 }

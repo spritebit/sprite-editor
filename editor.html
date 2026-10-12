@@ -88,6 +88,11 @@
           <button type="button" class="mb-item" role="menuitem" id="load-file-btn" data-i18n-attr="title:mb.openTitle" title="Projekt-, Sprite- oder Aseprite-Datei: ein Projekt öffnet sich als eigenes Projekt, ein Sprite kommt ins offene dazu"><span data-i18n="mb.open">Öffnen …</span><kbd data-i18n="mb.kOpen">Strg+O</kbd></button>
           <button type="button" class="mb-item" role="menuitem" id="add-sprite-btn" data-i18n-attr="title:mb.addSpriteTitle" title="Die Sprites einer Projektdatei ins offene Projekt übernehmen — statt das Projekt für sich zu öffnen"><span data-i18n="mb.addSprite">Sprites aus Projekt holen …</span></button>
           <button type="button" class="mb-item" role="menuitem" id="projects-btn"><span data-i18n="mb.projects">Projekte …</span></button>
+          <!-- Zuletzt geöffnet: die anderen Projekte dieses Browsers (js/projectsui.js renderRecentMenu) -->
+          <div class="mb-sub" id="recent-sub" hidden>
+            <button type="button" class="mb-item mb-subtitle" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span data-i18n="mb.recent">Zuletzt geöffnet</span></button>
+            <div class="mb-subdrop" role="menu" id="recent-drop"></div>
+          </div>
           <div class="mb-sep" role="separator"></div>
           <button type="button" class="mb-item" role="menuitem" id="save-file-btn"><span data-i18n="mb.save">Projekt sichern</span><kbd data-i18n="mb.kSave">Strg+S</kbd></button>
           <!-- Einzelne Sprites statt des ganzen Projekts (js/storage.js) -->

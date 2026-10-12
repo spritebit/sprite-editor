@@ -205,6 +205,7 @@ const STATIC = {
     'tool.fillContig':       'Contiguous',
     'tool.stamp':            'Custom brush',
     'mb.settings':           'Settings …',
+    'mb.recent':             'Recent projects',
     'mb.kSettings':          'Ctrl+,',
     'set.title':             'Settings',
     'set.close':             'Close',

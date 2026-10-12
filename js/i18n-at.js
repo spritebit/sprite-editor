@@ -264,6 +264,7 @@ export const STATIC_AT = {
   'tool.stampSave':   'Speichan',
   'pal.load':         'Lodn …',
   'mb.settings':      'Einstöllungen …',
+  'mb.recent':        'Zuletzt offn',
   'set.title':        'Einstöllungen',
   'set.lang':         'Sproch',
   'pal.export':       'Speichan …',

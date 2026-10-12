@@ -1,3 +1,13 @@
+# 3.7.1
+
+## Deutsch
+
+- Zuletzt geöffnete Projekte: Unter „Datei“ → „Zuletzt geöffnet“ stehen deine anderen Projekte in diesem Browser, das zuletzt benutzte zuerst. Ein Klick öffnet es.
+
+## English
+
+- Recent projects: “File” → “Recent projects” lists your other projects in this browser, the most recently used first. One click opens it.
+
 # 3.7.0
 
 ## Deutsch

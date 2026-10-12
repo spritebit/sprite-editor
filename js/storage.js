@@ -497,8 +497,14 @@ export async function switchProject(id) {
   syncCount();
   disableSaving();
   const reg = readRegistry();
-  if (!reg.list.some(e => e.id === id)) return;
+  const target = reg.list.find(e => e.id === id);
+  if (!target) return;
   reg.current = id;
+  // Für Datei → „Zuletzt geöffnet“: beide gelten als eben benutzt.
+  const now = Date.now();
+  target.opened = now;
+  const here = reg.list.find(e => e.id === PROJECT_ID);
+  if (here && here !== target) here.opened = now - 1;
   writeRegistry(reg);
   location.reload();
 }
