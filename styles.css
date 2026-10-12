@@ -3170,14 +3170,33 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 .shade-dir .btn { min-width: 30px; justify-content: center; }
 .shade-dir[hidden] { display: none; }
 
-/* Einstellungen (Menü „Bearbeiten“, Strg+,). */
-.settings-modal { width: min(560px, calc(100vw - 32px)); }
-.settings-sec { padding: 12px 0; border-top: 1px solid var(--border, rgba(127,127,127,.3)); }
-.settings-sec:first-of-type { border-top: none; }
-.settings-h { margin: 0 0 10px; font-size: var(--fs-sm, 13px); font-weight: 700; }
-.settings-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+/* Einstellungen (Menü „Bearbeiten“, Strg+,): links die Themen, ein
+   Trennstrich, rechts die Einstellungen des gewählten Themas (wie Photoshop). */
+.settings-modal { width: min(680px, calc(100vw - 32px)); max-width: none; }
+.settings-body { display: flex; min-height: 300px; margin-top: 4px; }
+.settings-nav {
+  display: flex; flex-direction: column; gap: 2px; flex: 0 0 160px;
+  padding: 4px 12px 4px 0; border-right: 1px solid var(--border, rgba(127,127,127,.35));
+}
+.settings-tab {
+  text-align: left; padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer;
+  background: none; color: var(--text-muted, inherit); font: inherit;
+}
+.settings-tab:hover { background: var(--surface-2); color: var(--text, inherit); }
+.settings-tab[aria-selected="true"] { background: var(--surface-3); color: var(--text, inherit); font-weight: 700; }
+.settings-panes { flex: 1; min-width: 0; padding: 4px 0 4px 20px; }
+.settings-pane[hidden] { display: none; }
+.settings-h { margin: 0 0 14px; font-size: var(--fs-lg); font-weight: 700; }
+.settings-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
 .settings-row--top { align-items: flex-start; }
 .settings-row .field-label { min-width: 120px; }
 .settings-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .settings-brushes { display: flex; flex-wrap: wrap; gap: 8px; }
 .settings-brushes:empty { display: none; }
+/* Schmal: Themen oben als Zeile, Trennstrich darunter. */
+@media (max-width: 560px) {
+  .settings-body { flex-direction: column; min-height: 0; }
+  .settings-nav { flex-direction: row; flex: none; overflow-x: auto; padding: 0 0 8px; border-right: none; border-bottom: 1px solid var(--border, rgba(127,127,127,.35)); }
+  .settings-tab { white-space: nowrap; }
+  .settings-panes { padding: 14px 0 4px; }
+}

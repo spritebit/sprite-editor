@@ -1147,55 +1147,66 @@
 <!-- Einstellungen (Menü „Bearbeiten“, Strg+,): sammelt, was sonst verstreut
      in Menüs und Werkzeugleiste steht — die Plätze dort bleiben. -->
 <div id="settings-modal-overlay" class="modal-overlay">
-  <div class="modal modal--scroll settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="modal-head">
       <h2 class="modal-title" id="settings-title" data-i18n="set.title">Einstellungen</h2>
       <button class="icon-btn" id="settings-close" data-i18n-attr="title:set.close;aria-label:set.close" title="Schließen" aria-label="Schließen"><span class="ico" data-icon="close"></span></button>
     </div>
+    <!-- Wie in Photoshop: links die Themen, ein Trennstrich, rechts die
+         Einstellungen des gewählten Themas. -->
+    <div class="settings-body">
+      <div class="settings-nav" role="tablist" aria-orientation="vertical" id="settings-nav">
+        <button type="button" class="settings-tab" role="tab" aria-selected="true" aria-controls="set-pane-lang" data-set-tab="lang" data-i18n="set.lang">Sprache</button>
+        <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="set-pane-view" data-set-tab="view" data-i18n="set.view">Ansicht</button>
+        <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="set-pane-brush" data-set-tab="brush" data-i18n="set.brush">Pinsel</button>
+      </div>
 
-    <section class="settings-sec">
-      <h3 class="settings-h" data-i18n="set.lang">Sprache</h3>
-      <div class="btn-group lang-switch" role="group" aria-label="Sprache / Language">
-        <button type="button" class="btn lang-btn" data-lang="de" lang="de">Deutsch</button>
-        <button type="button" class="btn lang-btn" data-lang="at" lang="de-AT">Österreichisch</button>
-        <button type="button" class="btn lang-btn" data-lang="en" lang="en">English</button>
-      </div>
-    </section>
+      <div class="settings-panes">
+        <section class="settings-pane" role="tabpanel" id="set-pane-lang" data-set-pane="lang">
+          <h3 class="settings-h" data-i18n="set.lang">Sprache</h3>
+          <div class="btn-group lang-switch" role="group" aria-label="Sprache / Language">
+            <button type="button" class="btn lang-btn" data-lang="de" lang="de">Deutsch</button>
+            <button type="button" class="btn lang-btn" data-lang="at" lang="de-AT">Österreichisch</button>
+            <button type="button" class="btn lang-btn" data-lang="en" lang="en">English</button>
+          </div>
+        </section>
 
-    <section class="settings-sec">
-      <h3 class="settings-h" data-i18n="set.view">Ansicht</h3>
-      <label class="settings-check">
-        <input type="checkbox" id="set-grid">
-        <span data-i18n="mb.grid">Pixelraster anzeigen</span>
-      </label>
-      <div class="settings-row">
-        <span class="field-label" data-i18n="mb.tiled">Kachelmodus</span>
-        <div class="btn-group" role="group" id="set-tiled">
-          <button type="button" class="btn" data-set-tiled="off" data-i18n="mb.tiledOff">Aus</button>
-          <button type="button" class="btn" data-set-tiled="both" data-i18n="mb.tiledBoth">Ringsum</button>
-          <button type="button" class="btn" data-set-tiled="x" data-i18n="mb.tiledX">Nur nebeneinander</button>
-          <button type="button" class="btn" data-set-tiled="y" data-i18n="mb.tiledY">Nur übereinander</button>
-        </div>
-      </div>
-    </section>
+        <section class="settings-pane" role="tabpanel" id="set-pane-view" data-set-pane="view" hidden>
+          <h3 class="settings-h" data-i18n="set.view">Ansicht</h3>
+          <label class="settings-check">
+            <input type="checkbox" id="set-grid">
+            <span data-i18n="mb.grid">Pixelraster anzeigen</span>
+          </label>
+          <div class="settings-row">
+            <span class="field-label" data-i18n="mb.tiled">Kachelmodus</span>
+            <div class="btn-group" role="group" id="set-tiled">
+              <button type="button" class="btn" data-set-tiled="off" data-i18n="mb.tiledOff">Aus</button>
+              <button type="button" class="btn" data-set-tiled="both" data-i18n="mb.tiledBoth">Ringsum</button>
+              <button type="button" class="btn" data-set-tiled="x" data-i18n="mb.tiledX">Nur nebeneinander</button>
+              <button type="button" class="btn" data-set-tiled="y" data-i18n="mb.tiledY">Nur übereinander</button>
+            </div>
+          </div>
+        </section>
 
-    <section class="settings-sec">
-      <h3 class="settings-h" data-i18n="set.brush">Pinsel</h3>
-      <div class="settings-row">
-        <span class="field-label" data-i18n="tool.shape">Pinselform</span>
-        <div class="btn-group" role="group" id="set-shape">
-          <button type="button" class="btn" data-set-round="0"><span class="ico" data-icon="square"></span><span data-i18n="set.square">Eckig</span></button>
-          <button type="button" class="btn" data-set-round="1"><span class="ico" data-icon="circle"></span><span data-i18n="set.round">Rund</span></button>
-        </div>
+        <section class="settings-pane" role="tabpanel" id="set-pane-brush" data-set-pane="brush" hidden>
+          <h3 class="settings-h" data-i18n="set.brush">Pinsel</h3>
+          <div class="settings-row">
+            <span class="field-label" data-i18n="tool.shape">Pinselform</span>
+            <div class="btn-group" role="group" id="set-shape">
+              <button type="button" class="btn" data-set-round="0"><span class="ico" data-icon="square"></span><span data-i18n="set.square">Eckig</span></button>
+              <button type="button" class="btn" data-set-round="1"><span class="ico" data-icon="circle"></span><span data-i18n="set.round">Rund</span></button>
+            </div>
+          </div>
+          <div class="settings-row settings-row--top">
+            <span class="field-label" data-i18n="tool.brushLib">Gespeicherte Pinsel</span>
+            <div>
+              <div class="settings-brushes" id="set-brushes"></div>
+              <p class="field-note" id="set-brushes-empty" data-i18n="set.brushesEmpty">Noch keine. Wähle etwas aus, drück Strg+B und dann „Speichern“ in der Pinsel-Zeile.</p>
+            </div>
+          </div>
+        </section>
       </div>
-      <div class="settings-row settings-row--top">
-        <span class="field-label" data-i18n="tool.brushLib">Gespeicherte Pinsel</span>
-        <div>
-          <div class="settings-brushes" id="set-brushes"></div>
-          <p class="field-note" id="set-brushes-empty" data-i18n="set.brushesEmpty">Noch keine. Wähle etwas aus, drück Strg+B und dann „Speichern“ in der Pinsel-Zeile.</p>
-        </div>
-      </div>
-    </section>
+    </div>
   </div>
 </div>
 

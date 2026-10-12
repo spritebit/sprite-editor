@@ -781,8 +781,31 @@ function syncSettings() {
   $('set-brushes-empty').hidden = savedBrushes.length > 0;
 }
 
+/** Thema links wählen: rechts nur dessen Einstellungen. */
+function showSettingsTab(tab) {
+  document.querySelectorAll('[data-set-tab]').forEach(b =>
+    b.setAttribute('aria-selected', String(/** @type {HTMLElement} */ (b).dataset.setTab === tab)));
+  document.querySelectorAll('[data-set-pane]').forEach(p => {
+    /** @type {HTMLElement} */ (p).hidden = /** @type {HTMLElement} */ (p).dataset.setPane !== tab;
+  });
+}
+
 function initSettings() {
   $('settings-btn').addEventListener('click', openSettings);
+  $('settings-nav').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-tab]');
+    if (b) showSettingsTab(/** @type {HTMLElement} */ (b).dataset.setTab);
+  });
+  // Pfeiltasten in der Themenliste (wie bei Reitern üblich).
+  $('settings-nav').addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const tabs = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-set-tab]')]);
+    const i = tabs.findIndex(b => b.getAttribute('aria-selected') === 'true');
+    const next = tabs[(i + (e.key === 'ArrowDown' ? 1 : tabs.length - 1)) % tabs.length];
+    e.preventDefault();
+    showSettingsTab(next.dataset.setTab);
+    next.focus();
+  });
   $('settings-close').addEventListener('click', () => $('settings-modal-overlay').classList.remove('open'));
   $('set-grid').addEventListener('change', () => $('grid-btn').click());
   $('set-tiled').addEventListener('click', e => {
