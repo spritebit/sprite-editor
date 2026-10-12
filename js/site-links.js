@@ -32,7 +32,7 @@
   // veröffentlichte Release (höchster v…-Tag von spritebit-rs).
   var VERSIONS = {
     web:     '3.7.0',
-    desktop: '1.7.0',
+    desktop: '1.7.1',
   };
 
   // Abgeleitete Adressen
