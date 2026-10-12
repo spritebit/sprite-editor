@@ -1918,7 +1918,11 @@ a.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; b
 
 @media (max-width: 940px) {
   .try, .sketch { grid-template-columns: minmax(0, 1fr); }
-  .try > .try-text { padding-top: 0; }
+  /* Untereinander: Bitty vor das Raster. Die Textspalte löst sich dafür auf
+     (display: contents), ihre Teile ordnen sich direkt in .try ein. */
+  .try { row-gap: var(--sp-5); }
+  .try > .try-text { display: contents; }
+  .try > .try-text > .bitty-hi { order: -1; }
   .teasers { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
