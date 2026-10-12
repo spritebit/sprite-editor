@@ -3,10 +3,12 @@
 ## Deutsch
 
 - Zuletzt geöffnete Projekte: Unter „Datei“ → „Zuletzt geöffnet“ stehen deine anderen Projekte in diesem Browser, das zuletzt benutzte zuerst. Ein Klick öffnet es.
+- Projektdateien wie in der Desktop-App: „Projekt sichern“ schreibt jetzt eine .sb-Datei, dieselbe, die die Desktop-App öffnet und speichert. So wanderst du ohne Umweg zwischen Browser und Desktop. Ältere .json-Projekte öffnen sich weiter. Sprites, die größer sind als 1024 × 1024 Pixel (das geht nur in der Desktop-App), lässt das Web beim Öffnen weg und sagt dir, welche es sind.
 
 ## English
 
 - Recent projects: “File” → “Recent projects” lists your other projects in this browser, the most recently used first. One click opens it.
+- Project files like the desktop app: “Save project” now writes a .sb file, the same one the desktop app opens and saves. Move between browser and desktop without a detour. Older .json projects still open. Sprites larger than 1024 × 1024 pixels (only possible in the desktop app) are left out when opening on the web, and you are told which ones.
 
 # 3.7.0
 

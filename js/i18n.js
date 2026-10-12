@@ -344,9 +344,9 @@ const STATIC = {
     'tb.dir':         'Save folder',
     'tb.dirTitle':    'Pick a folder for saved files — it is remembered',
     'tb.save':        'Save project',
-    'tb.saveTitle':   'Save the project as a JSON file',
+    'tb.saveTitle':   'Save the project as a .sb file — the desktop app opens it too',
     'tb.open':        'Open',
-    'tb.openTitle':   'Load a project from a JSON file',
+    'tb.openTitle':   'Load a project from a .sb file (or an older .json)',
     'tb.reset':       'Reset',
     'tb.resetTitle':  'Reset everything',
     'tb.langLabel':   'Language',
@@ -958,7 +958,7 @@ const STATIC = {
       + '<div><b>Spritesheet</b> packs all sprites into equally sized cells — for animations one row per sprite with all its frames — and drops a JSON atlas with names, coordinates and duration next to it. Engines read that straight away.</div>'
       + '<div><b>Tiles</b>: “Export for Godot” in the Tiles panel writes tile image, scene and JSON (see Tiles).</div>'
       + '<div><b>Desktop app</b>: spritebit is also a program for Windows (download on the start page). It reads and writes the same project files.</div>'
-      + '<div><b>Save project / Open</b> writes all sprites and palettes into one JSON file.</div>',
+      + '<div><b>Save project / Open</b> writes all sprites and palettes into one .sb file — the desktop app opens the same file. Older .json project files still open. Sprites larger than 1024 × 1024 pixels (from the desktop app) are left out when opening on the web.</div>',
 
     'help.h.keys': 'Keyboard shortcuts',
     'help.keys': ''
@@ -1485,6 +1485,8 @@ const MSG = {
     'file.savedOk':      '✅ „{name}“ gespeichert.',
     'file.saveFailed':   'Speichern fehlgeschlagen — ist der Speicher des Browsers voll? „Projekt sichern“ schreibt eine Datei.',
     'file.badProject':   'Ungültige Datei — das ist kein Sprite-Projekt.',
+    'file.sbSkipped':    'Nicht geöffnet, weil größer als {max} × {max} Pixel: {names}. Solche Flächen gehen nur in der Desktop-App.',
+    'file.sbNewer':      'Diese Projektdatei stammt aus einer neueren spritebit-Version — bitte die Web-Version neu laden.',
     'file.aseNot':       'Das ist keine Aseprite-Datei.',
     'file.aseBig':       'Zu groß für den Browser ({size} Pixel, höchstens 1024 × 1024) — die Desktop-App öffnet sie.',
     'file.aseBad':       'Die Aseprite-Datei ist beschädigt ({why}).',
@@ -2167,6 +2169,8 @@ const MSG = {
     'file.savedOk':      '✅ “{name}” saved.',
     'file.saveFailed':   'Saving failed — is the browser storage full? “Save project” writes a file.',
     'file.badProject':   'Invalid file — that is not a sprite project.',
+    'file.sbSkipped':    'Not opened because larger than {max} × {max} pixels: {names}. Canvases that big only work in the desktop app.',
+    'file.sbNewer':      'This project file comes from a newer spritebit version — please reload the web version.',
     'file.aseNot':       'This is not an Aseprite file.',
     'file.aseBig':       'Too big for the browser ({size} pixels, at most 1024 × 1024) — the desktop app opens it.',
     'file.aseBad':       'The Aseprite file is damaged ({why}).',

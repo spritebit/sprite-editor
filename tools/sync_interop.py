@@ -24,7 +24,8 @@ import sys
 WEB = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RS_DEFAULT = os.path.join(os.path.dirname(WEB), 'spritebit-rs')
 # Datei → welches Repo sie schreibt
-OWNER = {'web-sprite.bitty': 'web', 'desktop-sprite.bitty': 'rs'}
+OWNER = {'web-sprite.bitty': 'web', 'desktop-sprite.bitty': 'rs',
+         'web-project.sb': 'web', 'desktop-project.sb': 'rs'}
 
 
 def same(a, b):

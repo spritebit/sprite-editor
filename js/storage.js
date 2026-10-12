@@ -28,6 +28,8 @@ import { MATERIALS } from './gamejson.js';
 import { normalizeRamp, SOFT_DIRS } from './shade.js';
 import { normalizeLib } from './tilelib.js';
 import { RECOLOR_SCOPES } from './recolor.js';
+import { readSb, writeSb, isSbName, looksLikeSb } from './sbfile.js';
+import { MAX_SIDE } from './state.js';
 
 // Welches Projekt gerade dran ist (js/projects.js) — steht für die ganze
 // Sitzung fest; gewechselt wird per Neustart (switchProject).
@@ -733,13 +735,15 @@ export function flashSaved() {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Projekt-Datei (JSON) speichern / laden
+// Projekt-Datei (.sb wie die Desktop-App) speichern / laden
 // ────────────────────────────────────────────────────────────────────
+// Gespeichert wird als .sb (js/sbfile.js) — dieselbe Datei öffnet die
+// Desktop-App. Ältere .json-Projektdateien öffnen sich weiter.
 export async function saveToFile() {
   const payload = buildPayload();
   const base = projectName().replace(/[^a-zA-Z0-9_-]/g, '_') || 'spritebit';
-  const filename = `${base}.json`;
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const filename = `${base}.sb`;
+  const blob = new Blob([/** @type {BlobPart} */ (await writeSb(payload))], { type: 'application/octet-stream' });
   const result = await saveBlob(blob, filename);
   flashSaved();
   showInfoToast(result.fallback
@@ -879,8 +883,19 @@ export function addSpritesFromPayload(p) {
 }
 
 /** Datei lesen und ihre Sprites hinzufügen. onDone(ids), onError(text). */
-export function addSpritesFromFile(file, onDone, onError) {
+export async function addSpritesFromFile(file, onDone, onError) {
   if (isAse(file)) { addAseFile(file, onDone, onError); return; }
+  if (await isSbFile(file)) {
+    try {
+      const { doc, notice } = await readSbFile(file);
+      const ids = addSpritesFromPayload(doc);
+      if (notice) showInfoToast(notice);
+      if (ids.length) onDone(ids); else if (onError && !notice) onError(t('file.badProject'));
+    } catch (e) {
+      if (onError) onError(e?.code === 'version' ? t('file.sbNewer') : t('file.badProject'));
+    }
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     let ids = [];
@@ -891,13 +906,57 @@ export function addSpritesFromFile(file, onDone, onError) {
   reader.readAsText(file);
 }
 
+// ── .sb lesen ──
+// Hinweis, der den Neustart nach dem Öffnen überlebt (zu große Sprites).
+const NOTICE_KEY = 'spritebit_notice';
+
+/** Hinweis vom letzten Öffnen — einmal abholen (app.js nach dem Laden). */
+export function takeNotice() {
+  try {
+    const n = sessionStorage.getItem(NOTICE_KEY);
+    if (n) sessionStorage.removeItem(NOTICE_KEY);
+    return n;
+  } catch { return null; }
+}
+
+/** Ist das eine .sb-Datei (Endung oder Kennung)? */
+async function isSbFile(file) {
+  if (isSbName(file.name)) return true;
+  const head = new Uint8Array(await file.slice(0, 14).arrayBuffer());
+  return looksLikeSb(head);
+}
+
+/**
+ * .sb-Datei lesen → Inhalt wie eine Web-Projektdatei. Sprites über
+ * MAX_SIDE lässt sie weg; der Hinweis darauf kommt in `notice`.
+ */
+async function readSbFile(file) {
+  const { doc, skipped } = await readSb(new Uint8Array(await file.arrayBuffer()), MAX_SIDE);
+  const notice = skipped.length
+    ? t('file.sbSkipped', { names: skipped.map(s => `„${s.name}“ (${s.width} × ${s.height})`).join(', '), max: MAX_SIDE })
+    : null;
+  return { doc, notice };
+}
+
 // JSON-Projektdatei einlesen. Wird validiert und (nach Migration beim nächsten
 // Load) in den Storage geschrieben; danach Reload für einen sauberen Start.
 // Eine Sprite-Datei (kind: 'sprite') ersetzt das Projekt nicht, sie kommt
 // dazu — onAdded(ids) übernimmt dann das Anzeigen.
-export function loadFromFile(file, onError, onAdded = null) {
+export async function loadFromFile(file, onError, onAdded = null) {
   // Aseprite: ein Sprite — kommt dazu wie eine .bitty-Datei.
   if (isAse(file) && onAdded) { addAseFile(file, onAdded, onError); return; }
+  // .sb (Desktop-App und Web): ein Projekt — wird ein eigenes Projekt.
+  if (await isSbFile(file)) {
+    try {
+      const { doc, notice } = await readSbFile(file);
+      if (!Object.keys(doc.sprites).length) { if (onError) onError(notice || t('file.badProject')); return; }
+      if (notice) { try { sessionStorage.setItem(NOTICE_KEY, notice); } catch { /* egal */ } }
+      createProject(doc.name || file.name.replace(/\.[^.]+$/, ''), JSON.stringify(doc));
+    } catch (e) {
+      if (onError) onError(e?.code === 'version' ? t('file.sbNewer') : t('file.badProject'));
+    }
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     // readAsText (unten) liefert immer einen String, nie einen ArrayBuffer.

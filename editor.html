@@ -152,8 +152,8 @@
         </div>
       </div>
     </nav>
-    <input type="file" id="load-file-input" accept=".json,.bitty,.aseprite,.ase,application/json" hidden>
-    <input type="file" id="add-sprite-input" accept=".bitty,.json,.aseprite,.ase,application/json" hidden>
+    <input type="file" id="load-file-input" accept=".sb,.spritebit,.json,.bitty,.aseprite,.ase,application/json" hidden>
+    <input type="file" id="add-sprite-input" accept=".bitty,.sb,.spritebit,.json,.aseprite,.ase,application/json" hidden>
     <!-- Projektname (js/projectsui.js): Klick öffnet die Projektliste -->
     <button type="button" id="project-btn" class="project-btn" data-i18n-attr="title:tb.projects" title="Projekte — öffnen, neu anlegen, umbenennen"></button>
     <span id="save-indicator" class="save-indicator" data-i18n="tb.saved">gespeichert</span>
@@ -1526,7 +1526,7 @@
       <div><b>Spritesheet</b> packt alle Sprites in gleich große Zellen — bei Animationen eine Zeile je Sprite mit allen Frames — und legt einen JSON-Atlas mit Namen, Koordinaten und Dauer daneben. So lesen Engines es direkt ein.</div>
       <div><b>Kacheln</b>: „Für Godot exportieren“ im Panel Kacheln schreibt Kachelbild, Szene und JSON (siehe Kacheln).</div>
       <div><b>Desktop-App</b>: spritebit gibt es auch als Programm für Windows (Download auf der Startseite). Es liest und schreibt dieselben Projektdateien.</div>
-      <div><b>Projekt sichern / Öffnen</b> schreibt alle Sprites und Paletten in eine JSON-Datei.</div>
+      <div><b>Projekt sichern / Öffnen</b> schreibt alle Sprites und Paletten in eine .sb-Datei — dieselbe öffnet auch die Desktop-App. Ältere .json-Projektdateien öffnen sich weiter. Sprites über 1024 × 1024 Pixel (aus der Desktop-App) lässt das Web beim Öffnen weg.</div>
     </div>
 
     <h3 class="help-h" data-i18n="help.h.keys">Tastenkürzel</h3>
