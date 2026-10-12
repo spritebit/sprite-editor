@@ -263,6 +263,9 @@ export const STATIC_AT = {
   'tool.selBrush':    'Ois Pinsl',
   'tool.stampSave':   'Speichan',
   'pal.load':         'Lodn …',
+  'mb.settings':      'Einstöllungen …',
+  'set.title':        'Einstöllungen',
+  'set.lang':         'Sproch',
   'pal.export':       'Speichan …',
 
   // ── Reiter ──

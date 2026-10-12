@@ -204,6 +204,16 @@ const STATIC = {
     'tool.fillVisibleTitle': 'The edges of the fill come from all visible layers — the paint goes into the active one. That way you colour in a template that sits on a layer of its own, area by area.',
     'tool.fillContig':       'Contiguous',
     'tool.stamp':            'Custom brush',
+    'mb.settings':           'Settings …',
+    'mb.kSettings':          'Ctrl+,',
+    'set.title':             'Settings',
+    'set.close':             'Close',
+    'set.lang':              'Language',
+    'set.view':              'View',
+    'set.brush':             'Brush',
+    'set.square':            'Square',
+    'set.round':             'Round',
+    'set.brushesEmpty':      'None yet. Select something, press Ctrl+B and then “Save” in the brush bar.',
     'tool.shadeDir':         'Direction of the gradient',
     'tool.shadeDirCenter':   'Gradient from the middle outwards',
     'tool.shadeDirUp':       'Strongest at the top, fading downwards',
@@ -979,6 +989,7 @@ const STATIC = {
       + '<div class="sc-row"><b>Ctrl + A / C / X / V / D</b><span>All · Copy · Cut · Paste · Deselect</span></div>'
       + '<div class="sc-row"><b>Ctrl + Shift + V</b><span>Paste with the numbers instead of the colours (other palette)</span></div>'
       + '<div class="sc-row"><b>Ctrl + B</b><span>Selection as a custom brush · without a selection: back to the normal one</span></div>'
+      + '<div class="sc-row"><b>Ctrl + ,</b><span>Settings</span></div>'
       + '<div class="sc-row"><b>Del</b><span>Erase the selection</span></div>'
       + '<div class="sc-row"><b>Enter</b><span>Apply the rotation · otherwise play / pause the animation</span></div>'
       + '<div class="sc-row"><b>Home / End</b><span>First / last frame</span></div>'

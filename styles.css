@@ -3169,3 +3169,15 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 /* Richtung des Verlaufs beim Schattieren (js/shade.js softLevel). */
 .shade-dir .btn { min-width: 30px; justify-content: center; }
 .shade-dir[hidden] { display: none; }
+
+/* Einstellungen (Menü „Bearbeiten“, Strg+,). */
+.settings-modal { width: min(560px, calc(100vw - 32px)); }
+.settings-sec { padding: 12px 0; border-top: 1px solid var(--border, rgba(127,127,127,.3)); }
+.settings-sec:first-of-type { border-top: none; }
+.settings-h { margin: 0 0 10px; font-size: var(--fs-sm, 13px); font-weight: 700; }
+.settings-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.settings-row--top { align-items: flex-start; }
+.settings-row .field-label { min-width: 120px; }
+.settings-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.settings-brushes { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-brushes:empty { display: none; }

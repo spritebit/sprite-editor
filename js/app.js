@@ -704,6 +704,7 @@ try { savedBrushes = normalizeBrushes(JSON.parse(localStorage.getItem(BRUSHES_KE
 
 function storeBrushes() {
   try { localStorage.setItem(BRUSHES_KEY, JSON.stringify(savedBrushes)); } catch { /* privates Fenster o. Ä. */ }
+  syncSettings();
 }
 
 /** Kleines Bild eines gespeicherten Pinsels (1 Pixel je Zelle). */
@@ -727,6 +728,71 @@ function saveStamp() {
   storeBrushes();
   syncStamp();
   info(t(savedBrushes.length > had ? 'stamp.saved' : 'stamp.savedAgain'));
+}
+
+// ── Einstellungen (Menü „Bearbeiten“, Strg+,) ──
+// Derselbe Zustand wie an den gewohnten Plätzen — der Dialog ruft dieselben
+// Funktionen und spiegelt nur ihren Stand (syncSettings).
+function openSettings() {
+  syncSettings();
+  $('settings-modal-overlay').classList.add('open');
+}
+
+function syncSettings() {
+  const grid = /** @type {HTMLInputElement | null} */ ($('set-grid'));
+  if (!grid) return;
+  grid.checked = !!state.showGrid;
+  const mark = (sel, on) => document.querySelectorAll(sel).forEach(b => {
+    const v = on(/** @type {HTMLElement} */ (b));
+    b.classList.toggle('is-active', v);
+    b.setAttribute('aria-pressed', String(v));
+  });
+  mark('[data-set-tiled]', b => b.dataset.setTiled === state.tiled);
+  mark('[data-set-round]', b => (b.dataset.setRound === '1') === !!state.brushRound);
+  const box = $('set-brushes');
+  box.replaceChildren(...savedBrushes.map((b, i) => {
+    const item = document.createElement('div');
+    item.className = 'brushlib-item';
+    const img = document.createElement('img');
+    img.src = savedBrushUrl(b);
+    img.alt = b.w + '×' + b.h;
+    const k = 40 / Math.max(b.w, b.h);
+    img.style.width = Math.max(1, Math.round(b.w * k)) + 'px';
+    img.style.height = Math.max(1, Math.round(b.h * k)) + 'px';
+    const pick = document.createElement('span');
+    pick.className = 'brushlib-pick';
+    pick.title = b.w + '×' + b.h;
+    pick.append(img);
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'brushlib-del';
+    del.title = t('stamp.delete');
+    del.setAttribute('aria-label', t('stamp.delete'));
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      savedBrushes = savedBrushes.filter((_, k) => k !== i);
+      storeBrushes();
+      syncStamp();
+      syncSettings();
+    });
+    item.append(pick, del);
+    return item;
+  }));
+  $('set-brushes-empty').hidden = savedBrushes.length > 0;
+}
+
+function initSettings() {
+  $('settings-btn').addEventListener('click', openSettings);
+  $('settings-close').addEventListener('click', () => $('settings-modal-overlay').classList.remove('open'));
+  $('set-grid').addEventListener('change', () => $('grid-btn').click());
+  $('set-tiled').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-tiled]');
+    if (b) setTiled(/** @type {HTMLElement} */ (b).dataset.setTiled);
+  });
+  $('set-shape').addEventListener('click', e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-set-round]');
+    if (b) $(/** @type {HTMLElement} */ (b).dataset.setRound === '1' ? 'brush-round-btn' : 'brush-square-btn').click();
+  });
 }
 
 function closeBrushLib() {
@@ -880,6 +946,7 @@ function syncBrushShape() {
     $(id).setAttribute('aria-pressed', String(on));
   }
   $('brush-shape').hidden = state.tool === 'spray';
+  syncSettings();
 }
 
 function setBrushSize(n) {
@@ -1316,11 +1383,13 @@ const KEYMAP = [
 // Häkchen „Pixelraster anzeigen“ im Menü „Ansicht“.
 function syncGridItem() {
   $('grid-btn').setAttribute('aria-checked', String(state.showGrid));
+  syncSettings();
 }
 
 // Kachelmodus: Punkt im Menü „Ansicht“ setzen.
 function syncTiledItems() {
   for (const mode of TILED_MODES) $(`tiled-${mode}-btn`).setAttribute('aria-checked', String(state.tiled === mode));
+  syncSettings();
 }
 
 function setTiled(mode) {
@@ -1376,7 +1445,11 @@ function eyedropHint(e) {
 
 function clipboardKey(e) {
   const k = e.key.toLowerCase();
-  if (k === 'b' && !e.shiftKey && !e.altKey) {
+  if (k === ',') {
+    // Strg+,: Einstellungen (wie in vielen Programmen).
+    e.preventDefault();
+    openSettings();
+  } else if (k === 'b' && !e.shiftKey && !e.altKey) {
     // Strg+B: Auswahl wird zum Pinsel — ohne Auswahl zurück zum normalen.
     e.preventDefault();
     if (!makeStampFromSelection() && !dropStamp()) info(t('stamp.needSel'));
@@ -1711,6 +1784,7 @@ function initPalettePanel() {
   $('palette-del-btn').addEventListener('click', () => renderCallbacks.onDeletePalette(getPreviewName()));
   $('palette-from-image-btn').addEventListener('click', openReduceModal);
   initPaletteFiles();
+  initSettings();
 
   // Freier Farbwähler — Klick auf die aktuelle Farbe öffnet den Picker.
   const picker = $('free-color-picker');
