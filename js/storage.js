@@ -27,6 +27,7 @@ import { t } from './i18n.js';
 import { MATERIALS } from './gamejson.js';
 import { normalizeRamp } from './shade.js';
 import { normalizeLib } from './tilelib.js';
+import { RECOLOR_SCOPES } from './recolor.js';
 
 // Welches Projekt gerade dran ist (js/projects.js) — steht für die ganze
 // Sitzung fest; gewechselt wird per Neustart (switchProject).
@@ -174,6 +175,8 @@ function buildPayload(withSprites = true) {
       mirror:    state.mirror,
       shapeFill: state.shapeFill,
       fillVisible: state.fillVisible,
+      fillContig: state.fillContig,
+      recolorScope: state.recolorScope,
       pixelPerfect: state.pixelPerfect,
       shadeRamp: state.shadeRamp,
       shadeUp: state.shadeUp,
@@ -664,6 +667,8 @@ function applyPayload(payload) {
     if (ui.mirror) state.mirror = ui.mirror;
     if (typeof ui.shapeFill === 'boolean') state.shapeFill = ui.shapeFill;
     if (typeof ui.fillVisible === 'boolean') state.fillVisible = ui.fillVisible;
+    if (typeof ui.fillContig === 'boolean') state.fillContig = ui.fillContig;
+    if (RECOLOR_SCOPES.includes(ui.recolorScope)) state.recolorScope = ui.recolorScope;
     if (typeof ui.pixelPerfect === 'boolean') state.pixelPerfect = ui.pixelPerfect;
     state.shadeRamp = normalizeRamp(ui.shadeRamp);
     if (typeof ui.shadeUp === 'boolean') state.shadeUp = ui.shadeUp;

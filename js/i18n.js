@@ -202,6 +202,8 @@ const STATIC = {
   en: {
     'tool.fillVisible':      'Edges: all layers',
     'tool.fillVisibleTitle': 'The edges of the fill come from all visible layers — the paint goes into the active one. That way you colour in a template that sits on a layer of its own, area by area.',
+    'tool.fillContig':       'Contiguous',
+    'tool.fillContigTitle':  'On: only the connected area. Off: every spot with this colour in the picture, even separate ones — recolour a colour everywhere with one click.',
 
     'donate.menu':  'Support spritebit',
     'mb.tour':      'Tours with Bitty',
@@ -678,6 +680,17 @@ const STATIC = {
     'cln.inside':       'inside',
     'cln.both':         'both',
     'cln.outlineApply': 'Apply',
+    'cln.recolor':      'Replace colour',
+    'cln.recolorFrom':  'From',
+    'cln.recolorFromTitle': 'The old colour — click to open the palette colours',
+    'cln.recolorTo':    'To',
+    'cln.recolorToTitle': 'The new colour — click to open the palette colours',
+    'cln.recolorScopeTitle': 'Where to replace — locked layers stay unchanged',
+    'cln.scopeCel':     'this picture',
+    'cln.scopeLayer':   'layer, all frames',
+    'cln.scopeAll':     'whole sprite',
+    'cln.recolorApply': 'Replace',
+    'cln.recolorApplyTitle': 'Every spot with the old colour gets the new one — with a selection only inside it. Ctrl+Z brings everything back.',
 
     // ── Reiter ──
     'tabs.label':       'Open sprites',
@@ -1365,6 +1378,11 @@ const MSG = {
     'cln.despeckleNone': 'Nichts zu glätten gefunden.',
     'cln.outlined':    'Outline gezeichnet — {n} Pixel.',
     'cln.outlineNone': 'Keine Outline nötig — Sprite leer?',
+    'cln.recolored':   'Farbe ersetzt — {n} Pixel.',
+    'cln.recolorNone': 'Die alte Farbe kommt hier nicht vor.',
+    'cln.recolorUnset': 'Erst „Von“ und „Nach“ wählen.',
+    'cln.recolorSame': '„Von“ und „Nach“ sind dieselbe Farbe.',
+    'cln.recolorEmpty': 'leer',
 
     'info.size':       'Größe {n}',
     // Reiter
@@ -2037,6 +2055,11 @@ const MSG = {
     'cln.despeckleNone': 'Nothing found to despeckle.',
     'cln.outlined':    'Outline drawn — {n} pixels.',
     'cln.outlineNone': 'No outline needed — is the sprite empty?',
+    'cln.recolored':   'Colour replaced — {n} pixels.',
+    'cln.recolorNone': 'The old colour does not appear here.',
+    'cln.recolorUnset': 'Choose “From” and “To” first.',
+    'cln.recolorSame': '“From” and “To” are the same colour.',
+    'cln.recolorEmpty': 'empty',
 
     'info.size':       'Size {n}',
     'tabs.close':      'Close tab (middle click) — the sprite stays in the project',

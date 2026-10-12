@@ -78,6 +78,8 @@ export const state = {
   mirror:        'off',    // 'off' | 'x' (senkrechte Achse) | 'y' | 'both'
   shapeFill:     false,    // Rechteck/Ellipse gefüllt statt nur Kontur
   fillVisible:   false,    // Füllen: Grenzen von allen sichtbaren Ebenen (js/fill.js)
+  fillContig:    true,     // Füllen: nur die zusammenhängende Fläche (aus = jede Stelle der Farbe, fillAll)
+  recolorScope:  'cel',    // Farbe ersetzen: 'cel' | 'layer' | 'all' (js/recolor.js)
   pixelPerfect:  false,    // Stift/Radierer 1 px: L-Ecken entfernen (js/pixelperfect.js)
   // Schattieren (js/shade.js): die Farbreihe als Hex-Werte, dunkel → hell;
   // shadeUp = Linksklick macht heller statt dunkler (für Finger);

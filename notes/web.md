@@ -3,10 +3,14 @@
 ## Deutsch
 
 - Kachelmodus für nahtlose Muster: Im Menü „Ansicht“ unter „Kachelmodus“ steht dein Bild noch einmal daneben, ringsum, nur nebeneinander oder nur übereinander. Wer über den Rand malt, malt auf der anderen Seite weiter. Du kannst auch direkt auf den Kopien malen, so siehst du sofort, ob die Kanten zusammenpassen.
+- Farbe ersetzen: Im Panel „Feinschliff“ wählst du bei „Von“ die alte und bei „Nach“ die neue Farbe. „Ersetzen“ tauscht sie überall aus, wahlweise in diesem Bild, auf der Ebene in allen Frames oder im ganzen Sprite. Mit Auswahl nur darin, gesperrte Ebenen bleiben, wie sie sind.
+- Füllen ohne Zusammenhang: Schalte beim Füll-Eimer „Zusammenhängend“ aus, dann färbt ein Klick jede Stelle mit dieser Farbe im Bild um, auch getrennte Flächen.
 
 ## English
 
 - Tiled mode for seamless patterns: in the “View” menu under “Tiled mode”, your picture is shown again next to itself, all around, side by side only or stacked only. Painting over the edge continues on the other side. You can also paint directly on the copies, so you see right away whether the edges match.
+- Replace colour: in the “Finishing” panel, pick the old colour under “From” and the new one under “To”. “Replace” swaps it everywhere, in this picture, on the layer in all frames or in the whole sprite. With a selection only inside it; locked layers stay as they are.
+- Non-contiguous fill: switch off “Contiguous” for the fill bucket and one click recolours every spot with that colour in the picture, even separate areas.
 
 # 3.6.0
 

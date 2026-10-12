@@ -376,6 +376,8 @@
         <div class="tool-group" id="fill-group" hidden>
           <button class="btn" id="fill-visible-btn" aria-pressed="false" data-i18n="tool.fillVisible" data-i18n-attr="title:tool.fillVisibleTitle"
                   title="Die Grenzen der Füllung kommen von allen sichtbaren Ebenen — gemalt wird in die aktive. So malst du eine Vorlage, die auf einer eigenen Ebene liegt, Fläche für Fläche aus.">Grenzen: alle Ebenen</button>
+          <button class="btn" id="fill-contig-btn" aria-pressed="true" data-i18n="tool.fillContig" data-i18n-attr="title:tool.fillContigTitle"
+                  title="An: nur die zusammenhängende Fläche. Aus: jede Stelle mit dieser Farbe im Bild, auch getrennte — so färbst du eine Farbe mit einem Klick überall um.">Zusammenhängend</button>
         </div>
 
         <!-- Schattieren (js/shade.js): Farbreihe — gewählt durch Antippen in
@@ -839,6 +841,25 @@
               <option value="both" data-i18n="cln.both">beides</option>
             </select>
             <button class="btn" id="outline-btn" data-i18n="cln.outlineApply">Anwenden</button>
+          </div>
+
+          <!-- Farbe ersetzen (js/recolor.js): Von/Nach öffnen eine kleine Farbwahl (#recolor-pop). -->
+          <div class="field field--inline recolor-row">
+            <span class="field-label" data-i18n="cln.recolor">Farbe ersetzen</span>
+            <button class="btn recolor-pick" id="recolor-from" data-i18n-attr="title:cln.recolorFromTitle"
+                    title="Die alte Farbe — Klick öffnet die Farben der Palette">
+              <span class="recolor-chip" id="recolor-from-chip"></span><span data-i18n="cln.recolorFrom">Von</span></button>
+            <button class="btn recolor-pick" id="recolor-to" data-i18n-attr="title:cln.recolorToTitle"
+                    title="Die neue Farbe — Klick öffnet die Farben der Palette">
+              <span class="recolor-chip" id="recolor-to-chip"></span><span data-i18n="cln.recolorTo">Nach</span></button>
+            <select id="recolor-scope" class="input input--sm" data-i18n-attr="title:cln.recolorScopeTitle" title="Wo ersetzt wird — gesperrte Ebenen bleiben unverändert">
+              <option value="cel" data-i18n="cln.scopeCel">dieses Bild</option>
+              <option value="layer" data-i18n="cln.scopeLayer">Ebene, alle Frames</option>
+              <option value="all" data-i18n="cln.scopeAll">ganzer Sprite</option>
+            </select>
+            <button class="btn" id="recolor-btn" data-i18n="cln.recolorApply" data-i18n-attr="title:cln.recolorApplyTitle"
+                    title="Jede Stelle mit der alten Farbe bekommt die neue — mit Auswahl nur darin. Strg+Z holt alles zurück.">Ersetzen</button>
+            <div class="recolor-pop" id="recolor-pop" role="listbox" hidden></div>
           </div>
         </div>
       </section>

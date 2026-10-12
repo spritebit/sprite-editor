@@ -99,6 +99,7 @@ const PRECACHE = [
   'js/pwa.js',
   'js/qpdrag.js',
   'js/raster.js',
+  'js/recolor.js',
   'js/reduce.js',
   'js/remap.js',
   'js/render.js',

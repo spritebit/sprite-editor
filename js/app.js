@@ -57,6 +57,7 @@ import {
   medianCut, nearestColor, rgbToHex, hexToRgb,
   despeckleGrid, outlineGrid, magicWandDelete, autoRemoveBackground,
 } from './spritefx.js';
+import { replaceColor, recolorTargets, RECOLOR_SCOPES } from './recolor.js';
 import { normalizeFx, fxSource, fxFor, recomputeFx, fxStale, lightCel, shadowCel } from './light.js';
 import { HOLD_MIN_MS, makeShades, sortRamp } from './shade.js';
 import { initExport } from './export.js';
@@ -523,6 +524,78 @@ let sizeDrag = null;
 function syncFillVisible() {
   $('fill-visible-btn').classList.toggle('is-active', state.fillVisible);
   $('fill-visible-btn').setAttribute('aria-pressed', String(state.fillVisible));
+  $('fill-contig-btn').classList.toggle('is-active', state.fillContig);
+  $('fill-contig-btn').setAttribute('aria-pressed', String(state.fillContig));
+}
+
+// Farbe ersetzen (js/recolor.js): die gewählten Farben als Pixelwerte —
+// null = noch nicht gewählt, 0 = leer. Nur für diesen Besuch.
+// Gewählt wird in einer kleinen Farbwahl am Knopf: ein Klick in die Palette
+// schlösse das ausgeklappte Panel.
+const recolor = { from: /** @type {any} */ (null), to: /** @type {any} */ (null), open: /** @type {'from'|'to'|null} */ (null) };
+
+function openRecolorPop(which) {
+  const pop = $('recolor-pop');
+  if (recolor.open === which) { closeRecolorPop(); return; }
+  recolor.open = which;
+  const pal = getPal();
+  // Leer, alle Palettenfarben und — falls frei (Pipette) — die aktuelle Farbe.
+  const values = /** @type {any[]} */ ([0]);
+  for (let i = 1; i <= getMaxIdx(); i++) if (pal[i]) values.push(i);
+  if (typeof state.curColor === 'string') values.push(state.curColor);
+  pop.replaceChildren(...values.map(v => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'recolor-chip recolor-opt';
+    b.setAttribute('role', 'option');
+    const hex = cellToColor(v, pal);
+    if (hex) b.style.background = hex;
+    b.title = v === 0 ? t('cln.recolorEmpty') : (typeof v === 'number' && colorName(v)) || hex || '';
+    b.classList.toggle('is-active', v === recolor[which]);
+    b.addEventListener('click', () => { recolor[which] = v; closeRecolorPop(); syncRecolor(); });
+    return b;
+  }));
+  const btn = $('recolor-' + which);
+  pop.style.left = btn.offsetLeft + 'px';
+  pop.style.top = (btn.offsetTop + btn.offsetHeight + 4) + 'px';
+  pop.hidden = false;
+}
+
+function closeRecolorPop() {
+  recolor.open = null;
+  $('recolor-pop').hidden = true;
+}
+
+function syncRecolor() {
+  const pal = getPal();
+  for (const which of /** @type {const} */ (['from', 'to'])) {
+    const chip = $('recolor-' + which + '-chip'), v = recolor[which];
+    chip.classList.toggle('is-unset', v === null);
+    const hex = v === null ? null : cellToColor(v, pal);
+    chip.style.background = hex || '';
+    chip.title = v === null ? '' : v === 0 ? t('cln.recolorEmpty') : hex || '';
+  }
+  $('recolor-scope').value = state.recolorScope;
+}
+
+function applyRecolor() {
+  const { from, to } = recolor;
+  if (from === null || to === null) { showInfoToast(t('cln.recolorUnset')); return; }
+  const pal = getPal();
+  if (from === to || (from !== 0 && to !== 0 && cellToColor(from, pal)?.toLowerCase() === cellToColor(to, pal)?.toLowerCase())) {
+    showInfoToast(t('cln.recolorSame')); return;
+  }
+  const sp = getSprite();
+  if (!sp) return;
+  // Nur im aktuellen Bild zählt die Sperre der aktiven Ebene; sonst
+  // überspringt recolorTargets gesperrte Ebenen selbst.
+  if (state.recolorScope !== 'all' && layerBlocked(true)) return;
+  // Mit Auswahl nur darin (ein schwebender Inhalt zählt nicht als Auswahl).
+  const keep = selection.rect && !selection.float ? isInSelection : undefined;
+  let n = 0;
+  recordOp(() => { for (const g of recolorTargets(sp, /** @type {any} */ (state.recolorScope))) n += replaceColor(g, from, to, pal, keep); });
+  if (n) renderAll();
+  showInfoToast(n ? t('cln.recolored', { n }) : t('cln.recolorNone'));
 }
 
 // Pinselform: eckig oder rund (js/brushshape.js). Spray ist immer rund —
@@ -1137,6 +1210,23 @@ function initToolbar() {
     syncFillVisible();
     saveState();
   });
+  $('fill-contig-btn').addEventListener('click', () => {
+    state.fillContig = !state.fillContig;
+    syncFillVisible();
+    saveState();
+  });
+
+  $('recolor-from').addEventListener('click', () => openRecolorPop('from'));
+  $('recolor-to').addEventListener('click', () => openRecolorPop('to'));
+  document.addEventListener('pointerdown', e => {
+    const el = /** @type {Element} */ (e.target);
+    if (recolor.open && !el.closest('#recolor-pop, .recolor-pick')) closeRecolorPop();
+  });
+  $('recolor-scope').addEventListener('change', e => {
+    const v = /** @type {HTMLSelectElement} */ (e.target).value;
+    if (RECOLOR_SCOPES.includes(/** @type {any} */ (v))) { state.recolorScope = /** @type {any} */ (v); saveState(); }
+  });
+  $('recolor-btn').addEventListener('click', applyRecolor);
 
   $('sel-op-new').addEventListener('click', () => setSelOp('new'));
   $('sel-op-add').addEventListener('click', () => setSelOp('add'));
@@ -2075,6 +2165,7 @@ function syncUiFromState() {
   $('shape-fill-btn').classList.toggle('is-active', state.shapeFill);
   $('shape-fill-btn').setAttribute('aria-pressed', String(state.shapeFill));
   syncFillVisible();
+  syncRecolor();
   $('pixel-perfect-btn').classList.toggle('is-active', !!state.pixelPerfect);
   $('pixel-perfect-btn').setAttribute('aria-pressed', String(!!state.pixelPerfect));
   updateMirrorUI();

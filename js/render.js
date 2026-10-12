@@ -5,7 +5,7 @@
 // leben in app.js; nur Handler an dynamisch erzeugten Elementen (Sprite-Karten,
 // Farb-Swatches) werden hier gesetzt und rufen dann renderCallbacks auf.
 import { HANDLES, handlePos } from './scale.js';
-import { fillRegion } from './fill.js';
+import { fillRegion, fillAll } from './fill.js';
 import { maskedCel } from './mask.js';
 import {
   state, sprites, customPalettes, paletteMaterials, selection,
@@ -742,6 +742,8 @@ export function floodFill(startX, startY) {
   // In einer Maske gilt immer die Maske selbst.
   const sp = getSprite();
   const ref = state.fillVisible && sp && !editingMask() ? flatGrid(sp) : grid;
+  // „Zusammenhängend“ aus: jede Stelle mit dieser Farbe, auch getrennte Flächen.
+  if (!state.fillContig) { fillAll(grid, ref, startX, startY, fill); afterPaint(); return; }
   // Bei Symmetrie startet die Füllung an jedem Spiegelpunkt einmal.
   for (const [sx, sy] of mirrored(startX, startY)) fillRegion(grid, ref, sx, sy, fill);
   afterPaint();

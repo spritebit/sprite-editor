@@ -3106,3 +3106,23 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
 @media (max-width: 500px) {
   #tl-prev, #tl-next, #tl-go-field { display: none; }
 }
+
+/* Farbe ersetzen (Panel „Feinschliff“): Von/Nach mit kleinem Farbfeld. */
+.recolor-row { flex-wrap: wrap; }
+.recolor-pick { display: inline-flex; align-items: center; gap: 6px; }
+.recolor-chip {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1px solid var(--border, rgba(127,127,127,.5));
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-3) 0 50%) 0 0 / 6px 6px;
+}
+.recolor-chip.is-unset { background: none; border-style: dashed; }
+.recolor-row { position: relative; }
+.recolor-pop {
+  position: absolute; z-index: 20;
+  display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px; padding: 6px;
+  background: var(--surface-1, #222); border: 1px solid var(--border, rgba(127,127,127,.5));
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.recolor-pop[hidden] { display: none; }
+.recolor-opt { width: 20px; height: 20px; padding: 0; cursor: pointer; }
+.recolor-opt.is-active { outline: 2px solid var(--accent, #6af); outline-offset: 1px; }

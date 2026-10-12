@@ -255,6 +255,10 @@ export const STATIC_AT = {
   'cln.inside':       'innen',
   'cln.both':         'beides',
   'cln.outlineApply': 'Anwendn',
+  'cln.recolor':      'Farb austauschn',
+  'cln.scopeCel':     'des Büd',
+  'cln.scopeAll':     'ganza Sprite',
+  'cln.recolorApply': 'Austauschn',
 
   // ── Reiter ──
   'tabs.label':       'Offene Sprites',
