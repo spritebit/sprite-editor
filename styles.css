@@ -3096,6 +3096,18 @@ body.is-resizing-ui, body.is-resizing-ui * { cursor: col-resize !important; }
     border-bottom: 0;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
   }
+  /* Eine Werkzeuggruppe steht am Rechner in einer Zeile. In der schmalen
+     Options-Zeile passt sie nicht am Stueck: ohne Umbruch waechst sie ueber
+     den Rand hinaus, die Zeile wird breiter als das Display und die
+     Beschriftung (GROESSE, FARBREIHE) steht heraus. Darum darf hier jede
+     Gruppe umbrechen — und keine breiter werden als die Zeile. */
+  #tool-opts > .tool-group {
+    flex-wrap: wrap;
+    max-width: 100%;
+    min-width: 0;
+  }
+  /* Die Farbreihe (js/shade.js) kann viele Felder haben — sie bricht mit. */
+  #tool-opts .shade-ramp { flex-wrap: wrap; }
   #tool-opts[hidden], #tool-opts > [hidden] { display: none; }
   #tool-opts #brush-size { width: 120px; }
   #tool-opts .brush-sz { min-width: 32px; padding: 7px 6px; }

@@ -3,10 +3,12 @@
 ## Deutsch
 
 - Angepinnte Panels erkennst du an einem blauen Punkt am Icon in der Seitenleiste, wie in der Desktop-App. Ein Klick darauf springt zum Panel.
+- Am Handy stand beim Schattieren die Zeile mit der Farbreihe über den Rand hinaus, die Beschriftung lief aus dem Bild. Die Werkzeug-Optionen brechen jetzt um.
 
 ## English
 
 - Pinned panels now show a blue dot on their icon in the side bar, just like the desktop app. Clicking it jumps to the panel.
+- On phones the shading tool's colour ramp row ran past the edge and its label was cut off. Tool options now wrap onto a second line.
 
 # 3.7.2
 
