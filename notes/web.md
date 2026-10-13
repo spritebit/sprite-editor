@@ -1,3 +1,13 @@
+# 3.7.4
+
+## Deutsch
+
+- Am Handy stand beim Schattieren die Zeile mit der Farbreihe über den Rand hinaus, die Beschriftung lief aus dem Bild. Die Werkzeug-Optionen brechen jetzt um.
+
+## English
+
+- On phones the shading tool's colour ramp row ran past the edge and its label was cut off. Tool options now wrap onto a second line.
+
 # 3.7.3
 
 ## Deutsch
