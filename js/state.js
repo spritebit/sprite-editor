@@ -422,7 +422,12 @@ function mixHex(below, top, a) {
 // Transparenz-Stufen. Mit einer einzigen, sichtbaren, deckenden Ebene ist
 // das Ergebnis das Bild selbst (nicht verändern!).
 export function flatGrid(sp, f = sp.frame) {
-  const cels = sp.frames[f].cels;
+  return flatCels(sp, sp.frames[f].cels);
+}
+
+// Wie flatGrid, aber für einen Satz Zellen, der (noch) in keinem Frame
+// steckt — die Vorschau auf eine erzeugte Bewegung (js/rigui.js).
+export function flatCels(sp, cels) {
   const L0 = sp.layers[0];
   if (cels.length === 1 && L0.visible && L0.opacity >= 1 && !maskActive(L0)) return cels[0];
   const H = cels[0].length, W = cels[0][0].length;

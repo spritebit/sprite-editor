@@ -1390,6 +1390,25 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 /* Gelenk setzen: dieselbe gelbe Marke wie der Ring auf der Fläche. */
 #ly-part-pivot.is-active { border-color: #ffcc33; color: #ffcc33; }
 #editor-canvas-wrap.is-pivot-pick #editor-canvas { cursor: crosshair; }
+
+/* „Bewegung erzeugen“ (js/rigui.js): links die Einstellungen, rechts die
+   laufende Vorschau. Schmal untereinander — der Dialog soll aufs Handy passen. */
+/* Breiter als ein gewöhnlicher Dialog: links die Einstellungen, rechts die
+   Vorschau — nebeneinander sieht man gleich, was der Regler tut. */
+.modal.rig-modal { width: min(560px, calc(100vw - 32px)); max-width: none; }
+.rig-gen { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-start; }
+.rig-gen-form { flex: 1 1 15rem; min-width: 0; }
+.rig-gen-preview {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  flex: 0 0 auto;
+  padding: var(--sp-2);
+  border-radius: var(--r-sm);
+  background: repeating-conic-gradient(var(--surface-3) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px;
+}
+/* Pixel bleiben Pixel, auch wenn die Vorschau hochskaliert ist. */
+#rig-preview { image-rendering: pixelated; }
 /* Maske bearbeiten: roter Rahmen um die Zeichenfläche. */
 #editor-canvas-wrap.is-mask-edit #editor-canvas { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .ly-thumb {

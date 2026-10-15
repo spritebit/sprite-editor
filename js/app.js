@@ -70,6 +70,7 @@ import { initFrames, togglePlay, nextFrame, prevFrame, firstFrame, lastFrame, is
 import { initLayers, toggleLocked, toggleVisible, toggleMaskEdit, toggleMaskOn, setOpacity, setActiveLayer, setPivotAt } from './layers.js';
 import { celKeyDown } from './frames.js';
 import { initTlMenu } from './tlmenu.js';
+import { initRigModal } from './rigui.js';
 import { initQuickPaletteDrag } from './qpdrag.js';
 import { initMenubar } from './menubar.js';
 import { initFullscreen, enterFullscreen, exitFullscreen } from './fullscreen.js';
@@ -2645,6 +2646,7 @@ async function init() {
   initExport();
   initFrames();
   initLayers();   // nach initFrames: hängt sich an dessen Zeichen-Callback
+  initRigModal(); // nach initLayers: hängt am Knopf im Ebenen-Panel
   initTlMenu();
   initQuickPaletteDrag();
   initPreview();  // ebenso — zeichnet bei jedem Strich mit

@@ -592,6 +592,7 @@
             <span class="field-label" data-i18n="rig.label">Körperteil</span>
             <select id="ly-part-role" class="input input--sm" data-i18n-attr="title:rig.roleTitle" title="Welches Körperteil diese Ebene ist — davon hängt ab, wie es sich später bewegt"></select>
             <button class="btn btn--sm" id="ly-part-pivot" aria-pressed="false" hidden data-i18n-attr="title:rig.pivotTitle" title="Gelenk setzen: auf die Fläche klicken, wo das Teil angewachsen ist — Schulter, Hüfte, Hals"><span class="ico" data-icon="pivot"></span><span data-i18n="rig.pivot">Gelenk</span></button>
+            <button class="btn btn--sm" id="ly-part-gen" data-i18n-attr="title:rig.genTitleLong" title="Aus den Körperteilen eine Bewegung rechnen — Laufen, Schlag, Sprung und mehr. Die Frames kommen als neuer Tag in die Timeline."><span class="ico" data-icon="run"></span><span data-i18n="rig.gen">Erzeugen</span></button>
           </div>
           <label class="field field--inline">
             <span class="field-label" data-i18n="ly.opacity">Deckkraft</span>
@@ -1247,6 +1248,40 @@
     <div class="modal-actions">
       <button class="btn" id="size-modal-cancel" data-i18n="mod.cancel">Abbrechen</button>
       <button class="btn btn--primary" id="size-modal-ok" data-i18n="mod.sizeSave">Ändern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bewegung erzeugen: aus den Körperteilen Frames rechnen (js/rigui.js) -->
+<div id="rig-modal-overlay" class="modal-overlay">
+  <div class="modal rig-modal" role="dialog" aria-modal="true" aria-labelledby="rig-modal-title">
+    <h2 class="modal-title" id="rig-modal-title" data-i18n="rig.genTitle">Bewegung erzeugen</h2>
+    <p class="field-note" id="rig-modal-parts"></p>
+    <div class="rig-gen">
+      <div class="rig-gen-form">
+        <label class="form-row">
+          <span class="form-label" data-i18n="rig.tpl">Bewegung</span>
+          <select id="rig-tpl" class="input input--sm"></select>
+        </label>
+        <label class="form-row">
+          <span class="form-label" data-i18n="rig.count">Bilder</span>
+          <input type="number" id="rig-count" class="input input--num" min="2" max="64" step="1" value="8">
+        </label>
+        <label class="form-row">
+          <span class="form-label" data-i18n="rig.strength">Stärke</span>
+          <input type="range" id="rig-strength" min="25" max="200" step="5" value="100">
+          <span id="rig-strength-val" class="field-value">100%</span>
+        </label>
+      </div>
+      <div class="rig-gen-preview">
+        <canvas id="rig-preview"></canvas>
+        <span class="field-value" id="rig-preview-info"></span>
+      </div>
+    </div>
+    <p class="field-note" data-i18n="rig.genNote">Die Frames werden hinten angehängt und bekommen einen Tag mit dem Namen der Bewegung. Gibt es den Tag schon, werden seine Frames ersetzt — so probierst du die Stärke durch. Was dabei herauskommt, ist ein Rohentwurf: danach bessert man von Hand nach.</p>
+    <div class="modal-actions">
+      <button class="btn" id="rig-modal-cancel" data-i18n="mod.cancel">Abbrechen</button>
+      <button class="btn btn--primary" id="rig-modal-ok" data-i18n="rig.gen">Erzeugen</button>
     </div>
   </div>
 </div>

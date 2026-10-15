@@ -106,6 +106,7 @@ const PRECACHE = [
   'js/remap.js',
   'js/render.js',
   'js/rig.js',
+  'js/rigui.js',
   'js/sbfile.js',
   'js/scale.js',
   'js/search.js',
