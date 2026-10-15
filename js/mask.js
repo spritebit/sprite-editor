@@ -82,5 +82,16 @@ export function bakeMask(g, hide) {
   return g.map((row, y) => row.map((v, x) => (hide[y]?.[x] ? 0 : v)));
 }
 
-/** Ebene für den Speicherstand (Maske als Lauflängen). */
-export const layerForSave = l => (l.mask ? { ...l, mask: encodeMask(l.mask) } : l);
+/**
+ * Ebene für den Speicherstand (Maske als Lauflängen).
+ *
+ * `part` (Körperteil, js/rig.js) steht nur drin, wenn es eins gibt: so
+ * bleiben Dateien von Sprites ohne Figur Zeichen für Zeichen die alten —
+ * auch die, die die Desktop-App liest (tests/interop).
+ */
+export const layerForSave = l => {
+  const out = { ...l };
+  if (l.mask) out.mask = encodeMask(l.mask);
+  if (!l.part) delete out.part;
+  return out;
+};

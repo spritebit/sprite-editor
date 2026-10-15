@@ -70,7 +70,11 @@ export const SYNONYMS = {
   zerlegen: ['korperteile', 'auswahl', 'ebene'],
   korperteil: ['korperteile', 'auswahl', 'ebene'],
   bodypart: ['korperteile', 'auswahl', 'ebene'],
-  rig: ['korperteile', 'auswahl', 'ebene'],
+  rig: ['korperteile', 'auswahl', 'ebene', 'gelenk'],
+  pivot: ['gelenk', 'korperteil'],
+  drehpunkt: ['gelenk', 'korperteil'],
+  skelett: ['gelenk', 'korperteil'],
+  joint: ['gelenk', 'korperteil'],
 };
 
 /** Ein Suchwort samt Synonymen (bekanntes Wort oder dessen Anfang ab 6

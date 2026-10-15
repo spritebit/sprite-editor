@@ -1382,6 +1382,14 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 .ly-mask-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
 .ly-mask-actions [hidden] { display: none; }
 #ly-mask-edit.is-active { border-color: #ff6b6b; color: #ff9b9b; }
+/* Körperteil: Rolle und Gelenk der aktiven Ebene (js/rig.js). Die Auswahl
+   nimmt den Platz, der übrig bleibt — der Gelenk-Knopf behält seine Breite. */
+.ly-part-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
+.ly-part-actions [hidden] { display: none; }
+.ly-part-actions select { flex: 1 1 7rem; min-width: 0; }
+/* Gelenk setzen: dieselbe gelbe Marke wie der Ring auf der Fläche. */
+#ly-part-pivot.is-active { border-color: #ffcc33; color: #ffcc33; }
+#editor-canvas-wrap.is-pivot-pick #editor-canvas { cursor: crosshair; }
 /* Maske bearbeiten: roter Rahmen um die Zeichenfläche. */
 #editor-canvas-wrap.is-mask-edit #editor-canvas { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .ly-thumb {

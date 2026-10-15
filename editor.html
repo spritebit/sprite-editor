@@ -587,6 +587,12 @@
             <button class="btn btn--sm" id="ly-mask-apply" hidden data-i18n-attr="title:mask.applyTitle" title="Maske anwenden: ausgeblendete Pixel werden gelöscht, die Maske verschwindet"><span class="ico" data-icon="check"></span></button>
             <button class="btn btn--sm" id="ly-mask-del" hidden data-i18n-attr="title:mask.delTitle" title="Maske löschen — alles wieder sichtbar"><span class="ico" data-icon="trash"></span></button>
           </div>
+          <!-- Körperteil: Rolle und Gelenk der aktiven Ebene (js/rig.js) -->
+          <div class="ly-part-actions">
+            <span class="field-label" data-i18n="rig.label">Körperteil</span>
+            <select id="ly-part-role" class="input input--sm" data-i18n-attr="title:rig.roleTitle" title="Welches Körperteil diese Ebene ist — davon hängt ab, wie es sich später bewegt"></select>
+            <button class="btn btn--sm" id="ly-part-pivot" aria-pressed="false" hidden data-i18n-attr="title:rig.pivotTitle" title="Gelenk setzen: auf die Fläche klicken, wo das Teil angewachsen ist — Schulter, Hüfte, Hals"><span class="ico" data-icon="pivot"></span><span data-i18n="rig.pivot">Gelenk</span></button>
+          </div>
           <label class="field field--inline">
             <span class="field-label" data-i18n="ly.opacity">Deckkraft</span>
             <input type="range" id="ly-opacity" min="0" max="100" step="5" value="100">

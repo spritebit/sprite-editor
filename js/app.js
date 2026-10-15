@@ -27,7 +27,7 @@ import { showConfirmToast, showInfoToast } from './toast.js';
 import {
   renderAll, renderEditor, renderSpriteList, syncColorActive, updateOutput, currentCode, renderMaterials,
   renderFreeColorsList, countCurrentColor,
-  cellFromEvent, cellFromEventRaw, cellFromEventClamped, cellToColor, colorHooks, paintCell, paintStamp, stampActive, stampForPalette, STAMP_TOOLS, paintBrush, paintSpray, floodFill,
+  cellFromEvent, cellFromEventRaw, cellFromEventClamped, edgeFromEvent, cellToColor, colorHooks, paintCell, paintStamp, stampActive, stampForPalette, STAMP_TOOLS, paintBrush, paintSpray, floodFill,
   ppActive, ppBegin, ppEnd, paintPixelPerfect, shadeBegin, shadeEnd, paintShade, shadeDwell, syncShadeMarks,
   renderCallbacks, shapeCells, commitShape, placeHiddenPicker, updateCurrentColorIndicator,
 } from './render.js';
@@ -67,7 +67,7 @@ import { initExport } from './export.js';
 import { openReduceModal, initReduceModal } from './reduce.js';
 import { zoomAt, fitZoomToArea, isPanMode, setPanTool, initPan, initPinch } from './view.js';
 import { initFrames, togglePlay, nextFrame, prevFrame, firstFrame, lastFrame, isPlaying, stop as stopPlayback } from './frames.js';
-import { initLayers, toggleLocked, toggleVisible, toggleMaskEdit, toggleMaskOn, setOpacity, setActiveLayer } from './layers.js';
+import { initLayers, toggleLocked, toggleVisible, toggleMaskEdit, toggleMaskOn, setOpacity, setActiveLayer, setPivotAt } from './layers.js';
 import { celKeyDown } from './frames.js';
 import { initTlMenu } from './tlmenu.js';
 import { initQuickPaletteDrag } from './qpdrag.js';
@@ -1069,6 +1069,15 @@ function initCanvasEvents() {
   tiled.addEventListener('contextmenu', e => e.preventDefault());
 
   canvas.addEventListener('pointerdown', e => {
+    // Gelenk setzen (js/rig.js): der Klick legt den Drehpunkt des Körperteils
+    // fest und malt nicht. Ganz vorn, damit kein Werkzeug dazwischenkommt.
+    if (state.pivotPick && e.button === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      const p = edgeFromEvent(e);
+      setPivotAt(p.x, p.y);
+      return;
+    }
     // Hand-Werkzeug auf einer Hilfslinie: die Linie ziehen statt die Ansicht
     // verschieben (stopPropagation hält das Verschieben in view.js ab).
     if (state.tool === 'pan' && e.button === 0 && guideAt(e)) { e.stopPropagation(); guidePointerDown(e); return; }

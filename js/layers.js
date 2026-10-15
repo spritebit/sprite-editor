@@ -15,12 +15,13 @@ import { dc, cellToColor } from './data.js';
 import { renderAll, renderEditor, renderCallbacks } from './render.js';
 import { recordOp, beginStroke, commitStroke } from './history.js';
 import { commitFloat, isFloating, selectionPixels, takeSelection, stampCells } from './selection.js';
+import { PART_ROLES, autoPivot, rigParts, hasRig } from './rig.js';
 import { saveState } from './storage.js';
 import { stop as stopPlayback } from './frames.js';
 import { showInfoToast } from './toast.js';
 import { iconSvg } from './icons.js';
 import { gridToCanvas } from './raster.js';
-import { t } from './i18n.js';
+import { t, onLangChange } from './i18n.js';
 
 /** @type {(id: string) => any} */
 const $ = id => document.getElementById(id);
@@ -187,6 +188,94 @@ export function mergeDown() {
     s.layer = below;
     state.maskEdit = false;
   });
+}
+
+// ── Körperteil (rig.js): Rolle und Gelenk ────────────────────────────
+// Eine Rolle zu vergeben setzt gleich ein brauchbares Gelenk — oben in der
+// Mitte bei Armen und Beinen, unten bei Kopf, Rumpf und Waffe. Das stimmt
+// bei den meisten gezeichneten Figuren; sitzt es daneben, setzt man es mit
+// „Gelenk“ von Hand. „—“ macht die Ebene wieder zu einer gewöhnlichen.
+export function setPartRole(role) {
+  const sp = getSprite();
+  if (!sp) return;
+  meta(s => {
+    const L = s.layers[s.layer];
+    if (!PART_ROLES.includes(role)) { L.part = null; return; }
+    const pivot = L.part?.pivot || autoPivot(s.frames[s.frame].cels[s.layer], role)
+      || { x: s.grid[0].length / 2, y: s.grid.length / 2 };
+    L.part = { role, pivot };
+  });
+  if (!role) state.pivotPick = false;
+  renderLayers();
+  renderEditor();
+}
+
+/** Gelenk-Modus: der nächste Klick auf die Fläche setzt das Gelenk. */
+export function togglePivotPick() {
+  const sp = getSprite();
+  if (!sp?.layers[sp.layer].part) return;
+  state.pivotPick = !state.pivotPick;
+  if (state.pivotPick) showInfoToast(t('rig.pivotHint'));
+  renderLayers();
+  renderEditor();
+}
+
+/** Aus app.js, wenn im Gelenk-Modus auf die Fläche geklickt wird. */
+export function setPivotAt(x, y) {
+  const sp = getSprite();
+  const L = sp?.layers[sp.layer];
+  if (!L?.part) return;
+  const W = sp.grid[0].length, H = sp.grid.length;
+  meta(s => {
+    s.layers[s.layer].part.pivot = {
+      x: Math.max(0, Math.min(W, x)),
+      y: Math.max(0, Math.min(H, y)),
+    };
+  });
+  state.pivotPick = false;
+  renderLayers();
+  renderEditor();
+}
+
+// Die Gelenke aller Körperteile über das Bild zeichnen — der aktive Ring
+// kräftig, die übrigen blass, damit man sieht, wie die Figur zusammenhängt.
+function drawPivots(ctx, _W, _H, cs) {
+  const sp = getSprite();
+  if (!sp || !hasRig(sp)) return;
+  ctx.save();
+  for (const p of rigParts(sp)) {
+    const on = p.i === sp.layer;
+    const x = p.pivot.x * cs, y = p.pivot.y * cs;
+    const r = Math.max(3, Math.min(7, cs * 0.6));
+    ctx.lineWidth = on ? 2 : 1;
+    ctx.strokeStyle = on ? '#ffcc33' : 'rgba(255,204,51,0.45)';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    // Kreuz in der Mitte: der Kreis allein ist auf buntem Grund schlecht zu treffen.
+    ctx.beginPath();
+    ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+    ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function renderPart() {
+  const sel = $('ly-part-role'), btn = $('ly-part-pivot');
+  if (!sel) return;
+  const sp = getSprite();
+  const part = sp?.layers[sp.layer]?.part || null;
+  // Die Liste trägt die Sprache mit — sie wird bei jedem Wechsel neu gebaut.
+  sel.innerHTML = `<option value="">${t('rig.roleNone')}</option>`
+    + PART_ROLES.map(r => `<option value="${r}">${t('rig.role.' + r)}</option>`).join('');
+  sel.value = part?.role || '';
+  sel.disabled = !sp;
+  btn.hidden = !part;
+  btn.classList.toggle('is-active', !!state.pivotPick);
+  btn.setAttribute('aria-pressed', String(!!state.pivotPick));
+  if (part) {
+    const fmt = v => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+    btn.title = t('rig.pivotAt', { x: fmt(part.pivot.x), y: fmt(part.pivot.y) });
+  }
 }
 
 // ── Ebenenmasken (mask.js) ───────────────────────────────────────────
@@ -438,6 +527,7 @@ export function renderLayers() {
       mk('mask-on').title = t(m.on ? 'mask.off' : 'mask.on');
     }
   }
+  renderPart();
   const tlOp = $('tl-ly-opacity');
   if (tlOp) {
     if (document.activeElement !== tlOp) tlOp.value = String(Math.round(L.opacity * 100));
@@ -526,6 +616,8 @@ export function initLayers() {
   $('ly-del').addEventListener('click', deleteLayer);
   $('ly-merge').addEventListener('click', mergeDown);
   $('ly-merge-all').addEventListener('click', mergeVisible);
+  $('ly-part-role').addEventListener('change', e => setPartRole(/** @type {HTMLSelectElement} */ (e.target).value));
+  $('ly-part-pivot').addEventListener('click', togglePivotPick);
   $('ly-mask-add').addEventListener('click', addMask);
   $('ly-mask-edit').addEventListener('click', () => toggleMaskEdit());
   $('ly-mask-on').addEventListener('click', toggleMaskOn);
@@ -556,4 +648,7 @@ export function initLayers() {
   renderCallbacks.onRenderLayers = renderLayers;
   const prev = renderCallbacks.onEditorRendered;
   renderCallbacks.onEditorRendered = () => { prev(); refreshActiveThumb(); };
+  renderCallbacks.onDrawPivots = drawPivots;
+  // Die Rollenliste steht in der Sprache des Nutzers — nach dem Wechsel neu bauen.
+  onLangChange(renderPart);
 }
