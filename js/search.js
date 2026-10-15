@@ -67,6 +67,10 @@ export const SYNONYMS = {
   grid: ['raster', 'hilfslinien'],
   farbe: ['palette', 'farben', 'color'],
   colour: ['color', 'palette'],
+  zerlegen: ['korperteile', 'auswahl', 'ebene'],
+  korperteil: ['korperteile', 'auswahl', 'ebene'],
+  bodypart: ['korperteile', 'auswahl', 'ebene'],
+  rig: ['korperteile', 'auswahl', 'ebene'],
 };
 
 /** Ein Suchwort samt Synonymen (bekanntes Wort oder dessen Anfang ab 6

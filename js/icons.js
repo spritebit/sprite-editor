@@ -103,6 +103,8 @@ export const ICONS = {
   // Alle sichtbaren zusammenführen: zwei Pfeile in eine Linie.
   mergeAll: '<path d="M8 2l4 4 4-4M8 8l4 4 4-4"/><path d="M4 17h16M4 21h16"/>',
   mergeDown:'<path d="M12 3v10M8 9l4 4 4-4"/><path d="M4 17h16M4 21h16"/>',
+  // Auswahl → eigene Ebene: gestrichelte Auswahl, die nach oben heraus geht.
+  partOut: `<rect x="3" y="11" width="10" height="10" rx="1" ${DASH}/><path d="M18 3v10M14 7l4-4 4 4"/>`,
   // Ebene nach oben / unten (wie in der Desktop-App)
   up:      '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
   down:    '<path d="M12 5v14"/><path d="M6 13l6 6 6-6"/>',

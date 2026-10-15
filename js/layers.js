@@ -9,12 +9,12 @@
 // Die Liste im Panel zeigt die oberste Ebene oben. Alle Änderungen laufen
 // durch recordOp() und sind Undo-Schritte; nur das Wählen der aktiven Ebene
 // ist keine Änderung.
-import { state, getSprite, getPaletteByName, clearSelection, defaultLayer, blankLike, sampleGrid, copyLayer, flatGrid } from './state.js';
+import { state, getSprite, getPaletteByName, clearSelection, defaultLayer, blankLike, sampleGrid, copyLayer, flatGrid, isLinked } from './state.js';
 import { blankMask, bakeMask, maskedCel } from './mask.js';
 import { dc, cellToColor } from './data.js';
 import { renderAll, renderEditor, renderCallbacks } from './render.js';
 import { recordOp, beginStroke, commitStroke } from './history.js';
-import { commitFloat } from './selection.js';
+import { commitFloat, isFloating, selectionPixels, takeSelection, stampCells } from './selection.js';
 import { saveState } from './storage.js';
 import { stop as stopPlayback } from './frames.js';
 import { showInfoToast } from './toast.js';
@@ -51,11 +51,11 @@ function meta(fn) {
   saveState();
 }
 
-// Freier Name "Ebene N".
-function freshName(sp) {
+// Freier Name "Ebene N" — oder nach einem anderen Muster ("Teil N").
+function freshName(sp, key = 'ly.name') {
   const taken = new Set(sp.layers.map(l => l.name));
   let n = sp.layers.length + 1;
-  while (taken.has(t('ly.name', { n }))) n++;
+  while (taken.has(t(key, { n }))) n++;
   return n;
 }
 
@@ -92,6 +92,48 @@ export function duplicateLayer() {
     });
     sp.layer = at;
   });
+}
+
+// ── Auswahl → eigene Ebene ───────────────────────────────────────────
+// Der ausgewählte Teil wird aus der aktiven Ebene HERAUSGENOMMEN und sitzt
+// danach allein in einer neuen Ebene darüber, an genau derselben Stelle.
+// Damit zerlegt man eine fertig gezeichnete Figur in Kopf, Rumpf, Arme und
+// Beine — die Voraussetzung dafür, die Teile einzeln zu bewegen.
+//
+// Nur im aktuellen Frame: man zerlegt ein Bild, nicht eine Animation. Teilt
+// die Quellzelle ihr Bild mit anderen Frames (verknüpft), wird sie für diesen
+// Frame zuerst gelöst — sonst fehlte das Teil überall.
+export function layerFromSelection() {
+  const sp = getSprite();
+  if (!sp) return;
+  if (state.maskEdit) { showInfoToast(t('ly.notInMask')); return; }
+  const src = sp.layers[sp.layer];
+  if (src.locked) { showInfoToast(t('ly.lockedInfo', { name: src.name })); return; }
+
+  // Leere Auswahl: nichts anfassen, sonst entstünde eine leere Ebene.
+  const peek = selectionPixels();
+  if (!peek) { showInfoToast(t('ly.needSel')); return; }
+  if (!peek.cells.some(row => row.some(v => v !== 0))) { showInfoToast(t('ly.partEmpty')); return; }
+
+  // Nicht edit(): das setzt schwebenden Inhalt ab und hebt die Auswahl auf,
+  // bevor hier etwas passieren könnte — beides brauchen wir noch.
+  stopPlayback();
+  let moved = 0;
+  recordOp(() => {
+    const from = sp.layer, fr = sp.frames[sp.frame];
+    // Verknüpfung nur für diesen Frame lösen — vor dem Herausnehmen.
+    if (!isFloating() && isLinked(sp, sp.frame, from)) fr.cels[from] = dc(fr.cels[from]);
+    const part = takeSelection();
+    const at = from + 1;
+    sp.layers.splice(at, 0, { ...defaultLayer(), name: t('ly.partName', { n: freshName(sp, 'ly.partName') }) });
+    sp.frames.forEach(f => f.cels.splice(at, 0, blankLike(f.cels[from])));
+    moved = stampCells(fr.cels[at], part.cells, part.x, part.y);
+    sp.layer = at;
+  });
+  clearSelection();
+  renderAll();
+  saveState();
+  showInfoToast(t('ly.partDone', { n: moved }));
 }
 
 export function deleteLayer() {
@@ -468,6 +510,8 @@ export function initLayers() {
   const on = (id, fn) => $(id)?.addEventListener('click', fn);
   on('tl-ly-add', addLayer);
   on('tl-ly-dup', duplicateLayer);
+  on('tl-ly-from-sel', layerFromSelection);
+  on('ly-from-sel', layerFromSelection);
   on('tl-ly-del', deleteLayer);
   on('tl-ly-merge', mergeDown);
   on('tl-ly-merge-all', mergeVisible);

@@ -1,3 +1,13 @@
+# 3.7.5
+
+## Deutsch
+
+- Auswahl in eine eigene Ebene: Wähl einen Teil deiner Figur aus — mit Lasso, Rechteck oder Zauberstab — und drück den neuen Knopf im Ebenen-Panel oder in der Timeline-Leiste. Der Teil wird aus der aktiven Ebene herausgenommen und sitzt danach allein in einer neuen Ebene darüber, an genau derselben Stelle. So zerlegst du eine fertig gezeichnete Figur Stück für Stück in Kopf, Rumpf, Arme und Beine, und kannst jedes Teil einzeln bewegen und drehen. Das gilt nur für den Frame, in dem du gerade bist; teilt sich die Zelle ihr Bild mit anderen Frames, wird sie vorher nur für diesen Frame gelöst. Ein Undo macht alles auf einmal rückgängig.
+
+## English
+
+- Selection into its own layer: select a part of your figure — with the lasso, rectangle or magic wand — and press the new button in the layers panel or the timeline bar. The part is taken out of the active layer and ends up alone in a new layer above it, in exactly the same place. That is how you split a finished figure piece by piece into head, body, arms and legs, so you can move and rotate each part on its own. It only affects the frame you are in; if the cel shares its image with other frames, it is unlinked for this frame first. One undo takes the whole thing back.
+
 # 3.7.4
 
 ## Deutsch

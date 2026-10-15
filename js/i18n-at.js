@@ -332,6 +332,7 @@ export const STATIC_AT = {
   // ── Ebenen ──
   'ly.add':       'A neiche Ebene über da aktivn',
   'ly.dup':       'Ebene verdoppln',
+  'ly.fromSel':   'Auswoi in a eigene Ebene — nimmt den gwöhtn Teil aus da aktivn Ebene außa und legt eam in a neiche drüber, in dem Frame. So zalegst a Figur in Kerperteile.',
   'ly.merge':     'Noch untn zammlegn — in jedem Frame',
   'ly.del':       'Ebene weghaun',
   'ly.note':      'Doppelklick aufn Nom benennt um, ziagn sortiert. Export und Vorschau zeign olle sichtbarn Ebenen übereinand.',
@@ -525,6 +526,11 @@ export const MSG_AT = {
   'ly.rowTitle':       '{name} — antippn wöhlt, ziagn sortiert, Doppelklick benennt um',
   'ly.lastLayer':      'De letzte Ebene bleibt — a Sprite braucht mindestens oane.',
   'ly.nothingBelow':   'Unter da untersten Ebene is nix zum Zammlegn.',
+  'ly.partName':       'Teil {n}',
+  'ly.needSel':        'Z’erst an Teil auswöhln — mit Lasso, Rechteck oder Zauberstab.',
+  'ly.notInMask':      'Des geht nur an Pixeln — „Maske bearbeitn“ vorher obdrahn.',
+  'ly.partEmpty':      'In da Auswoi is nix drin — do san olle Pixel laar.',
+  'ly.partDone':       'Teil mit {n} Pixeln in a eigene Ebene glegt.',
   'ly.lockedInfo':     'Ebene „{name}“ is zuagsperrt — z’erst aufsperrn (Schlossl im Ebenen-Panel).',
   'ly.hiddenInfo':     'Ebene „{name}“ is weggtuan — z’erst herzagn (Aug im Ebenen-Panel).',
 
