@@ -593,6 +593,8 @@
             <select id="ly-part-role" class="input input--sm" data-i18n-attr="title:rig.roleTitle" title="Welches Körperteil diese Ebene ist — davon hängt ab, wie es sich später bewegt"></select>
             <button class="btn btn--sm" id="ly-part-pivot" aria-pressed="false" hidden data-i18n-attr="title:rig.pivotTitle" title="Gelenk setzen: auf die Fläche klicken, wo das Teil angewachsen ist — Schulter, Hüfte, Hals"><span class="ico" data-icon="pivot"></span><span data-i18n="rig.pivot">Gelenk</span></button>
             <button class="btn btn--sm" id="ly-part-back" hidden data-i18n-attr="title:rig.backTitle" title="Daraus das hintere Glied machen: dieselbe Form eine Stufe dunkler, ganz unten im Stapel — so bekommt die Figur Tiefe"><span class="ico" data-icon="backLimb"></span><span data-i18n="rig.back">Hinten</span></button>
+            <label class="ly-free" id="ly-free-amp-row" hidden><span class="field-label" data-i18n="rig.amp">Ausschlag</span><input type="range" id="ly-free-amp" min="0" max="90" step="5" value="25"><span class="field-value" id="ly-free-amp-val">25°</span></label>
+            <label class="ly-free" id="ly-free-phase-row" hidden><span class="field-label" data-i18n="rig.phase">Im Takt</span><input type="range" id="ly-free-phase" min="0" max="345" step="15" value="90"><span class="field-value" id="ly-free-phase-val">90°</span></label>
             <button class="btn btn--sm" id="ly-part-gen" data-i18n-attr="title:rig.genTitleLong" title="Aus den Körperteilen eine Bewegung rechnen — Laufen, Schlag, Sprung und mehr. Die Frames kommen als neuer Tag in die Timeline."><span class="ico" data-icon="run"></span><span data-i18n="rig.gen">Erzeugen</span></button>
           </div>
           <label class="field field--inline">

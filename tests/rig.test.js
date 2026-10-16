@@ -264,3 +264,104 @@ test('rundlaufende Vorlagen zeigen nie zweimal hintereinander dasselbe Bild', ()
     }
   }
 });
+
+// ── Freie Teile: Schwanz, Ohren, Umhang ─────────────────────────────
+import { FREE_AMP, FREE_PHASE, FREE_AMP_MAX, freePose, phases, normalizePart as np, copyPart as cp } from '../js/rig.js';
+
+test('ein freies Teil ohne eigene Werte bekommt die Vorgaben', () => {
+  const p = np({ role: 'free', pivot: { x: 2, y: 3 } }, 16, 16);
+  assert.deepEqual(p, { role: 'free', pivot: { x: 2, y: 3 }, amp: FREE_AMP, phase: FREE_PHASE });
+});
+
+test('Ausschlag wird begrenzt, der Takt läuft rund', () => {
+  const at = (amp, phase) => np({ role: 'free', pivot: { x: 0, y: 0 }, amp, phase }, 16, 16);
+  assert.equal(at(999, 0).amp, FREE_AMP_MAX);
+  assert.equal(at(-5, 0).amp, 0);
+  assert.equal(at(10, -90).phase, 270, 'minus 90 ist dieselbe Stelle wie 270');
+  assert.equal(at(10, 450).phase, 90);
+  assert.equal(at(10, 'nanu').phase, FREE_PHASE);
+});
+
+test('feste Rollen tragen keinen Ausschlag mit sich herum', () => {
+  const p = np({ role: 'head', pivot: { x: 1, y: 1 }, amp: 40, phase: 10 }, 16, 16);
+  assert.deepEqual(p, { role: 'head', pivot: { x: 1, y: 1 } });
+  assert.deepEqual(cp(p), { role: 'head', pivot: { x: 1, y: 1 } });
+});
+
+test('copyPart nimmt Ausschlag und Takt eines freien Teils mit', () => {
+  const p = { role: 'free', pivot: { x: 1, y: 2 }, amp: 40, phase: 200 };
+  const c = cp(p);
+  assert.deepEqual(c, p);
+  c.pivot.x = 9;
+  assert.equal(p.pivot.x, 1);
+});
+
+test('der Ausschlag bestimmt, wie weit ein freies Teil dreht', () => {
+  const part = { role: 'free', pivot: { x: 0, y: 0 }, amp: 30, phase: 0 };
+  const rots = phases('walk', 8).map(p => freePose('walk', p, 1, part).rot);
+  assert.ok(Math.max(...rots.map(Math.abs)) <= 30);
+  assert.ok(rots.some(r => r !== 0));
+  // Doppelter Ausschlag, doppelte Drehung
+  const wide = phases('walk', 8).map(p => freePose('walk', p, 1, { ...part, amp: 60 }).rot);
+  rots.forEach((r, i) => assert.ok(Math.abs(wide[i] - 2 * r) < 0.2));
+});
+
+test('„im Takt“ verschiebt die Bewegung umlaufend', () => {
+  const part = { role: 'free', pivot: { x: 0, y: 0 }, amp: 30, phase: 0 };
+  const ps = phases('walk', 8);
+  const plain = ps.map(p => freePose('walk', p, 1, part).rot);
+  // Eine halbe Runde später ist es genau die Gegenbewegung.
+  const half = ps.map(p => freePose('walk', p, 1, { ...part, phase: 180 }).rot);
+  plain.forEach((r, i) => assert.ok(Math.abs(half[i] + r) < 0.2, `Bild ${i + 1}`));
+  // Eine ganze Runde später ist es wieder dasselbe.
+  const full = ps.map(p => freePose('walk', p, 1, { ...part, phase: 360 }).rot);
+  assert.deepEqual(full, plain);
+});
+
+test('ein freies Teil wandert mit dem Körper, statt abzureißen', () => {
+  const part = { role: 'free', pivot: { x: 0, y: 0 }, amp: 30, phase: 0 };
+  for (const name of TEMPLATE_NAMES) {
+    for (const p of phases(name, 8)) {
+      const body = TEMPLATES[name].pose(p, 1).torso || REST;
+      const free = freePose(name, p, 1, part, body);
+      assert.equal(free.dx, body.dx, name);
+      assert.equal(free.dy, body.dy, name);
+    }
+  }
+});
+
+test('jede Vorlage bewegt ein freies Teil überhaupt', () => {
+  const part = { role: 'free', pivot: { x: 0, y: 0 }, amp: 30, phase: 0 };
+  for (const name of TEMPLATE_NAMES) {
+    const rots = phases(name, 8).map(p => freePose(name, p, 1, part).rot);
+    assert.ok(rots.some(r => r !== 0), name);
+  }
+});
+
+test('buildFrames dreht ein freies Teil mit', () => {
+  const layers = [
+    { part: { role: 'torso', pivot: { x: 2, y: 4 } } },
+    { part: { role: 'free', pivot: { x: 2, y: 2 }, amp: 60, phase: 0 } },
+  ];
+  const frames = buildFrames([bar(), bar()], layers, 'walk', 8);
+  const shapes = frames.map(c => c[1].map(r => r.join('')).join('|'));
+  assert.ok(new Set(shapes).size > 1, 'der Schwanz steht nicht still');
+});
+
+test('ein freies Teil hängt an der Seite, die zur Bildmitte zeigt', () => {
+  // 20 × 20, Mitte bei (10, 10). Schwanz links oben, Kasten (2..5, 5..9).
+  const g = Array.from({ length: 20 }, () => new Array(20).fill(0));
+  for (let y = 5; y <= 9; y++) for (let x = 2; x <= 5; x++) g[y][x] = 1;
+  // Nächste Stelle zur Mitte: die untere rechte Ecke des Kastens.
+  assert.deepEqual(autoPivot(g, 'free'), { x: 6, y: 10 });
+
+  // Ohr oben mittig (9..11, 1..3): Unterkante, waagerecht die Mitte.
+  const e = Array.from({ length: 20 }, () => new Array(20).fill(0));
+  for (let y = 1; y <= 3; y++) for (let x = 9; x <= 11; x++) e[y][x] = 1;
+  assert.deepEqual(autoPivot(e, 'free'), { x: 10, y: 4 });
+
+  // Ein Teil, das die Mitte selbst überdeckt, dreht um die Mitte.
+  const m = Array.from({ length: 20 }, () => new Array(20).fill(0));
+  for (let y = 6; y <= 14; y++) for (let x = 6; x <= 14; x++) m[y][x] = 1;
+  assert.deepEqual(autoPivot(m, 'free'), { x: 10, y: 10 });
+});

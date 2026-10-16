@@ -15,7 +15,7 @@ import { dc, cellToColor } from './data.js';
 import { renderAll, renderEditor, renderCallbacks } from './render.js';
 import { recordOp, beginStroke, commitStroke } from './history.js';
 import { commitFloat, isFloating, selectionPixels, takeSelection, stampCells } from './selection.js';
-import { PART_ROLES, autoPivot, rigParts, hasRig } from './rig.js';
+import { PART_ROLES, autoPivot, rigParts, hasRig, FREE_AMP, FREE_PHASE } from './rig.js';
 import { makeShader } from './shade.js';
 import { saveState } from './storage.js';
 import { stop as stopPlayback } from './frames.js';
@@ -204,7 +204,11 @@ export function setPartRole(role) {
     if (!PART_ROLES.includes(role)) { L.part = null; return; }
     const pivot = L.part?.pivot || autoPivot(s.frames[s.frame].cels[s.layer], role)
       || { x: s.grid[0].length / 2, y: s.grid.length / 2 };
-    L.part = { role, pivot };
+    // Ein freies Teil bringt seine Bewegung selbst mit — mit Vorgaben, die
+    // als Schwanz gleich brauchbar aussehen.
+    L.part = role === 'free'
+      ? { role, pivot, amp: L.part?.amp ?? FREE_AMP, phase: L.part?.phase ?? FREE_PHASE }
+      : { role, pivot };
   });
   if (!role) state.pivotPick = false;
   renderLayers();
@@ -249,6 +253,14 @@ export function backLimbFromFront() {
   renderAll();
   saveState();
   showInfoToast(t('rig.backDone', { name: t('rig.role.' + back) }));
+}
+
+/** Ausschlag oder Takt eines freien Teils stellen (js/rig.js). */
+export function setFreeSwing(key, value) {
+  const sp = getSprite();
+  if (sp?.layers[sp.layer].part?.role !== 'free') return;
+  meta(s => { s.layers[s.layer].part[key] = value; });
+  renderEditor();
 }
 
 /** Gelenk-Modus: der nächste Klick auf die Fläche setzt das Gelenk. */
@@ -319,6 +331,16 @@ function renderPart() {
   if (part) {
     const fmt = v => (Number.isInteger(v) ? String(v) : v.toFixed(1));
     btn.title = t('rig.pivotAt', { x: fmt(part.pivot.x), y: fmt(part.pivot.y) });
+  }
+  // Ausschlag und Takt gibt es nur beim freien Teil.
+  const free = part?.role === 'free';
+  for (const [key, def] of [['amp', FREE_AMP], ['phase', FREE_PHASE]]) {
+    $('ly-free-' + key + '-row').hidden = !free;
+    if (!free) continue;
+    const inp = $('ly-free-' + key);
+    const v = part[key] ?? def;
+    if (document.activeElement !== inp) inp.value = String(v);
+    $('ly-free-' + key + '-val').textContent = v + '°';
   }
 }
 
@@ -663,6 +685,11 @@ export function initLayers() {
   $('ly-part-role').addEventListener('change', e => setPartRole(/** @type {HTMLSelectElement} */ (e.target).value));
   $('ly-part-pivot').addEventListener('click', togglePivotPick);
   $('ly-part-back').addEventListener('click', backLimbFromFront);
+  for (const key of ['amp', 'phase']) {
+    $('ly-free-' + key).addEventListener('input', e => {
+      setFreeSwing(key, Number(/** @type {HTMLInputElement} */ (e.target).value));
+    });
+  }
   $('ly-mask-add').addEventListener('click', addMask);
   $('ly-mask-edit').addEventListener('click', () => toggleMaskEdit());
   $('ly-mask-on').addEventListener('click', toggleMaskOn);

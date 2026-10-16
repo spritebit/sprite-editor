@@ -1387,6 +1387,11 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
 .ly-part-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
 .ly-part-actions [hidden] { display: none; }
 .ly-part-actions select { flex: 1 1 7rem; min-width: 0; }
+/* Freies Teil: Ausschlag und Takt stehen je in einer eigenen Zeile, damit
+   die Regler breit genug bleiben, um sie zu treffen. */
+.ly-free { display: flex; flex: 1 0 100%; align-items: center; gap: var(--sp-2); }
+.ly-free input { flex: 1 1 auto; min-width: 0; }
+.ly-free .field-value { flex: none; min-width: 3em; text-align: right; }
 /* Gelenk setzen: dieselbe gelbe Marke wie der Ring auf der Fläche. */
 #ly-part-pivot.is-active { border-color: #ffcc33; color: #ffcc33; }
 #editor-canvas-wrap.is-pivot-pick #editor-canvas { cursor: crosshair; }

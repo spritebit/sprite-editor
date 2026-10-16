@@ -29,10 +29,31 @@
  * von denen beim Laufen das hintere verdeckt wird (meist eine Stufe dunkler).
  * @type {readonly string[]}
  */
-export const PART_ROLES = ['head', 'torso', 'armBack', 'armFront', 'legBack', 'legFront', 'weapon'];
+export const PART_ROLES = ['head', 'torso', 'armBack', 'armFront', 'legBack', 'legFront', 'weapon', 'free'];
+
+// ── Freie Teile ──────────────────────────────────────────────────────
+// Ein Schwanz passt in keine der festen Rollen: er gehört nicht zum Rumpf,
+// soll aber auch nicht wie ein Bein schwingen. Statt für jedes Anhängsel
+// eine eigene Rolle zu erfinden — Schwanz, Ohr, Umhang, Fühler, Flügel —
+// gibt es die Rolle „Frei“: die Ebene bringt ihre Bewegung selbst mit.
+//
+//   amp    wie weit sie ausschwingt, in Grad
+//   phase  wann im Takt, in Grad (0 = mit den vorderen Beinen,
+//          180 = dagegen, 90 = dazwischen)
+//
+// Jede Vorlage liefert dafür ein Signal zwischen -1 und 1 (`swing`); das
+// freie Teil dreht um `amp × Signal` und wandert im Übrigen mit dem Körper,
+// damit es nie abreißt. Bei einmaligen Bewegungen (Sprung, Schlag, Treffer,
+// Tod) hat „im Takt“ keine Bedeutung — es gibt keinen Takt, durch den man
+// sich verschieben könnte.
+export const FREE_AMP = 25;
+export const FREE_PHASE = 90;
+export const FREE_AMP_MAX = 90;
 
 /** Teil-Angaben einer Ebene kopieren (state.js copyLayer). */
-export const copyPart = p => (p ? { role: p.role, pivot: { x: p.pivot.x, y: p.pivot.y } } : null);
+export const copyPart = p => (p
+  ? { role: p.role, pivot: { x: p.pivot.x, y: p.pivot.y }, ...(p.role === 'free' ? { amp: p.amp, phase: p.phase } : {}) }
+  : null);
 
 /**
  * Teil-Angaben aus einem Speicherstand prüfen. Unbekannte Rolle, fehlendes
@@ -43,10 +64,17 @@ export function normalizePart(p, W, H) {
   if (!p || !PART_ROLES.includes(p.role)) return null;
   const x = Number(p.pivot?.x), y = Number(p.pivot?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-  return {
+  const out = {
     role: p.role,
     pivot: { x: Math.max(0, Math.min(W, x)), y: Math.max(0, Math.min(H, y)) },
   };
+  if (p.role === 'free') {
+    const amp = Number(p.amp), phase = Number(p.phase);
+    out.amp = Number.isFinite(amp) ? Math.max(0, Math.min(FREE_AMP_MAX, amp)) : FREE_AMP;
+    // Der Takt läuft rund: -90 und 270 sind dieselbe Stelle.
+    out.phase = Number.isFinite(phase) ? ((phase % 360) + 360) % 360 : FREE_PHASE;
+  }
+  return out;
 }
 
 /**
@@ -84,6 +112,18 @@ export function contentBox(cel) {
 export function autoPivot(cel, role) {
   const b = contentBox(cel);
   if (!b) return null;
+  // Ein freies Teil kann überall sitzen — Schwanz hinten, Ohr oben, Umhang
+  // am Rücken. Darum keine feste Kante, sondern die Stelle des Teils, die
+  // der Mitte des Bildes am nächsten liegt: dort hängt es am Körper. Beim
+  // Schwanz links oben ist das seine untere rechte Ecke, beim Ohr die
+  // Unterkante — beides richtig, ohne dass man es sagen muss.
+  if (role === 'free') {
+    const cx = cel[0].length / 2, cy = cel.length / 2;
+    return {
+      x: Math.max(b.x0, Math.min(b.x1 + 1, cx)),
+      y: Math.max(b.y0, Math.min(b.y1 + 1, cy)),
+    };
+  }
   const top = role === 'armBack' || role === 'armFront' || role === 'legBack' || role === 'legFront';
   return { x: (b.x0 + b.x1 + 1) / 2, y: top ? b.y0 : b.y1 + 1 };
 }
@@ -171,6 +211,8 @@ const BODY = ['head', 'torso', 'armBack', 'armFront', 'weapon'];
 export const TEMPLATES = {
   // Atmen im Stand: Brust und Kopf gehen einen Pixel auf und ab.
   idle: {
+    // Atmen: der Schwanz wiegt sanft mit.
+    swing: p => Math.sin(2 * Math.PI * p),
     frames: 4,
     loop: true,
     pose: (p, s) => {
@@ -184,6 +226,8 @@ export const TEMPLATES = {
   // Laufen: Arme und Beine im Gegentakt, der Körper hebt sich zur Mitte
   // jedes Schritts. Eine volle Runde sind zwei Schritte.
   walk: {
+    // Im Takt der Schritte — „im Takt 0“ heißt mit dem vorderen Bein.
+    swing: p => Math.sin(2 * Math.PI * p),
     frames: 8,
     loop: true,
     pose: (p, s) => {
@@ -220,6 +264,7 @@ export const TEMPLATES = {
   // ein Hund mit kurz trippelnden Vorderbeinen sieht lahm aus. Der Rücken
   // wippt nur wenig, der Kopf bleibt fast ruhig: er trägt sich selbst.
   walkQuad: {
+    swing: p => Math.sin(2 * Math.PI * p),
     frames: 8,
     loop: true,
     pose: (p, s) => {
@@ -244,6 +289,7 @@ export const TEMPLATES = {
   // Rennen: dieselbe Mechanik, größere Ausschläge, und die Figur lehnt sich
   // nach vorn — als Versatz, nicht als Drehung (siehe oben, Punkt 1).
   run: {
+    swing: p => Math.sin(2 * Math.PI * p),
     frames: 8,
     loop: true,
     pose: (p, s) => {
@@ -266,6 +312,8 @@ export const TEMPLATES = {
   // Sprung in einem Durchlauf: ducken, abstoßen, steigen, oben, fallen,
   // aufkommen. Die Beine ziehen erst an und strecken sich dann.
   jump: {
+    // Hoch beim Abstoßen, danach schleppt es hinterher.
+    swing: p => seg(p, [0, 1, -1, -1, -0.5, 0]),
     frames: 6,
     loop: false,
     pose: (p, s) => {
@@ -287,6 +335,8 @@ export const TEMPLATES = {
   // Schlag: ausholen (zurück), treffen (weit vor), nachschwingen, zurück.
   // Die Waffe macht die Bewegung des vorderen Arms mit.
   attack: {
+    // Mit dem Ausholen zurück, mit dem Schlag nach vorn.
+    swing: p => seg(p, [0, -1, 1, 1, 0.2]),
     frames: 5,
     loop: false,
     pose: (p, s) => {
@@ -308,6 +358,8 @@ export const TEMPLATES = {
   // Treffer: die Figur wird zurückgestoßen, der Kopf kippt, die Arme fliegen
   // hoch — und alles federt zurück.
   hit: {
+    // Fliegt mit dem Rückstoß hoch und federt zurück.
+    swing: p => seg(p, [0, 1, 0.6, 0]),
     frames: 4,
     loop: false,
     pose: (p, s) => {
@@ -329,6 +381,8 @@ export const TEMPLATES = {
   // Figur — die kann es ohne Hierarchie nicht geben (siehe oben, Punkt 1),
   // darum sinkt sie, der Kopf neigt sich, Arme und Beine geben nach.
   death: {
+    // Sinkt in eine Richtung und bleibt liegen.
+    swing: p => seg(p, [0, 0.3, 0.6, 0.85, 1, 1]),
     frames: 6,
     loop: false,
     pose: (p, s) => {
@@ -365,12 +419,33 @@ export const REST = { dx: 0, dy: 0, rot: 0 };
  * wäre wieder 0 und ergäbe einen doppelten Frame. Einmalige Bewegungen
  * laufen dagegen von 0 bis 1 durch, damit auch das Ende dabei ist.
  */
-export function buildPoses(name, n = 0, strength = 1) {
+export function phases(name, n = 0) {
   const tpl = TEMPLATES[name];
   if (!tpl) return [];
   const count = Math.max(2, Math.min(64, Math.round(n) || tpl.frames));
   const last = tpl.loop ? count : count - 1;
-  return Array.from({ length: count }, (_, i) => tpl.pose(i / last, strength));
+  return Array.from({ length: count }, (_, i) => i / last);
+}
+
+export function buildPoses(name, n = 0, strength = 1) {
+  const tpl = TEMPLATES[name];
+  if (!tpl) return [];
+  return phases(name, n).map(p => tpl.pose(p, strength));
+}
+
+/**
+ * Die Stellung eines freien Teils (Schwanz, Ohr, Umhang …) an der Stelle p.
+ * Es dreht um seinen eigenen Ausschlag und wandert im Übrigen mit dem
+ * Körper — ein eigener Versatz würde es vom Rumpf lösen.
+ */
+export function freePose(name, p, strength, part, body = REST) {
+  const tpl = TEMPLATES[name];
+  if (!tpl?.swing) return body;
+  const amp = part.amp ?? FREE_AMP;
+  // „Im Takt“ verschiebt die Stelle in der Bewegung — bei einer rundlaufenden
+  // umlaufend, bei einer einmaligen gäbe es nichts zu verschieben.
+  const at = tpl.loop ? (((p + (part.phase ?? FREE_PHASE) / 360) % 1) + 1) % 1 : p;
+  return { dx: body.dx, dy: body.dy, rot: deg(amp * strength * tpl.swing(at)) };
 }
 
 /**
@@ -412,11 +487,15 @@ export function transformPart(cel, pivot, { dx = 0, dy = 0, rot = 0 } = {}) {
  * @param {any[]} layers      die Ebenen des Sprites (für `part`)
  * @param {Record<string, Pose>} pose
  */
-export function buildFrame(base, layers, pose) {
+export function buildFrame(base, layers, pose, freeAt = null) {
   return base.map((cel, i) => {
     const part = layers[i]?.part;
     if (!part) return cel;
-    const p = pose[part.role] || REST;
+    // Freie Teile bringen ihre Bewegung selbst mit (siehe freePose) — die
+    // Vorlage kennt sie nicht, sie kennt nur die festen Rollen.
+    const p = part.role === 'free'
+      ? (freeAt ? freeAt(part) : REST)
+      : (pose[part.role] || REST);
     return transformPart(cel, part.pivot, p);
   });
 }
@@ -427,5 +506,11 @@ export function buildFrame(base, layers, pose) {
  * entscheidet der Aufrufer (js/layers.js, später das Erzeugen-Fenster).
  */
 export function buildFrames(base, layers, name, n = 0, strength = 1) {
-  return buildPoses(name, n, strength).map(pose => buildFrame(base, layers, pose));
+  const tpl = TEMPLATES[name];
+  if (!tpl) return [];
+  return phases(name, n).map(p => {
+    const pose = tpl.pose(p, strength);
+    const body = pose.torso || REST;
+    return buildFrame(base, layers, pose, part => freePose(name, p, strength, part, body));
+  });
 }
