@@ -1275,9 +1275,17 @@
           <input type="range" id="rig-strength" min="25" max="200" step="5" value="100">
           <span id="rig-strength-val" class="field-value">100%</span>
         </label>
+        <label class="form-row">
+          <span class="form-label" data-i18n="rig.only">Prüfen</span>
+          <select id="rig-only" class="input input--sm" data-i18n-attr="title:rig.onlyTitle" title="Ein einzelnes Teil prüfen: nur dieses bewegt sich, der Rest steht still. So siehst du, ob sein Gelenk richtig sitzt. Erzeugt werden immer alle Teile."></select>
+        </label>
       </div>
       <div class="rig-gen-preview">
         <canvas id="rig-preview"></canvas>
+        <div class="rig-scrub">
+          <button class="btn btn--sm" id="rig-play" aria-pressed="true" data-i18n-attr="title:rig.pause" title="Anhalten — dann kannst du mit dem Regler Bild für Bild durchgehen"><span class="ico" data-icon="pause"></span></button>
+          <input type="range" id="rig-at" min="0" max="7" step="1" value="0" data-i18n-attr="title:rig.atTitle" title="Bild für Bild durchgehen">
+        </div>
         <span class="field-value" id="rig-preview-info"></span>
       </div>
     </div>

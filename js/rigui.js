@@ -14,6 +14,7 @@
 // Alles zusammen ist EIN Undo-Schritt.
 import { getSprite, getPaletteByName, flatCels, clearSelection } from './state.js';
 import { TEMPLATES, TEMPLATE_NAMES, buildFrames, hasRig, rigParts } from './rig.js';
+import { iconSvg } from './icons.js';
 import { renderAll } from './render.js';
 import { recordOp } from './history.js';
 import { saveState } from './storage.js';
@@ -27,12 +28,16 @@ import { t, onLangChange } from './i18n.js';
 /** @type {(id: string) => any} */
 const $ = id => document.getElementById(id);
 
-// Die Vorschau läuft, solange das Fenster offen ist.
+// Die Vorschau läuft, solange das Fenster offen ist — oder steht still,
+// wenn man sie angehalten hat, um ein Bild genau anzusehen.
 let timer = null;
 let preview = [];   // die gerechneten Zellen je Frame
 let at = 0;
+let running = true;
 
 const count = () => Math.max(2, Math.min(64, Math.round(Number($('rig-count').value) || 8)));
+/** Nur dieses Teil bewegen (Ebenen-Nummer) — oder -1 für alle. */
+const only = () => Number($('rig-only').value);
 const strength = () => Number($('rig-strength').value) / 100;
 const template = () => $('rig-tpl').value;
 
@@ -92,11 +97,18 @@ export function generate(name, n, s) {
 // ────────────────────────────────────────────────────────────────────
 function rebuild() {
   const sp = getSprite();
+  // „Prüfen“ nimmt allen anderen Ebenen ihre Rolle — nur für diese Rechnung,
+  // nicht am Sprite. Sie stehen dann still, und man sieht genau an einem
+  // Teil, ob sein Gelenk richtig sitzt.
+  const k = only();
+  const layers = k < 0 ? sp?.layers : sp?.layers.map((L, i) => (i === k ? L : { ...L, part: null }));
   preview = sp && hasRig(sp)
-    ? buildFrames(sp.frames[sp.frame].cels, sp.layers, template(), count(), strength())
+    ? buildFrames(sp.frames[sp.frame].cels, layers, template(), count(), strength())
     : [];
-  at = 0;
+  at = Math.min(at, Math.max(0, preview.length - 1));
   $('rig-strength-val').textContent = $('rig-strength').value + '%';
+  const slider = /** @type {HTMLInputElement} */ ($('rig-at'));
+  slider.max = String(Math.max(0, preview.length - 1));
   draw();
 }
 
@@ -111,16 +123,40 @@ function draw() {
   cv.style.width = cv.width * k + 'px';
   cv.style.height = cv.height * k + 'px';
   $('rig-preview-info').textContent = t('rig.previewAt', { i: (at % preview.length) + 1, n: preview.length });
+  const slider = /** @type {HTMLInputElement} */ ($('rig-at'));
+  if (document.activeElement !== slider) slider.value = String(at % preview.length);
 }
 
 function play() {
   stopPreview();
+  if (!running) return;
   timer = setInterval(() => { at++; draw(); }, Math.round(1000 / Math.max(1, getSprite()?.fps || 8)));
 }
 
 function stopPreview() {
   if (timer) clearInterval(timer);
   timer = null;
+}
+
+/** Laufen lassen oder anhalten — angehalten geht man mit dem Regler durch. */
+function setRunning(on) {
+  running = on;
+  const btn = $('rig-play');
+  btn.innerHTML = iconSvg(on ? 'pause' : 'play');
+  btn.title = t(on ? 'rig.pause' : 'rig.play');
+  btn.setAttribute('aria-pressed', String(on));
+  if (on) play(); else stopPreview();
+}
+
+/** Die Teile zur Auswahl — „alle“ und je ein Eintrag für jedes Körperteil. */
+function fillOnly() {
+  const sel = $('rig-only');
+  if (!sel) return;
+  const sp = getSprite();
+  const keep = sel.value;
+  sel.innerHTML = `<option value="-1">${t('rig.onlyAll')}</option>`
+    + (sp ? rigParts(sp).map(p => `<option value="${p.i}">${t('rig.role.' + p.role)} — ${p.name}</option>`).join('') : '');
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : '-1';
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -143,6 +179,7 @@ export function openRigModal() {
   clearSelection();
 
   fillTemplates();
+  fillOnly();
   // Die Bildzahl schlägt die Vorlage vor — bis der Nutzer selbst etwas tippt.
   $('rig-count').value = String(TEMPLATES[template()].frames);
   $('rig-modal-parts').textContent = t('rig.parts', {
@@ -150,8 +187,9 @@ export function openRigModal() {
     list: rigParts(sp).map(p => t('rig.role.' + p.role)).join(', '),
   });
   $('rig-modal-overlay').classList.add('open');
+  at = 0;
   rebuild();
-  play();
+  setRunning(true);
 }
 
 export function initRigModal() {
@@ -172,6 +210,14 @@ export function initRigModal() {
   });
   $('rig-count').addEventListener('input', rebuild);
   $('rig-strength').addEventListener('input', rebuild);
+  $('rig-only').addEventListener('change', rebuild);
+  $('rig-play').addEventListener('click', () => setRunning(!running));
+  $('rig-at').addEventListener('input', e => {
+    // Von Hand durchgehen heißt anhalten — sonst liefe es einem davon.
+    if (running) setRunning(false);
+    at = Number(/** @type {HTMLInputElement} */ (e.target).value);
+    draw();
+  });
 
   $('rig-modal-ok').addEventListener('click', () => {
     const name = template(), n = count(), s = strength();

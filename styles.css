@@ -1412,6 +1412,9 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
   border-radius: var(--r-sm);
   background: repeating-conic-gradient(var(--surface-3) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px;
 }
+/* Anhalten und Bild für Bild: der Regler nimmt die Breite der Vorschau. */
+.rig-scrub { display: flex; align-items: center; gap: var(--sp-1); width: 100%; }
+.rig-scrub input { flex: 1 1 auto; min-width: 0; }
 /* Pixel bleiben Pixel, auch wenn die Vorschau hochskaliert ist. */
 #rig-preview { image-rendering: pixelated; }
 /* Maske bearbeiten: roter Rahmen um die Zeichenfläche. */
