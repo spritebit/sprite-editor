@@ -16,6 +16,7 @@ import { renderAll, renderEditor, renderCallbacks } from './render.js';
 import { recordOp, beginStroke, commitStroke } from './history.js';
 import { commitFloat, isFloating, selectionPixels, takeSelection, stampCells } from './selection.js';
 import { PART_ROLES, autoPivot, rigParts, hasRig } from './rig.js';
+import { makeShader } from './shade.js';
 import { saveState } from './storage.js';
 import { stop as stopPlayback } from './frames.js';
 import { showInfoToast } from './toast.js';
@@ -210,6 +211,46 @@ export function setPartRole(role) {
   renderEditor();
 }
 
+// Aus einem vorderen Arm oder Bein das hintere machen: dieselbe Form, eine
+// Stufe dunkler, ganz unten in den Stapel. Das ist der Griff, mit dem
+// Pixel-Art seit jeher Tiefe erzeugt — und von Hand wäre es für jedes Teil
+// dasselbe Duplizieren, Abdunkeln und Hinunterschieben.
+//
+// Ganz nach unten, weil das hintere Glied hinter ALLEM liegt, auch hinter
+// dem Rumpf. Das Gelenk wird mitgenommen: beide hängen an derselben Schulter.
+const BACK_OF = { armFront: 'armBack', legFront: 'legBack' };
+
+export function backLimbFromFront() {
+  const sp = getSprite();
+  if (!sp) return;
+  const src = sp.layers[sp.layer];
+  const back = BACK_OF[src?.part?.role];
+  if (!back) { showInfoToast(t('rig.needFront')); return; }
+  if (sp.layers.some(L => L.part?.role === back)) {
+    showInfoToast(t('rig.backExists', { name: t('rig.role.' + back) }));
+    return;
+  }
+
+  const pal = getPaletteByName(sp.palette);
+  const darker = makeShader(pal, [], -1);
+  const from = sp.layer;
+  stopPlayback();
+  commitFloat();
+  clearSelection();
+  recordOp(() => {
+    sp.layers.unshift({ ...copyLayer(src), name: t('rig.role.' + back), part: { role: back, pivot: { ...src.part.pivot } } });
+    // In jedem Frame: unten eine leere Zelle, nur im aktuellen die dunkle Kopie.
+    // Der vordere Arm steht jetzt eine Stelle weiter oben.
+    sp.frames.forEach(f => f.cels.unshift(blankLike(f.cels[0])));
+    const cel = sp.frames[sp.frame].cels[from + 1];
+    sp.frames[sp.frame].cels[0] = cel.map(row => row.map(v => (v === 0 ? 0 : darker(v))));
+    sp.layer = 0;
+  });
+  renderAll();
+  saveState();
+  showInfoToast(t('rig.backDone', { name: t('rig.role.' + back) }));
+}
+
 /** Gelenk-Modus: der nächste Klick auf die Fläche setzt das Gelenk. */
 export function togglePivotPick() {
   const sp = getSprite();
@@ -270,6 +311,9 @@ function renderPart() {
   sel.value = part?.role || '';
   sel.disabled = !sp;
   btn.hidden = !part;
+  // „Hinten“ nur bei einem vorderen Glied — und nur, solange das hintere fehlt.
+  const back = BACK_OF[part?.role];
+  $('ly-part-back').hidden = !back || sp.layers.some(L => L.part?.role === back);
   btn.classList.toggle('is-active', !!state.pivotPick);
   btn.setAttribute('aria-pressed', String(!!state.pivotPick));
   if (part) {
@@ -618,6 +662,7 @@ export function initLayers() {
   $('ly-merge-all').addEventListener('click', mergeVisible);
   $('ly-part-role').addEventListener('change', e => setPartRole(/** @type {HTMLSelectElement} */ (e.target).value));
   $('ly-part-pivot').addEventListener('click', togglePivotPick);
+  $('ly-part-back').addEventListener('click', backLimbFromFront);
   $('ly-mask-add').addEventListener('click', addMask);
   $('ly-mask-edit').addEventListener('click', () => toggleMaskEdit());
   $('ly-mask-on').addEventListener('click', toggleMaskOn);
