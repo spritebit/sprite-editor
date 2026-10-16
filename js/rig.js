@@ -206,6 +206,41 @@ export const TEMPLATES = {
     },
   },
 
+  // Laufen auf vier Beinen — Hund, Katze, Pferd.
+  //
+  // Es gibt keine eigenen Rollen dafür: die beiden VORDERBEINE bekommen „Arm
+  // vorne“ und „Arm hinten“, die Hinterbeine „Bein vorne“ und „Bein hinten“
+  // („vorne/hinten“ heißt hier näher und ferner zum Betrachter). Das klingt
+  // schief, trägt aber genau, was gebraucht wird: vier Glieder in zwei
+  // Paaren.
+  //
+  // Gangart ist der Trab, und damit laufen die Beine ÜBER KREUZ: das nahe
+  // Vorderbein mit dem fernen Hinterbein, das ferne Vorderbein mit dem nahen
+  // Hinterbein. Anders als beim Zweibeiner schwingen alle vier gleich weit —
+  // ein Hund mit kurz trippelnden Vorderbeinen sieht lahm aus. Der Rücken
+  // wippt nur wenig, der Kopf bleibt fast ruhig: er trägt sich selbst.
+  walkQuad: {
+    frames: 8,
+    loop: true,
+    pose: (p, s) => {
+      const a = 2 * Math.PI * p;
+      // Kräftig genug, um wirklich einen Pixel zu wandern: tut es das nicht,
+      // sind die Frames nur noch die Beinwinkel — und die sind um die Spitze
+      // herum spiegelgleich, es käme zweimal dasselbe Bild heraus.
+      const bob = { dx: 0, dy: px(0.7 * s * Math.sin(2 * a)), rot: 0 };
+      const swing = phase => ({ ...bob, rot: deg(30 * s * Math.sin(a + phase)) });
+      return {
+        head: bob,
+        torso: bob,
+        weapon: bob,
+        armFront: swing(0),            // nahes Vorderbein
+        legBack: swing(0),             // fernes Hinterbein — mit ihm im Takt
+        armBack: swing(Math.PI),       // fernes Vorderbein
+        legFront: swing(Math.PI),      // nahes Hinterbein
+      };
+    },
+  },
+
   // Rennen: dieselbe Mechanik, größere Ausschläge, und die Figur lehnt sich
   // nach vorn — als Versatz, nicht als Drehung (siehe oben, Punkt 1).
   run: {

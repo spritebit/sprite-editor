@@ -238,3 +238,29 @@ test('der Kopf sinkt nie über den Rumpf hinaus nach oben weg', () => {
     }
   }
 });
+
+test('Vierbeiner: alle vier Beine schwingen gleich weit, über Kreuz', () => {
+  for (const pose of buildPoses('walkQuad', 8, 1)) {
+    const amp = Math.abs(pose.armFront.rot);
+    for (const r of ['armBack', 'legFront', 'legBack']) {
+      assert.equal(Math.abs(pose[r].rot), amp, r);
+    }
+    // nahes Vorderbein mit fernem Hinterbein, ferne über Kreuz dazu
+    assert.equal(pose.legBack.rot, pose.armFront.rot);
+    assert.equal(pose.legFront.rot, pose.armBack.rot);
+    assert.equal(pose.armBack.rot, -pose.armFront.rot + 0);
+  }
+  assert.ok(buildPoses('walkQuad', 8).some(p => p.armFront.rot !== 0));
+});
+
+test('rundlaufende Vorlagen zeigen nie zweimal hintereinander dasselbe Bild', () => {
+  // Ein doppelter Frame ist beim Abspielen ein Stolperer. Geprüft wird bei
+  // der Bildzahl, die die Vorlage selbst vorschlägt.
+  for (const n of TEMPLATE_NAMES) {
+    if (!TEMPLATES[n].loop) continue;
+    const ps = buildPoses(n);
+    for (let i = 0; i < ps.length; i++) {
+      assert.notDeepEqual(ps[i], ps[(i + 1) % ps.length], `${n}: Bild ${i + 1} und ${i + 2}`);
+    }
+  }
+});

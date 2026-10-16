@@ -547,6 +547,7 @@ export const MSG_AT = {
   'rig.pivotHint':     'Jetzt auf d’Flächn klickn, wo da Teil onghängt is — Schuita, Hüftn oder Hois.',
   'rig.tplName.idle':  'Steh’n',
   'rig.tplName.walk':  'Geh’n',
+  'rig.tplName.walkQuad':'Geh’n (Vierbeiner)',
   'rig.tplName.run':   'Rennan',
   'rig.tplName.attack':'Schlog',
   'rig.needFront':     'Des geht an am vuaren Oarm oder an a Haxn — da Ebene z’erst de Roin „Arm vorne“ oder „Bein vorne“ gebn.',
