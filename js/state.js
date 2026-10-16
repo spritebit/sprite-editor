@@ -6,6 +6,7 @@
 // lokale Re-Assignments — sonst sehen andere Module die Änderung nicht.
 import { normalizeFx } from './light.js';
 import { copyTileset, normalizeTileset } from './tiles.js';
+import { copyPart, normalizePart } from './rig.js';
 import { maskedCel, maskActive, copyMask, decodeMask } from './mask.js';
 import { BUILTIN_PALETTES, DEFAULT_PALETTE, paletteSize, cellToColor } from './data.js';
 import { t } from './i18n.js';
@@ -95,6 +96,9 @@ export const state = {
   shadeSoft:     false,
   shadeDir:      'center', // Richtung des Verlaufs: 'center' | 'up' | 'down' | 'left' | 'right' (js/shade.js softLevel)
   maskEdit:      false,    // Werkzeuge malen in die Maske der aktiven Ebene (js/mask.js)
+  // Gelenk setzen (js/rig.js): der nächste Klick auf die Fläche legt das
+  // Gelenk der aktiven Ebene fest, statt zu malen. Gilt für einen Klick.
+  pivotPick:     false,
   // Tilemap-Ebenen (js/tiles.js, js/tilemap.js): 'pixel' = Kacheln bemalen,
   // 'tiles' = Kacheln setzen; Auto legt beim Malen in leere Zellen neue an.
   tileMode:      'pixel',
@@ -219,13 +223,13 @@ export function attachGrid(sp) {
 // continuous: „durchgehende" Ebene — ein neuer Frame
 // bekommt hier keine leere Zelle, sondern teilt sich das Bild des vorigen.
 export function defaultLayer(n = 1) {
-  return { name: t('ly.name', { n }), visible: true, locked: false, opacity: 1, continuous: false, fx: null, mask: null, tileset: null };
+  return { name: t('ly.name', { n }), visible: true, locked: false, opacity: 1, continuous: false, fx: null, mask: null, tileset: null, part: null };
 }
 
 // Kopie einer Ebene samt Effekt-Einstellungen (light.js) — eine flache
 // Kopie teilte sich das fx-Objekt mit dem Original, und Undo-Schnappschüsse
 // würden beim nächsten Neuberechnen still mitgeändert.
-export const copyLayer = l => ({ ...l, fx: l.fx ? { ...l.fx, dir: { ...l.fx.dir } } : null, mask: copyMask(l.mask), tileset: copyTileset(l.tileset) });
+export const copyLayer = l => ({ ...l, fx: l.fx ? { ...l.fx, dir: { ...l.fx.dir } } : null, mask: copyMask(l.mask), tileset: copyTileset(l.tileset), part: copyPart(l.part) });
 
 export function normalizeLayer(l, n) {
   const op = Number(l?.opacity);
@@ -240,6 +244,9 @@ export function normalizeLayer(l, n) {
     mask: l?.mask ?? null,
     // Tilemap-Ebene: Kachelsatz (js/tiles.js), sonst null.
     tileset: normalizeTileset(l?.tileset),
+    // Körperteil einer Figur: Rolle und Gelenk (js/rig.js), sonst null.
+    // Roh — makeSprite prüft es gegen die Größe (normalizePart).
+    part: l?.part ?? null,
   };
 }
 
@@ -269,7 +276,7 @@ export function makeSprite({ name, palette, frames, fps = DEFAULT_FPS, frame = 0
   for (const f of fr) while (f.cels.length < n) f.cels.push(blankLike(f.cels[0]));
   const ly = Array.from({ length: n }, (_, i) => normalizeLayer(layers?.[i], i + 1));
   const H0 = fr[0].cels[0].length, W0 = fr[0].cels[0][0].length;
-  ly.forEach(l => { l.mask = decodeMask(l.mask, W0, H0); });
+  ly.forEach(l => { l.mask = decodeMask(l.mask, W0, H0); l.part = normalizePart(l.part, W0, H0); });
   return attachGrid({
     name,
     palette,
@@ -296,6 +303,7 @@ export function allGrids(sp) {
 // bleibt geteilt.
 export function mapFrames(sp, fn) {
   const done = new Map();
+  const oldW = sp.frames[0].cels[0][0].length, oldH = sp.frames[0].cels[0].length;
   sp.frames.forEach(f => {
     f.cels = f.cels.map(g => {
       if (!done.has(g)) done.set(g, fn(g));
@@ -304,6 +312,22 @@ export function mapFrames(sp, fn) {
   });
   // Masken wandern mit (Größe, Drehen, Spiegeln …) — sie sind Raster wie die Bilder.
   sp.layers?.forEach(l => { if (l.mask) l.mask.hide = fn(l.mask.hide); });
+  // Gelenke (js/rig.js) sind bloße Koordinaten, kein Raster — sie wachsen mit
+  // der Zeichenfläche. Beim Skalieren stimmt das genau; beim Spiegeln und
+  // Drehen bleibt das Verhältnis 1 und das Gelenk stehen, wo es war. Dafür
+  // gibt es den Gelenk-Knopf im Panel; wichtiger ist, dass nie ein Wert
+  // außerhalb des Bildes übrig bleibt.
+  const newW = sp.frames[0].cels[0][0].length, newH = sp.frames[0].cels[0].length;
+  if (newW !== oldW || newH !== oldH) {
+    const kx = newW / oldW, ky = newH / oldH;
+    sp.layers?.forEach(l => {
+      if (!l.part) return;
+      l.part.pivot = {
+        x: Math.max(0, Math.min(newW, l.part.pivot.x * kx)),
+        y: Math.max(0, Math.min(newH, l.part.pivot.y * ky)),
+      };
+    });
+  }
 }
 
 // ── Verknüpfte Zellen ───────────────────────────────────────────────
@@ -398,7 +422,12 @@ function mixHex(below, top, a) {
 // Transparenz-Stufen. Mit einer einzigen, sichtbaren, deckenden Ebene ist
 // das Ergebnis das Bild selbst (nicht verändern!).
 export function flatGrid(sp, f = sp.frame) {
-  const cels = sp.frames[f].cels;
+  return flatCels(sp, sp.frames[f].cels);
+}
+
+// Wie flatGrid, aber für einen Satz Zellen, der (noch) in keinem Frame
+// steckt — die Vorschau auf eine erzeugte Bewegung (js/rigui.js).
+export function flatCels(sp, cels) {
   const L0 = sp.layers[0];
   if (cels.length === 1 && L0.visible && L0.opacity >= 1 && !maskActive(L0)) return cels[0];
   const H = cels[0].length, W = cels[0][0].length;

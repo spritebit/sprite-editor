@@ -98,7 +98,7 @@ function clearSel(grid, r, mask) {
 // Die Maske steckt hier schon drin: außerhalb von ihr sind die Zellen 0.
 // Die Maße kommen aus dem übergebenen Grid, nicht vom aktiven Sprite: beim
 // Absetzen kann das ein anderer sein, und der darf andere Maße haben.
-function stampCells(grid, cells, ox, oy) {
+export function stampCells(grid, cells, ox, oy) {
   const H = grid.length, W = grid[0].length;
   let n = 0;
   for (let y = 0; y < cells.length; y++) for (let x = 0; x < cells[y].length; x++) {
@@ -568,6 +568,24 @@ function currentCells() {
 export function selectionPixels() {
   if (!selection.rect) return null;
   return { cells: currentCells(), mask: selection.mask };
+}
+
+/**
+ * Den Inhalt der Auswahl HERAUSNEHMEN — für „Auswahl → neue Ebene“
+ * (js/layers.js). Die Quelle bleibt leer: entweder das Grid, oder der
+ * schwebende Puffer, der dann aufgelöst wird. Gibt die Zellen samt Ort.
+ *
+ * Kein eigener Undo-Schritt — der Aufrufer wickelt das in recordOp(). Beim
+ * Schweben läuft dessen beginStroke() in den Schnappschuss von ensureFloating
+ * (history.js: der erste gewinnt), das Anheben gehört also in denselben Schritt.
+ */
+export function takeSelection() {
+  const r = selection.rect;
+  if (!r) return null;
+  const cells = currentCells();
+  if (selection.float) { selection.float = null; selection.owner = null; }
+  else clearSel(getGrid(), r, selection.mask);
+  return { cells, x: r.x, y: r.y };
 }
 
 // Die Form wandert mit in die Zwischenablage — eingefügt wird wieder genau sie.

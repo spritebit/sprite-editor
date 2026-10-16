@@ -62,6 +62,10 @@ export const renderCallbacks = {
   onShadeRamp:       () => {},
   // Hilfslinien (guides.js) — zeichnet über Gitter und Auswahl.
   onDrawOverlay:     (_ctx, _W, _H, _cs) => {},
+  // Gelenke der Körperteile (layers.js, js/rig.js) — ganz obenauf, damit
+  // man sie auch über den Hilfslinien trifft. Eigener Platz statt einer
+  // Kette an onDrawOverlay: initLayers läuft vor initGuides.
+  onDrawPivots:      (_ctx, _W, _H, _cs) => {},
   // Tilemap-Ebenen (tilemap.js): Kachelraster und Vorschau; Panel „Kacheln“.
   onDrawTiles:       (_ctx, _W, _H, _cs) => {},
   onRenderTiles:     () => {},
@@ -273,6 +277,7 @@ export function renderEditor() {
   // Maske bearbeiten: Ausgeblendetes rötlich über allem.
   const maskL = sp && state.maskEdit ? sp.layers[sp.layer]?.mask : null;
   document.getElementById('editor-canvas-wrap')?.classList.toggle('is-mask-edit', !!maskL);
+  document.getElementById('editor-canvas-wrap')?.classList.toggle('is-pivot-pick', !!state.pivotPick);
   if (maskL) paintMask(ctx, W, H, r, (x, y) => !!maskL.hide[y][x], [255, 70, 70, 120]);
 
   // Grid-Linien liegen als CSS-Ebene über dem Canvas (#editor-gridlines):
@@ -299,6 +304,7 @@ export function renderEditor() {
   if (state.mirror !== 'off') drawMirrorGuides(ctx, W, H, r);
   renderCallbacks.onDrawTiles(ctx, W, H, r);
   renderCallbacks.onDrawOverlay(ctx, W, H, r);
+  renderCallbacks.onDrawPivots(ctx, W, H, r);
 
   updateStageTitle();
   afterEditorRendered(big);
@@ -510,6 +516,21 @@ export function cellFromEventRaw(e) {
   const [x0, x1] = axisRange(g[0].length, a.x), [y0, y1] = axisRange(g.length, a.y);
   if (x < x0 || y < y0 || x > x1 || y > y1) return null;
   return { x, y };
+}
+
+// Punkt auf dem Gitter statt Zelle: in KANTEN gerechnet (0 = linke Kante der
+// ersten Spalte), gerundet auf halbe Zellen. So trifft man sowohl die Mitte
+// eines Pixels als auch die Grenze zwischen zweien — beides braucht ein
+// Gelenk (js/rig.js). Außerhalb wird auf den Rand gezogen.
+export function edgeFromEvent(e) {
+  const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('editor-canvas'));
+  const r = canvas.getBoundingClientRect();
+  const g = getGrid();
+  const snap = (v, max) => Math.max(0, Math.min(max, Math.round(v / state.cellSize * 2) / 2));
+  return {
+    x: snap(e.clientX - r.left, g[0].length),
+    y: snap(e.clientY - r.top, g.length),
+  };
 }
 
 // Wie cellFromEvent, aber ohne null: Werte außerhalb werden auf den Rand

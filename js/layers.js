@@ -9,18 +9,20 @@
 // Die Liste im Panel zeigt die oberste Ebene oben. Alle Änderungen laufen
 // durch recordOp() und sind Undo-Schritte; nur das Wählen der aktiven Ebene
 // ist keine Änderung.
-import { state, getSprite, getPaletteByName, clearSelection, defaultLayer, blankLike, sampleGrid, copyLayer, flatGrid } from './state.js';
+import { state, getSprite, getPaletteByName, clearSelection, defaultLayer, blankLike, sampleGrid, copyLayer, flatGrid, isLinked } from './state.js';
 import { blankMask, bakeMask, maskedCel } from './mask.js';
 import { dc, cellToColor } from './data.js';
 import { renderAll, renderEditor, renderCallbacks } from './render.js';
 import { recordOp, beginStroke, commitStroke } from './history.js';
-import { commitFloat } from './selection.js';
+import { commitFloat, isFloating, selectionPixels, takeSelection, stampCells } from './selection.js';
+import { PART_ROLES, autoPivot, rigParts, hasRig, FREE_AMP, FREE_PHASE } from './rig.js';
+import { makeShader } from './shade.js';
 import { saveState } from './storage.js';
 import { stop as stopPlayback } from './frames.js';
 import { showInfoToast } from './toast.js';
 import { iconSvg } from './icons.js';
 import { gridToCanvas } from './raster.js';
-import { t } from './i18n.js';
+import { t, onLangChange } from './i18n.js';
 
 /** @type {(id: string) => any} */
 const $ = id => document.getElementById(id);
@@ -51,11 +53,11 @@ function meta(fn) {
   saveState();
 }
 
-// Freier Name "Ebene N".
-function freshName(sp) {
+// Freier Name "Ebene N" — oder nach einem anderen Muster ("Teil N").
+function freshName(sp, key = 'ly.name') {
   const taken = new Set(sp.layers.map(l => l.name));
   let n = sp.layers.length + 1;
-  while (taken.has(t('ly.name', { n }))) n++;
+  while (taken.has(t(key, { n }))) n++;
   return n;
 }
 
@@ -92,6 +94,48 @@ export function duplicateLayer() {
     });
     sp.layer = at;
   });
+}
+
+// ── Auswahl → eigene Ebene ───────────────────────────────────────────
+// Der ausgewählte Teil wird aus der aktiven Ebene HERAUSGENOMMEN und sitzt
+// danach allein in einer neuen Ebene darüber, an genau derselben Stelle.
+// Damit zerlegt man eine fertig gezeichnete Figur in Kopf, Rumpf, Arme und
+// Beine — die Voraussetzung dafür, die Teile einzeln zu bewegen.
+//
+// Nur im aktuellen Frame: man zerlegt ein Bild, nicht eine Animation. Teilt
+// die Quellzelle ihr Bild mit anderen Frames (verknüpft), wird sie für diesen
+// Frame zuerst gelöst — sonst fehlte das Teil überall.
+export function layerFromSelection() {
+  const sp = getSprite();
+  if (!sp) return;
+  if (state.maskEdit) { showInfoToast(t('ly.notInMask')); return; }
+  const src = sp.layers[sp.layer];
+  if (src.locked) { showInfoToast(t('ly.lockedInfo', { name: src.name })); return; }
+
+  // Leere Auswahl: nichts anfassen, sonst entstünde eine leere Ebene.
+  const peek = selectionPixels();
+  if (!peek) { showInfoToast(t('ly.needSel')); return; }
+  if (!peek.cells.some(row => row.some(v => v !== 0))) { showInfoToast(t('ly.partEmpty')); return; }
+
+  // Nicht edit(): das setzt schwebenden Inhalt ab und hebt die Auswahl auf,
+  // bevor hier etwas passieren könnte — beides brauchen wir noch.
+  stopPlayback();
+  let moved = 0;
+  recordOp(() => {
+    const from = sp.layer, fr = sp.frames[sp.frame];
+    // Verknüpfung nur für diesen Frame lösen — vor dem Herausnehmen.
+    if (!isFloating() && isLinked(sp, sp.frame, from)) fr.cels[from] = dc(fr.cels[from]);
+    const part = takeSelection();
+    const at = from + 1;
+    sp.layers.splice(at, 0, { ...defaultLayer(), name: t('ly.partName', { n: freshName(sp, 'ly.partName') }) });
+    sp.frames.forEach(f => f.cels.splice(at, 0, blankLike(f.cels[from])));
+    moved = stampCells(fr.cels[at], part.cells, part.x, part.y);
+    sp.layer = at;
+  });
+  clearSelection();
+  renderAll();
+  saveState();
+  showInfoToast(t('ly.partDone', { n: moved }));
 }
 
 export function deleteLayer() {
@@ -145,6 +189,159 @@ export function mergeDown() {
     s.layer = below;
     state.maskEdit = false;
   });
+}
+
+// ── Körperteil (rig.js): Rolle und Gelenk ────────────────────────────
+// Eine Rolle zu vergeben setzt gleich ein brauchbares Gelenk — oben in der
+// Mitte bei Armen und Beinen, unten bei Kopf, Rumpf und Waffe. Das stimmt
+// bei den meisten gezeichneten Figuren; sitzt es daneben, setzt man es mit
+// „Gelenk“ von Hand. „—“ macht die Ebene wieder zu einer gewöhnlichen.
+export function setPartRole(role) {
+  const sp = getSprite();
+  if (!sp) return;
+  meta(s => {
+    const L = s.layers[s.layer];
+    if (!PART_ROLES.includes(role)) { L.part = null; return; }
+    const pivot = L.part?.pivot || autoPivot(s.frames[s.frame].cels[s.layer], role)
+      || { x: s.grid[0].length / 2, y: s.grid.length / 2 };
+    // Ein freies Teil bringt seine Bewegung selbst mit — mit Vorgaben, die
+    // als Schwanz gleich brauchbar aussehen.
+    L.part = role === 'free'
+      ? { role, pivot, amp: L.part?.amp ?? FREE_AMP, phase: L.part?.phase ?? FREE_PHASE }
+      : { role, pivot };
+  });
+  if (!role) state.pivotPick = false;
+  renderLayers();
+  renderEditor();
+}
+
+// Aus einem vorderen Arm oder Bein das hintere machen: dieselbe Form, eine
+// Stufe dunkler, ganz unten in den Stapel. Das ist der Griff, mit dem
+// Pixel-Art seit jeher Tiefe erzeugt — und von Hand wäre es für jedes Teil
+// dasselbe Duplizieren, Abdunkeln und Hinunterschieben.
+//
+// Ganz nach unten, weil das hintere Glied hinter ALLEM liegt, auch hinter
+// dem Rumpf. Das Gelenk wird mitgenommen: beide hängen an derselben Schulter.
+const BACK_OF = { armFront: 'armBack', legFront: 'legBack' };
+
+export function backLimbFromFront() {
+  const sp = getSprite();
+  if (!sp) return;
+  const src = sp.layers[sp.layer];
+  const back = BACK_OF[src?.part?.role];
+  if (!back) { showInfoToast(t('rig.needFront')); return; }
+  if (sp.layers.some(L => L.part?.role === back)) {
+    showInfoToast(t('rig.backExists', { name: t('rig.role.' + back) }));
+    return;
+  }
+
+  const pal = getPaletteByName(sp.palette);
+  const darker = makeShader(pal, [], -1);
+  const from = sp.layer;
+  stopPlayback();
+  commitFloat();
+  clearSelection();
+  recordOp(() => {
+    sp.layers.unshift({ ...copyLayer(src), name: t('rig.role.' + back), part: { role: back, pivot: { ...src.part.pivot } } });
+    // In jedem Frame: unten eine leere Zelle, nur im aktuellen die dunkle Kopie.
+    // Der vordere Arm steht jetzt eine Stelle weiter oben.
+    sp.frames.forEach(f => f.cels.unshift(blankLike(f.cels[0])));
+    const cel = sp.frames[sp.frame].cels[from + 1];
+    sp.frames[sp.frame].cels[0] = cel.map(row => row.map(v => (v === 0 ? 0 : darker(v))));
+    sp.layer = 0;
+  });
+  renderAll();
+  saveState();
+  showInfoToast(t('rig.backDone', { name: t('rig.role.' + back) }));
+}
+
+/** Ausschlag oder Takt eines freien Teils stellen (js/rig.js). */
+export function setFreeSwing(key, value) {
+  const sp = getSprite();
+  if (sp?.layers[sp.layer].part?.role !== 'free') return;
+  meta(s => { s.layers[s.layer].part[key] = value; });
+  renderEditor();
+}
+
+/** Gelenk-Modus: der nächste Klick auf die Fläche setzt das Gelenk. */
+export function togglePivotPick() {
+  const sp = getSprite();
+  if (!sp?.layers[sp.layer].part) return;
+  state.pivotPick = !state.pivotPick;
+  if (state.pivotPick) showInfoToast(t('rig.pivotHint'));
+  renderLayers();
+  renderEditor();
+}
+
+/** Aus app.js, wenn im Gelenk-Modus auf die Fläche geklickt wird. */
+export function setPivotAt(x, y) {
+  const sp = getSprite();
+  const L = sp?.layers[sp.layer];
+  if (!L?.part) return;
+  const W = sp.grid[0].length, H = sp.grid.length;
+  meta(s => {
+    s.layers[s.layer].part.pivot = {
+      x: Math.max(0, Math.min(W, x)),
+      y: Math.max(0, Math.min(H, y)),
+    };
+  });
+  state.pivotPick = false;
+  renderLayers();
+  renderEditor();
+}
+
+// Die Gelenke aller Körperteile über das Bild zeichnen — der aktive Ring
+// kräftig, die übrigen blass, damit man sieht, wie die Figur zusammenhängt.
+function drawPivots(ctx, _W, _H, cs) {
+  const sp = getSprite();
+  if (!sp || !hasRig(sp)) return;
+  ctx.save();
+  for (const p of rigParts(sp)) {
+    const on = p.i === sp.layer;
+    const x = p.pivot.x * cs, y = p.pivot.y * cs;
+    const r = Math.max(3, Math.min(7, cs * 0.6));
+    ctx.lineWidth = on ? 2 : 1;
+    ctx.strokeStyle = on ? '#ffcc33' : 'rgba(255,204,51,0.45)';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    // Kreuz in der Mitte: der Kreis allein ist auf buntem Grund schlecht zu treffen.
+    ctx.beginPath();
+    ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+    ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function renderPart() {
+  const sel = $('ly-part-role'), btn = $('ly-part-pivot');
+  if (!sel) return;
+  const sp = getSprite();
+  const part = sp?.layers[sp.layer]?.part || null;
+  // Die Liste trägt die Sprache mit — sie wird bei jedem Wechsel neu gebaut.
+  sel.innerHTML = `<option value="">${t('rig.roleNone')}</option>`
+    + PART_ROLES.map(r => `<option value="${r}">${t('rig.role.' + r)}</option>`).join('');
+  sel.value = part?.role || '';
+  sel.disabled = !sp;
+  btn.hidden = !part;
+  // „Hinten“ nur bei einem vorderen Glied — und nur, solange das hintere fehlt.
+  const back = BACK_OF[part?.role];
+  $('ly-part-back').hidden = !back || sp.layers.some(L => L.part?.role === back);
+  btn.classList.toggle('is-active', !!state.pivotPick);
+  btn.setAttribute('aria-pressed', String(!!state.pivotPick));
+  if (part) {
+    const fmt = v => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+    btn.title = t('rig.pivotAt', { x: fmt(part.pivot.x), y: fmt(part.pivot.y) });
+  }
+  // Ausschlag und Takt gibt es nur beim freien Teil.
+  const free = part?.role === 'free';
+  for (const [key, def] of [['amp', FREE_AMP], ['phase', FREE_PHASE]]) {
+    $('ly-free-' + key + '-row').hidden = !free;
+    if (!free) continue;
+    const inp = $('ly-free-' + key);
+    const v = part[key] ?? def;
+    if (document.activeElement !== inp) inp.value = String(v);
+    $('ly-free-' + key + '-val').textContent = v + '°';
+  }
 }
 
 // ── Ebenenmasken (mask.js) ───────────────────────────────────────────
@@ -396,6 +593,7 @@ export function renderLayers() {
       mk('mask-on').title = t(m.on ? 'mask.off' : 'mask.on');
     }
   }
+  renderPart();
   const tlOp = $('tl-ly-opacity');
   if (tlOp) {
     if (document.activeElement !== tlOp) tlOp.value = String(Math.round(L.opacity * 100));
@@ -468,6 +666,8 @@ export function initLayers() {
   const on = (id, fn) => $(id)?.addEventListener('click', fn);
   on('tl-ly-add', addLayer);
   on('tl-ly-dup', duplicateLayer);
+  on('tl-ly-from-sel', layerFromSelection);
+  on('ly-from-sel', layerFromSelection);
   on('tl-ly-del', deleteLayer);
   on('tl-ly-merge', mergeDown);
   on('tl-ly-merge-all', mergeVisible);
@@ -482,6 +682,14 @@ export function initLayers() {
   $('ly-del').addEventListener('click', deleteLayer);
   $('ly-merge').addEventListener('click', mergeDown);
   $('ly-merge-all').addEventListener('click', mergeVisible);
+  $('ly-part-role').addEventListener('change', e => setPartRole(/** @type {HTMLSelectElement} */ (e.target).value));
+  $('ly-part-pivot').addEventListener('click', togglePivotPick);
+  $('ly-part-back').addEventListener('click', backLimbFromFront);
+  for (const key of ['amp', 'phase']) {
+    $('ly-free-' + key).addEventListener('input', e => {
+      setFreeSwing(key, Number(/** @type {HTMLInputElement} */ (e.target).value));
+    });
+  }
   $('ly-mask-add').addEventListener('click', addMask);
   $('ly-mask-edit').addEventListener('click', () => toggleMaskEdit());
   $('ly-mask-on').addEventListener('click', toggleMaskOn);
@@ -512,4 +720,7 @@ export function initLayers() {
   renderCallbacks.onRenderLayers = renderLayers;
   const prev = renderCallbacks.onEditorRendered;
   renderCallbacks.onEditorRendered = () => { prev(); refreshActiveThumb(); };
+  renderCallbacks.onDrawPivots = drawPivots;
+  // Die Rollenliste steht in der Sprache des Nutzers — nach dem Wechsel neu bauen.
+  onLangChange(renderPart);
 }

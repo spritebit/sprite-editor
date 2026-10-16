@@ -103,6 +103,14 @@ export const ICONS = {
   // Alle sichtbaren zusammenführen: zwei Pfeile in eine Linie.
   mergeAll: '<path d="M8 2l4 4 4-4M8 8l4 4 4-4"/><path d="M4 17h16M4 21h16"/>',
   mergeDown:'<path d="M12 3v10M8 9l4 4 4-4"/><path d="M4 17h16M4 21h16"/>',
+  // Auswahl → eigene Ebene: gestrichelte Auswahl, die nach oben heraus geht.
+  partOut: `<rect x="3" y="11" width="10" height="10" rx="1" ${DASH}/><path d="M18 3v10M14 7l4-4 4 4"/>`,
+  // Hinteres Glied: zwei gleiche Formen, die hintere gefüllt (= dunkler).
+  backLimb: `<rect x="3" y="3" width="12" height="12" rx="1" ${DOT} opacity="0.45"/><rect x="9" y="9" width="12" height="12" rx="1"/>`,
+  // Bewegung erzeugen: eine laufende Strichfigur.
+  run:     '<circle cx="13" cy="4" r="2"/><path d="M13 8l-4 3 2 4-3 5"/><path d="M11 11l4 2 1 4"/><path d="M9 11L5 9"/>',
+  // Gelenk: ein Punkt im Fadenkreuz — hier dreht sich das Teil.
+  pivot:   `<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" ${DOT}/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>`,
   // Ebene nach oben / unten (wie in der Desktop-App)
   up:      '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
   down:    '<path d="M12 5v14"/><path d="M6 13l6 6 6-6"/>',
